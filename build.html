@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>No Box Builder (staff view is on the home page)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="bar-title">No Box <span>/</span> Builder<svg class="bolt" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg></div>
+    <div class="stages">
+      <div class="stage-chip on" id="chip1">1 &nbsp;Part 1</div>
+      <div class="stage-chip" id="chip2">2 &nbsp;Batches</div>
+      <div class="stage-chip" id="chip3">3 &nbsp;Part 2 + Waitlist</div>
+      <div class="stage-chip" id="chip4">4 &nbsp;Review + send</div>
+    </div>
+    <div class="bar-actions">
+      <button class="ghost" id="btnBack">Back to the list</button>
+      <button class="ghost" id="btnDocs">SOP</button>
+      <button class="ghost" id="btnReset">Start over</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <h1>Deployed Monthly: Members Without a Box</h1>
+  <p class="sub">Drop in the exports, confirm the columns, and this builds the No Box list, the Client ID batches, the statuses, the flags, and the handoff lists for Logistics and Volunteer Services.</p>
+  <p class="privacy">Everything runs inside this browser tab. No file is uploaded, stored, or sent anywhere.</p>
+
+  <!-- ============ STAGE 1 ============ -->
+  <section class="panel" id="p1">
+    <div class="eyebrow">Stage 1 &nbsp;·&nbsp; Steps 1 through 3</div>
+    <h2>Load Deployed Monthly Part 1</h2><div class="h2rule"></div>
+    <p>Pull both exports from Part 1 with the month filter set correctly, then drop them here. Check the column mapping under each file before you build.</p>
+    <p class="hint" style="margin-bottom:14px">I solemnly swear the month filter is set correctly.</p>
+
+    <div class="rowline">
+      <label class="hint" for="monthPick">Reporting month</label>
+      <input type="month" id="monthPick">
+      <span class="hint">Replaces the old [Current Month] swap in Prompts 3 and 5.</span>
+    </div>
+
+    <div class="drops">
+      <div class="drop" id="drop-deployed" data-key="deployed">
+        <div class="dt">Deployed Report</div>
+        <div class="dd">Part 1, Formatted Report</div>
+        <div class="fname"></div>
+        <div class="map"></div>
+      </div>
+      <div class="drop" id="drop-details" data-key="details">
+        <div class="dt">Details</div>
+        <div class="dd">Part 1, Details Only</div>
+        <div class="fname"></div>
+        <div class="map"></div>
+      </div>
+    </div>
+
+    <button class="btn" id="btnBuild" disabled>Build the No Box list</button>
+    <span class="hint" id="hint1" style="margin-left:12px"></span>
+  </section>
+
+  <!-- ============ STAGE 2 ============ -->
+  <section class="panel locked" id="p2">
+    <div class="eyebrow">Stage 2 &nbsp;·&nbsp; Steps 4 and 5</div>
+    <h2>Client ID batches</h2><div class="h2rule"></div>
+    <dl class="stats" id="stats1"></dl>
+    <p>Copy each batch into the Part 2 report filter, one batch at a time. Filter logic stays the same: <span class="hint">Program Engagement Name AND (Client IDs) AND Created Date AND Service Delivery Name</span></p>
+    <div class="rowline">
+      <label class="hint" for="batchSize">Batch size</label>
+      <input type="number" id="batchSize" value="70" min="10" max="500" style="width:80px">
+      <button class="btn sm out" id="btnRebatch">Rebuild batches</button>
+      <button class="btn sm out" id="btnDlIds">Download all IDs (.csv)</button>
+    </div>
+    <div class="batches" id="batches"></div>
+  </section>
+
+  <!-- ============ STAGE 3 ============ -->
+  <section class="panel locked" id="p3">
+    <div class="eyebrow">Stage 3 &nbsp;·&nbsp; Steps 6 through 11</div>
+    <h2>Load Part 2 and the waitlist</h2><div class="h2rule"></div>
+    <p>Drop in the Part 2 export you just pulled and the Currently Waitlisted export. This fills the dates, names, and addresses, sets every Status, and applies the gold, blue, purple, and red flags in one pass.</p>
+    <div class="drops">
+      <div class="drop" id="drop-part2" data-key="part2">
+        <div class="dt">Deployed Monthly Part2</div>
+        <div class="dd">Details Only</div>
+        <div class="fname"></div>
+        <div class="map"></div>
+      </div>
+      <div class="drop" id="drop-waitlist" data-key="waitlist">
+        <div class="dt">Currently Waitlisted Clients</div>
+        <div class="dd">Details Only</div>
+        <div class="fname"></div>
+        <div class="map"></div>
+      </div>
+    </div>
+    <button class="btn" id="btnFinish" disabled>Fill, flag, and finish</button>
+    <span class="hint" id="hint3" style="margin-left:12px"></span>
+  </section>
+
+  <!-- ============ STAGE 4 ============ -->
+  <section class="panel locked" id="p4" style="border-left-color:var(--gold)">
+    <div class="eyebrow">Stage 4 &nbsp;·&nbsp; Step 12 and the handoff</div>
+    <h2>Review and send</h2><div class="h2rule"></div>
+    <dl class="stats" id="stats2"></dl>
+    <div id="alerts"></div>
+
+    <div class="views" id="views">
+      <button class="view-tab on" data-view="all">Full No Box list <span class="n" id="n-all">0</span></button>
+      <button class="view-tab" data-view="logistics">Logistics: send a box <span class="n" id="n-logistics">0</span></button>
+      <button class="view-tab" data-view="volunteer">Volunteer Services: reach out <span class="n" id="n-volunteer">0</span></button>
+      <button class="view-tab" data-view="waitlisted">Waitlisted <span class="n" id="n-waitlisted">0</span></button>
+      <button class="view-tab" data-view="review">Needs review <span class="n" id="n-review">0</span></button>
+    </div>
+    <div class="viewbox">
+      <div class="viewhead">
+        <div class="txt"><h3 id="vTitle"></h3><p id="vDesc"></p></div>
+        <div class="tools">
+          <button class="btn sm out" id="btnCsv">Export .csv</button>
+          <button class="btn sm gold" id="btnXlsx">Export .xlsx</button>
+        </div>
+      </div>
+      <div class="filters" id="vFilters"></div>
+      <div class="tw"><table id="vTable"><thead></thead><tbody></tbody></table></div>
+      <p class="hint" id="vFoot" style="margin-top:10px"></p>
+    </div>
+
+    <div style="margin-top:18px">
+      <button class="btn" id="btnWorkbook">Download the full styled workbook (.xlsx)</button>
+      <span class="hint" style="margin-left:12px">Values only, no formulas. Prompt 6 is already baked in.</span>
+    </div>
+  </section>
+
+  <!-- ============ STAGE 5 ============ -->
+  <section class="panel locked" id="p5" style="border-left-color:var(--ok)">
+    <div class="eyebrow">Stage 5 &nbsp;·&nbsp; The handoff</div>
+    <h2>Publish it for staff</h2><div class="h2rule"></div>
+    <p>This encrypts the finished list with the team password and downloads one file. Put that file in the repo and staff can open the site and read it. They never touch an export and never upload anything.</p>
+    <div class="note">
+      <div class="lbl">How the encryption works</div>
+      <p>The password is the key. What gets committed is ciphertext, so even if the link gets out, the file is unreadable without the password. It is decrypted in the reader's browser, never on a server.</p>
+    </div>
+    <div class="rowline">
+      <label class="hint" for="pubPw">Team password</label>
+      <input type="password" id="pubPw" placeholder="The password staff will use" style="min-width:260px">
+    </div>
+
+    <h3 style="margin-top:20px">Where it goes</h3>
+    <div class="map show" style="border-top:none;padding-top:0;max-width:520px">
+      <div class="map-row"><label>GitHub owner</label><input type="text" id="ghOwner" placeholder="your GitHub username" style="flex:1"></div>
+      <div class="map-row"><label>Repository</label><input type="text" id="ghRepo" placeholder="no-box-builder" style="flex:1"></div>
+      <div class="map-row"><label>Access token</label><input type="password" id="ghToken" placeholder="github_pat_..." style="flex:1"></div>
+      <div class="map-row"><label></label><label class="hint" style="flex:1;display:flex;gap:7px;align-items:center;cursor:pointer"><input type="checkbox" id="ghSave" style="width:auto"> Remember the token in this browser</label></div>
+    </div>
+
+    <div class="rowline" style="margin-top:14px">
+      <button class="btn gold" id="btnPublishLive">Publish to the live site</button>
+      <button class="btn sm out" id="btnCheck">Check connection</button>
+      <span class="hint">Encrypts, commits, and Render redeploys. No downloading, no GitHub tab.</span>
+    </div>
+    <div id="pubOut"></div>
+
+    <details style="margin-top:18px">
+      <summary class="hint" style="cursor:pointer">Getting your access token, one time only</summary>
+      <div class="note" style="margin-top:12px">
+        <div class="lbl">Five clicks in GitHub</div>
+        <p>Profile photo → <strong>Settings</strong> → scroll to <strong>Developer settings</strong> → <strong>Personal access tokens</strong> → <strong>Fine-grained tokens</strong> → <strong>Generate new token</strong>.</p>
+        <p>Name it "No Box publisher". Set an expiration you will remember, a year is reasonable. Under <strong>Repository access</strong> pick <strong>Only select repositories</strong> and choose this one repo. Under <strong>Permissions → Repository permissions</strong>, set <strong>Contents</strong> to <strong>Read and write</strong>. Leave everything else alone. Generate, then copy the token and paste it above.</p>
+        <p>The token only reaches GitHub. It is never written into the repo. If you tick Remember, it stays in this browser on this computer, so treat that the way you would a saved password. If you lose the laptop, revoke the token in the same GitHub screen.</p>
+      </div>
+    </details>
+
+    <details style="margin-top:10px">
+      <summary class="hint" style="cursor:pointer">Manual fallback, if GitHub is down or the token is expired</summary>
+      <div style="margin-top:12px">
+        <button class="btn sm out" id="btnPublish">Encrypt and download the file instead</button>
+        <p class="hint" style="margin-top:8px">Then upload it into the <code>data</code> folder in GitHub yourself.</p>
+      </div>
+    </details>
+  </section>
+
+  <footer>
+    <p>Runs the process documented in the Deployed Monthly No Box SOP. Questions on the process go to the Director of Virtual Services. <a href="sop.html">Run this manually</a> &nbsp;·&nbsp; <a href="index.html">Staff view</a></p>
+  </footer>
+</div>
+
+<input type="file" id="filePicker" accept=".xlsx,.xls,.csv,.tsv" style="display:none">
+
+<script src="config.js"></script>
+<script>window.NOBOX_GATE = 'admin';</script>
+<script src="gate.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="vendor/exceljs.min.js"></script>
+<script src="core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
