@@ -9,6 +9,17 @@
    ============================================================ */
 
 window.NOBOX_CONFIG = {
-  passwordHash: '0826a14b082536f75223aa576f33acef46e6de0813ff65368e4a6fb96b804aab',
-  hint: 'Ask Cody'
+  passwordHash: '',       // team password: everyone. Opens the list.
+  adminHash: '',          // admin password: you. Unlocks Run new report.
+  hint: '',
+
+  /* Where the published list gets committed. Safe to put here, it is not a
+     secret. Your access token is NEVER stored in this file. You type it into
+     the builder page once and it stays in that browser. */
+  github: {
+    owner: '',                    // e.g. 'CheesyGrunt'
+    repo:  '',                    // e.g. 'no-box-builder'
+    branch:'main',
+    path:  'data/latest.enc'
+  }
 };

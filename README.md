@@ -6,8 +6,8 @@ batches, the statuses, the flags, and the handoff lists for Logistics and Volunt
 
 | Page | Who it is for |
 |---|---|
-| `index.html` | **Staff.** Password, then read this month's list. No uploading. |
-| `build.html` | **Director of Virtual Services.** Runs the monthly process and publishes. |
+| `index.html` | **Everyone.** Team password, then this month's list. The Run new report button appears here for whoever has the admin password. |
+| `build.html` | **You.** The monthly run and publishing. Reached through Run new report. |
 | `sop.html` | The written SOP. |
 | `set-password.html` | Sets the team password. |
 
@@ -70,28 +70,36 @@ red flags before anything ships.
 
 ---
 
-## The team password
+## Two passwords
 
-One password does two jobs: it gates `build.html` and `sop.html`, and it is the encryption key
-for the published list. Set it once:
+| Password | Who has it | What it does |
+|---|---|---|
+| **Team** | Everyone | Opens the list. Also the encryption key for the published file. |
+| **Admin** | You | Unlocks **Run new report**. Nobody else can overwrite what staff see. |
 
-1. Open `set-password.html`, type the password, hit Generate.
-2. Paste the block over `window.NOBOX_CONFIG` in `config.js`. Commit.
-3. Use that same password when you publish. The builder refuses to publish with a different
-   one, so staff can never be locked out of a file you posted.
+Set both at once in `set-password.html`, paste the block into `config.js`, commit.
 
-To rotate it: set a new one in `config.js`, then republish `latest.enc` with the new password.
-Both steps, or staff will hit a file they cannot open.
+Rotating the team password means two steps: change `config.js` **and** republish, or staff
+will hit a file they cannot open. Rotating the admin password is just `config.js`.
 
 ## Publishing each month
 
-1. Open **build.html** on the live site, not off your hard drive. Encryption needs a secure
-   page, and a local file is not one.
-2. Run stages 1 through 4 as usual.
-3. Stage 5: type the team password, click **Encrypt and download**. You get `latest.enc`.
-4. In GitHub, open the `data` folder, **Add file → Upload files**, drop in `latest.enc`,
-   commit. It replaces last month's.
-5. Render redeploys in about a minute. Staff see the new month next time they open the page.
+Everything happens on the live site. No downloads, no GitHub tab.
+
+1. Sign in at the home page with the team password. You see the current month, same as staff.
+2. Click **Run new report**, enter the admin password.
+3. Run stages 1 through 4.
+4. Stage 5: enter the team password, click **Publish to the live site**.
+
+That encrypts in your browser, commits `data/latest.enc` through the GitHub API, and Render
+redeploys. About a minute later staff see the new month.
+
+**One-time setup for that button:** a GitHub fine-grained access token with **Contents:
+Read and write** on this one repo. The builder page has step-by-step instructions in a
+drop-down. The token goes in the page, never in the repo. Tick Remember and you type it once.
+
+If GitHub is unreachable or the token expires, the same panel has a manual fallback that
+downloads the encrypted file so you can upload it by hand.
 
 ## Column mapping
 

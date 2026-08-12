@@ -392,6 +392,117 @@ async function publish(){
   }
 }
 
+/* ---------- publish straight to the live site ---------- */
+const GH = {
+  key: 'nobox-gh-token',
+  cfg(){
+    const g = (window.NOBOX_CONFIG || {}).github || {};
+    return {
+      owner: ($('#ghOwner').value || g.owner || '').trim(),
+      repo:  ($('#ghRepo').value  || g.repo  || '').trim(),
+      branch: (g.branch || 'main'),
+      path:  (g.path || 'data/latest.enc')
+    };
+  },
+  token(){ return $('#ghToken').value.trim(); },
+  remember(t){ try{ $('#ghSave').checked ? localStorage.setItem(GH.key, t) : localStorage.removeItem(GH.key); }catch(e){} },
+  restore(){
+    try{
+      const t = localStorage.getItem(GH.key);
+      if (t){ $('#ghToken').value = t; $('#ghSave').checked = true; }
+    }catch(e){}
+    const g = (window.NOBOX_CONFIG || {}).github || {};
+    if (g.owner) $('#ghOwner').value = g.owner;
+    if (g.repo)  $('#ghRepo').value = g.repo;
+  },
+  async call(url, opts){
+    const res = await fetch(url, Object.assign({}, opts, {
+      headers: Object.assign({
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Authorization': 'Bearer ' + GH.token()
+      }, (opts || {}).headers || {})
+    }));
+    return res;
+  }
+};
+
+async function publishLive(){
+  const out = $('#pubOut');
+  const note = (k, t, b) => { out.innerHTML = '<div class="note' + (k ? ' ' + k : '') + '"><div class="lbl">' + t + '</div><p>' + b + '</p></div>'; };
+
+  if (!state.rows.length) return note('warn', 'Nothing to publish', 'Finish stage 3 first.');
+  if (!cryptoReady()) return note('warn', 'Open the live site', 'Encryption needs a secure page. Use the https address, not a file on your hard drive.');
+
+  const pw = $('#pubPw').value;
+  if (!pw) return note('warn', 'Password needed', 'Type the team password. It is the encryption key.');
+  const cfg = window.NOBOX_CONFIG || {};
+  if (cfg.passwordHash && window.noboxHash && window.noboxHash(pw) !== cfg.passwordHash)
+    return note('warn', 'That is not the team password', 'It does not match config.js, so staff could not open the file.');
+
+  const g = GH.cfg();
+  if (!g.owner || !g.repo) return note('warn', 'Repo needed', 'Fill in the GitHub owner and repository name.');
+  if (!GH.token()) return note('warn', 'Token needed', 'Paste a GitHub token with Contents write access to this repo. Instructions are below.');
+
+  out.innerHTML = '<p class="hint">Encrypting ' + state.rows.length + ' rows...</p>';
+  const label = new Date(state.month.y, state.month.m, 1).toLocaleString('en-US', { month:'long', year:'numeric' });
+  const payload = {
+    month: label,
+    monthKey: state.month.y + '-' + String(state.month.m + 1).padStart(2, '0'),
+    generated: new Date().toISOString(),
+    counts: {
+      unsupported: state.rows.length,
+      waitlisted: state.rows.filter(r => r.status === STATUS.WAIT).length,
+      angel: state.rows.filter(r => r.status === STATUS.ANGEL).length
+    },
+    rows: state.rows
+  };
+
+  let text;
+  try { text = await encryptPayload(pw, payload); }
+  catch(e){ return note('warn', 'Encryption failed', String(e.message || e)); }
+
+  const api = 'https://api.github.com/repos/' + g.owner + '/' + g.repo + '/contents/' + g.path;
+  const content = b64.enc(new TextEncoder().encode(text));
+
+  out.innerHTML = '<p class="hint">Uploading to GitHub...</p>';
+  try {
+    let sha = null;
+    const cur = await GH.call(api + '?ref=' + encodeURIComponent(g.branch));
+    if (cur.status === 200){ sha = (await cur.json()).sha; }
+    else if (cur.status === 401) return note('warn', 'Token rejected', 'GitHub did not accept that token. Check it was copied whole and has not expired.');
+    else if (cur.status === 403) return note('warn', 'Token lacks permission', 'The token needs Contents set to Read and write on this repository.');
+    else if (cur.status !== 404) return note('warn', 'GitHub said no', 'Status ' + cur.status + '. Check the owner and repository names.');
+
+    const body = {
+      message: 'Publish No Box list for ' + label,
+      content: content,
+      branch: g.branch
+    };
+    if (sha) body.sha = sha;
+
+    let put = await GH.call(api, { method:'PUT', body: JSON.stringify(body) });
+    if (put.status === 409 && sha){
+      const again = await GH.call(api + '?ref=' + encodeURIComponent(g.branch));
+      if (again.status === 200){ body.sha = (await again.json()).sha; put = await GH.call(api, { method:'PUT', body: JSON.stringify(body) }); }
+    }
+    if (!put.ok){
+      const e = await put.json().catch(() => ({}));
+      return note('warn', 'Upload failed', 'Status ' + put.status + '. ' + (e.message || 'Check the repo name, branch, and token permissions.'));
+    }
+
+    GH.remember(GH.token());
+    const res = await put.json();
+    const url = res.commit && res.commit.html_url;
+    out.innerHTML = '<div class="note"><div class="lbl">Published</div>' +
+      '<p>' + label + ' is live, ' + state.rows.length + ' members, ' + Math.round(text.length / 1024) + ' KB encrypted.' +
+      (url ? ' <a href="' + url + '" target="_blank" rel="noopener">See the commit</a>.' : '') + '</p>' +
+      '<p>Render is rebuilding now. Give it about a minute, then staff will see this month when they sign in.</p></div>';
+  } catch(e){
+    note('warn', 'Could not reach GitHub', String(e.message || e) + '. Check your connection, then try the manual download below.');
+  }
+}
+
 /* ---------- wire up ---------- */
 document.querySelectorAll('.drop').forEach(wireDrop);
 $('#btnBuild').addEventListener('click', build);
@@ -405,7 +516,10 @@ $('#btnCsv').addEventListener('click', exportCsv);
 $('#btnXlsx').addEventListener('click', exportXlsx);
 $('#btnWorkbook').addEventListener('click', exportWorkbook);
 $('#btnDocs').addEventListener('click', () => window.open('sop.html', '_blank'));
+$('#btnBack').addEventListener('click', () => { location.href = 'index.html'; });
 $('#btnPublish').addEventListener('click', publish);
+$('#btnPublishLive').addEventListener('click', publishLive);
+GH.restore();
 $('#btnReset').addEventListener('click', () => { if (confirm('Clear the loaded files and start over?')) location.reload(); });
 document.querySelectorAll('.view-tab').forEach(t => t.addEventListener('click', () => {
   document.querySelectorAll('.view-tab').forEach(x => x.classList.remove('on'));

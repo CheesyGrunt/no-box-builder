@@ -34,7 +34,11 @@
     try { text = await fetchData(); }
     catch(e){
       show(msg('warn', 'No list published yet',
-        'Nothing has been posted for this month. The Director of Virtual Services publishes it once the monthly run is finished.'));
+        'Nothing has been posted for this month. The Director of Virtual Services publishes it once the monthly run is finished.') +
+        ((window.NOBOX_CONFIG || {}).adminHash
+          ? '<div class="rowline" style="margin-top:12px"><input type="password" id="adminPw" placeholder="Admin password" style="min-width:200px"><button class="btn sm" id="adminGo">Run the first report</button></div><div id="adminMsg"></div>'
+          : ''));
+      wireAdmin();
       return;
     }
 
@@ -54,6 +58,7 @@
     document.getElementById('content').style.display = '';
     document.getElementById('monthChip').textContent = payload.month || '';
     document.getElementById('monthChip').className = 'stage-chip on';
+    if ((window.NOBOX_CONFIG || {}).adminHash) document.getElementById('btnRun').style.display = '';
 
     const gen = payload.generated ? new Date(payload.generated) : null;
     document.getElementById('subLine').textContent =
@@ -61,6 +66,36 @@
       (gen ? '. Published ' + gen.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + '.' : '.');
 
     paint();
+    showAdmin(gen);
+  }
+
+  /* The run button only appears for whoever knows the admin password.
+     Staff never see a way to overwrite the month. */
+  function showAdmin(gen){
+    const cfg = window.NOBOX_CONFIG || {};
+    if (!cfg.adminHash){
+      document.getElementById('adminPanel').style.display = 'none';
+      return;
+    }
+    const now = new Date();
+    const stale = gen && (now.getFullYear() !== gen.getFullYear() || now.getMonth() !== gen.getMonth());
+    document.getElementById('staleLine').textContent = stale
+      ? 'This list is from last month. A new run will replace it everywhere the moment you publish.'
+      : 'This month is already published. Running again replaces it.';
+    if (stale) document.getElementById('adminPanel').style.borderLeftColor = 'var(--red)';
+  }
+
+  function goAdmin(){
+    const cfg = window.NOBOX_CONFIG || {};
+    const pw = document.getElementById('adminPw').value;
+    const box = document.getElementById('adminMsg');
+    if (!pw){ box.innerHTML = msg('warn', 'Password needed', 'Enter the admin password.'); return; }
+    if (!window.noboxHash || window.noboxHash(pw) !== cfg.adminHash){
+      box.innerHTML = msg('warn', 'Not the admin password', 'This is the second password, the one only you have.');
+      return;
+    }
+    try { sessionStorage.setItem('nobox-admin', cfg.adminHash); } catch(e){}
+    location.href = 'build.html';
   }
 
   function paint(){
@@ -86,6 +121,16 @@
     renderView();
   }
 
+  function wireAdmin(){
+    const g = document.getElementById('adminGo'), p = document.getElementById('adminPw');
+    if (g && !g.dataset.wired){ g.dataset.wired = '1'; g.addEventListener('click', goAdmin); }
+    if (p && !p.dataset.wired){ p.dataset.wired = '1'; p.addEventListener('keydown', e => { if (e.key === 'Enter') goAdmin(); }); }
+  }
+  wireAdmin();
+  document.getElementById('btnRun').addEventListener('click', () => {
+    document.getElementById('adminPanel').scrollIntoView({ behavior:'smooth', block:'center' });
+    document.getElementById('adminPw').focus();
+  });
   document.getElementById('go').addEventListener('click', open_);
   document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') open_(); });
   document.getElementById('btnSop').addEventListener('click', () => window.open('sop.html', '_blank'));

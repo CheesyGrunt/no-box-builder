@@ -50,9 +50,15 @@
   window.noboxHash = pw => sha256('no-box-builder::' + pw);
 
   const cfg = window.NOBOX_CONFIG || {};
-  if (!cfg.passwordHash) return;                       // no password set, carry on
+  const which = window.NOBOX_GATE || 'team';           // 'team' | 'admin' | 'none'
+  if (which === 'none') return;
+  const need = which === 'admin' ? cfg.adminHash : cfg.passwordHash;
+  if (!need) return;                                   // no password set, carry on
 
-  try { if (sessionStorage.getItem('nobox-unlocked') === cfg.passwordHash) return; } catch(e){}
+  try {
+    if (sessionStorage.getItem('nobox-unlocked') === need) return;
+    if (which === 'admin' && sessionStorage.getItem('nobox-admin') === need) return;
+  } catch(e){}
 
   const style = document.createElement('style');
   style.textContent = `
@@ -82,7 +88,7 @@
     lock.innerHTML = `<div class="box">
       <div class="eb">Soldiers' Angels &nbsp;·&nbsp; Virtual Services</div>
       <h2>No Box Builder</h2>
-      <p>${cfg.hint ? String(cfg.hint).replace(/</g,'&lt;') : 'Enter the team password to continue.'}</p>
+      <p>${which === 'admin' ? 'Admin password required to run a new report.' : (cfg.hint ? String(cfg.hint).replace(/</g,'&lt;') : 'Enter the team password to continue.')}</p>
       <input type="password" id="lockPw" autocomplete="current-password" placeholder="Password" autofocus>
       <button id="lockGo">Unlock</button>
       <div class="err" id="lockErr"></div></div>`;
@@ -90,8 +96,8 @@
 
     const go = () => {
       const v = document.getElementById('lockPw').value;
-      if (window.noboxHash(v) === cfg.passwordHash){
-        try { sessionStorage.setItem('nobox-unlocked', cfg.passwordHash); } catch(e){}
+      if (window.noboxHash(v) === need){
+        try { sessionStorage.setItem('nobox-unlocked', need); } catch(e){}
         lock.remove();
         document.body.classList.remove('locked');
       } else {

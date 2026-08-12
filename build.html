@@ -21,6 +21,7 @@
       <div class="stage-chip" id="chip4">4 &nbsp;Review + send</div>
     </div>
     <div class="bar-actions">
+      <button class="ghost" id="btnBack">Back to the list</button>
       <button class="ghost" id="btnDocs">SOP</button>
       <button class="ghost" id="btnReset">Start over</button>
     </div>
@@ -147,9 +148,39 @@
     <div class="rowline">
       <label class="hint" for="pubPw">Team password</label>
       <input type="password" id="pubPw" placeholder="The password staff will use" style="min-width:260px">
-      <button class="btn gold" id="btnPublish">Encrypt and download</button>
+    </div>
+
+    <h3 style="margin-top:20px">Where it goes</h3>
+    <div class="map show" style="border-top:none;padding-top:0;max-width:520px">
+      <div class="map-row"><label>GitHub owner</label><input type="text" id="ghOwner" placeholder="your GitHub username" style="flex:1"></div>
+      <div class="map-row"><label>Repository</label><input type="text" id="ghRepo" placeholder="no-box-builder" style="flex:1"></div>
+      <div class="map-row"><label>Access token</label><input type="password" id="ghToken" placeholder="github_pat_..." style="flex:1"></div>
+      <div class="map-row"><label></label><label class="hint" style="flex:1;display:flex;gap:7px;align-items:center;cursor:pointer"><input type="checkbox" id="ghSave" style="width:auto"> Remember the token in this browser</label></div>
+    </div>
+
+    <div class="rowline" style="margin-top:14px">
+      <button class="btn gold" id="btnPublishLive">Publish to the live site</button>
+      <span class="hint">Encrypts, commits, and Render redeploys. No downloading, no GitHub tab.</span>
     </div>
     <div id="pubOut"></div>
+
+    <details style="margin-top:18px">
+      <summary class="hint" style="cursor:pointer">Getting your access token, one time only</summary>
+      <div class="note" style="margin-top:12px">
+        <div class="lbl">Five clicks in GitHub</div>
+        <p>Profile photo → <strong>Settings</strong> → scroll to <strong>Developer settings</strong> → <strong>Personal access tokens</strong> → <strong>Fine-grained tokens</strong> → <strong>Generate new token</strong>.</p>
+        <p>Name it "No Box publisher". Set an expiration you will remember, a year is reasonable. Under <strong>Repository access</strong> pick <strong>Only select repositories</strong> and choose this one repo. Under <strong>Permissions → Repository permissions</strong>, set <strong>Contents</strong> to <strong>Read and write</strong>. Leave everything else alone. Generate, then copy the token and paste it above.</p>
+        <p>The token only reaches GitHub. It is never written into the repo. If you tick Remember, it stays in this browser on this computer, so treat that the way you would a saved password. If you lose the laptop, revoke the token in the same GitHub screen.</p>
+      </div>
+    </details>
+
+    <details style="margin-top:10px">
+      <summary class="hint" style="cursor:pointer">Manual fallback, if GitHub is down or the token is expired</summary>
+      <div style="margin-top:12px">
+        <button class="btn sm out" id="btnPublish">Encrypt and download the file instead</button>
+        <p class="hint" style="margin-top:8px">Then upload it into the <code>data</code> folder in GitHub yourself.</p>
+      </div>
+    </details>
   </section>
 
   <footer>
@@ -160,6 +191,7 @@
 <input type="file" id="filePicker" accept=".xlsx,.xls,.csv,.tsv" style="display:none">
 
 <script src="config.js"></script>
+<script>window.NOBOX_GATE = 'admin';</script>
 <script src="gate.js"></script>
 <script src="vendor/xlsx.full.min.js"></script>
 <script src="vendor/exceljs.min.js"></script>

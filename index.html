@@ -29,7 +29,10 @@
   <div class="bar-in">
     <div class="bar-title">Members Without a Box</div>
     <div class="stages"><div class="stage-chip" id="monthChip">Not loaded</div></div>
-    <div class="bar-actions"><button class="ghost" id="btnSop">SOP</button></div>
+    <div class="bar-actions">
+      <button class="ghost" id="btnRun" style="display:none">Run new report</button>
+      <button class="ghost" id="btnSop">SOP</button>
+    </div>
   </div>
 </div>
 
@@ -71,6 +74,17 @@
     <dl class="stats" id="stats2"></dl>
     <div id="alerts"></div>
 
+    <section class="panel" id="adminPanel" style="border-left-color:var(--gold);margin-bottom:22px">
+      <div class="eyebrow">Director of Virtual Services</div>
+      <h3>Time to run a new month?</h3>
+      <p class="hint" id="staleLine" style="margin-bottom:12px"></p>
+      <div class="rowline">
+        <input type="password" id="adminPw" placeholder="Admin password" style="min-width:230px">
+        <button class="btn" id="adminGo">Run new report</button>
+      </div>
+      <div id="adminMsg"></div>
+    </section>
+
     <div class="views" id="views">
       <button class="view-tab on" data-view="all">Full list <span class="n" id="n-all">0</span></button>
       <button class="view-tab" data-view="logistics">Logistics: send a box <span class="n" id="n-logistics">0</span></button>
@@ -100,6 +114,8 @@
 </div>
 
 <script src="config.js"></script>
+<script>window.NOBOX_GATE = 'none';</script>
+<script src="gate.js"></script>
 <script src="vendor/xlsx.full.min.js"></script>
 <script src="vendor/exceljs.min.js"></script>
 <script src="core.js"></script>
