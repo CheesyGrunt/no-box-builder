@@ -3,114 +3,76 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Deployed Monthly: No Box Builder</title>
+<title>Members Without a Box</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<style>
+  #unlock{max-width:420px;margin:70px auto;background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--maroon);padding:30px}
+  #unlock input{width:100%;font-size:16px;padding:12px 14px;margin-bottom:10px}
+  #unlock .btn{width:100%}
+  .roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:0 0 26px}
+  .role{background:var(--card);border:1px solid var(--rule);border-top:4px solid var(--maroon);padding:18px 20px;text-align:left;cursor:pointer;font-family:var(--body)}
+  .role:hover{background:#FFFCF4;border-color:var(--maroon)}
+  .role .rn{font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;font-size:19px;color:var(--maroon);margin-bottom:2px}
+  .role .rc{font-family:var(--display);font-size:34px;font-weight:700;line-height:1}
+  .role .rd{font-size:13px;color:var(--ink-soft);margin-top:4px}
+  .role.log{border-top-color:var(--ok)}
+  .role.vol{border-top-color:var(--blue)}
+  .role.rev{border-top-color:var(--red)}
+</style>
 </head>
 <body>
 
 <div class="bar">
   <div class="bar-in">
-    <div class="bar-title">No Box <span>/</span> Builder</div>
-    <div class="stages">
-      <div class="stage-chip on" id="chip1">1 &nbsp;Part 1</div>
-      <div class="stage-chip" id="chip2">2 &nbsp;Batches</div>
-      <div class="stage-chip" id="chip3">3 &nbsp;Part 2 + Waitlist</div>
-      <div class="stage-chip" id="chip4">4 &nbsp;Review + send</div>
-    </div>
-    <div class="bar-actions">
-      <button class="ghost" id="btnDocs">SOP</button>
-      <button class="ghost" id="btnReset">Start over</button>
-    </div>
+    <div class="bar-title">Members Without a Box</div>
+    <div class="stages"><div class="stage-chip" id="monthChip">Not loaded</div></div>
+    <div class="bar-actions"><button class="ghost" id="btnSop">SOP</button></div>
   </div>
 </div>
 
 <div class="wrap">
 
-  <h1>Deployed Monthly: Members Without a Box</h1>
-  <p class="sub">Drop in the exports, confirm the columns, and this builds the No Box list, the Client ID batches, the statuses, the flags, and the handoff lists for Logistics and Volunteer Services.</p>
-  <p class="privacy">Everything runs inside this browser tab. No file is uploaded, stored, or sent anywhere.</p>
-
-  <!-- ============ STAGE 1 ============ -->
-  <section class="panel" id="p1">
-    <div class="eyebrow">Stage 1 &nbsp;·&nbsp; Steps 1 through 3</div>
-    <h2>Load Deployed Monthly Part 1</h2><div class="h2rule"></div>
-    <p>Pull both exports from Part 1 with the month filter set correctly, then drop them here. Check the column mapping under each file before you build.</p>
-
-    <div class="rowline">
-      <label class="hint" for="monthPick">Reporting month</label>
-      <input type="month" id="monthPick">
-      <span class="hint">Replaces the old [Current Month] swap in Prompts 3 and 5.</span>
-    </div>
-
-    <div class="drops">
-      <div class="drop" id="drop-deployed" data-key="deployed">
-        <div class="dt">Deployed Report</div>
-        <div class="dd">Part 1, Formatted Report</div>
-        <div class="fname"></div>
-        <div class="map"></div>
-      </div>
-      <div class="drop" id="drop-details" data-key="details">
-        <div class="dt">Details</div>
-        <div class="dd">Part 1, Details Only</div>
-        <div class="fname"></div>
-        <div class="map"></div>
-      </div>
-    </div>
-
-    <button class="btn" id="btnBuild" disabled>Build the No Box list</button>
-    <span class="hint" id="hint1" style="margin-left:12px"></span>
+  <!-- lock -->
+  <section id="unlock">
+    <div class="eyebrow">Soldiers' Angels &nbsp;·&nbsp; Virtual Services</div>
+    <h2 style="margin-bottom:6px">Sign in</h2>
+    <p class="hint" style="margin-bottom:16px">Enter the team password to open this month's list.</p>
+    <input type="password" id="pw" placeholder="Team password" autocomplete="current-password">
+    <button class="btn" id="go">Open the list</button>
+    <div id="unlockMsg" style="margin-top:14px"></div>
   </section>
 
-  <!-- ============ STAGE 2 ============ -->
-  <section class="panel locked" id="p2">
-    <div class="eyebrow">Stage 2 &nbsp;·&nbsp; Steps 4 and 5</div>
-    <h2>Client ID batches</h2><div class="h2rule"></div>
-    <dl class="stats" id="stats1"></dl>
-    <p>Copy each batch into the Part 2 report filter, one batch at a time. Filter logic stays the same: <span class="hint">Program Engagement Name AND (Client IDs) AND Created Date AND Service Delivery Name</span></p>
-    <div class="rowline">
-      <label class="hint" for="batchSize">Batch size</label>
-      <input type="number" id="batchSize" value="70" min="10" max="500" style="width:80px">
-      <button class="btn sm out" id="btnRebatch">Rebuild batches</button>
-      <button class="btn sm out" id="btnDlIds">Download all IDs (.csv)</button>
-    </div>
-    <div class="batches" id="batches"></div>
-  </section>
+  <!-- content -->
+  <section id="content" style="display:none">
+    <h1>Members Without a Box</h1>
+    <p class="sub" id="subLine"></p>
 
-  <!-- ============ STAGE 3 ============ -->
-  <section class="panel locked" id="p3">
-    <div class="eyebrow">Stage 3 &nbsp;·&nbsp; Steps 6 through 11</div>
-    <h2>Load Part 2 and the waitlist</h2><div class="h2rule"></div>
-    <p>Drop in the Part 2 export you just pulled and the Currently Waitlisted export. This fills the dates, names, and addresses, sets every Status, and applies the gold, blue, purple, and red flags in one pass.</p>
-    <div class="drops">
-      <div class="drop" id="drop-part2" data-key="part2">
-        <div class="dt">Deployed Monthly Part2</div>
-        <div class="dd">Details Only</div>
-        <div class="fname"></div>
-        <div class="map"></div>
-      </div>
-      <div class="drop" id="drop-waitlist" data-key="waitlist">
-        <div class="dt">Currently Waitlisted Clients</div>
-        <div class="dd">Details Only</div>
-        <div class="fname"></div>
-        <div class="map"></div>
-      </div>
+    <div class="roles">
+      <button class="role log" data-goto="logistics">
+        <div class="rn">Logistics</div>
+        <div class="rc" id="r-log">0</div>
+        <div class="rd">members cleared to receive a box</div>
+      </button>
+      <button class="role vol" data-goto="volunteer">
+        <div class="rn">Volunteer Services</div>
+        <div class="rc" id="r-vol">0</div>
+        <div class="rd">members waiting on Angel contact</div>
+      </button>
+      <button class="role rev" data-goto="review">
+        <div class="rn">Held for review</div>
+        <div class="rc" id="r-rev">0</div>
+        <div class="rd">address or eligibility to confirm</div>
+      </button>
     </div>
-    <button class="btn" id="btnFinish" disabled>Fill, flag, and finish</button>
-    <span class="hint" id="hint3" style="margin-left:12px"></span>
-  </section>
 
-  <!-- ============ STAGE 4 ============ -->
-  <section class="panel locked" id="p4" style="border-left-color:var(--gold)">
-    <div class="eyebrow">Stage 4 &nbsp;·&nbsp; Step 12 and the handoff</div>
-    <h2>Review and send</h2><div class="h2rule"></div>
     <dl class="stats" id="stats2"></dl>
     <div id="alerts"></div>
 
     <div class="views" id="views">
-      <button class="view-tab on" data-view="all">Full No Box list <span class="n" id="n-all">0</span></button>
+      <button class="view-tab on" data-view="all">Full list <span class="n" id="n-all">0</span></button>
       <button class="view-tab" data-view="logistics">Logistics: send a box <span class="n" id="n-logistics">0</span></button>
       <button class="view-tab" data-view="volunteer">Volunteer Services: reach out <span class="n" id="n-volunteer">0</span></button>
       <button class="view-tab" data-view="waitlisted">Waitlisted <span class="n" id="n-waitlisted">0</span></button>
@@ -129,23 +91,18 @@
       <p class="hint" id="vFoot" style="margin-top:10px"></p>
     </div>
 
-    <div style="margin-top:18px">
-      <button class="btn" id="btnWorkbook">Download the full styled workbook (.xlsx)</button>
-      <span class="hint" style="margin-left:12px">Values only, no formulas. Prompt 6 is already baked in.</span>
-    </div>
+    <footer>
+      <p>Read only. This list is published each month by the Director of Virtual Services.
+      Questions on a specific member go to them, not to the report.
+      <a href="sop.html">How the list is built</a></p>
+    </footer>
   </section>
-
-  <footer>
-    <p>Runs the process documented in the Deployed Monthly No Box SOP. Questions on the process go to the Director of Virtual Services. <a href="sop.html">Open the SOP</a></p>
-  </footer>
 </div>
 
-<input type="file" id="filePicker" accept=".xlsx,.xls,.csv,.tsv" style="display:none">
-
 <script src="config.js"></script>
-<script src="gate.js"></script>
 <script src="vendor/xlsx.full.min.js"></script>
 <script src="vendor/exceljs.min.js"></script>
-<script src="app.js"></script>
+<script src="core.js"></script>
+<script src="viewer.js"></script>
 </body>
 </html>

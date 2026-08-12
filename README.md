@@ -4,17 +4,37 @@ Runs the Soldiers' Angels Virtual Services "Members Without a Box" process in a 
 Drop in the report exports, confirm the columns, and it builds the No Box list, the Client ID
 batches, the statuses, the flags, and the handoff lists for Logistics and Volunteer Services.
 
-**Live tool:** `index.html` &nbsp;·&nbsp; **The written SOP:** `sop.html`
+| Page | Who it is for |
+|---|---|
+| `index.html` | **Staff.** Password, then read this month's list. No uploading. |
+| `build.html` | **Director of Virtual Services.** Runs the monthly process and publishes. |
+| `sop.html` | The written SOP. |
+| `set-password.html` | Sets the team password. |
 
 ---
 
-## Everything stays on your machine
+## How the data is protected
 
-No file is uploaded, stored, or transmitted. The page has no back end and makes no network
-calls. Excel files are read in browser memory and discarded when you close the tab. That is
-the reason this repo can be public without exposing anything: it contains code, not data.
+Report exports are read in browser memory and never uploaded. When you publish, the finished
+list is encrypted **in your browser** with AES-256-GCM, using a key derived from the team
+password via PBKDF2 (250,000 iterations). Only the ciphertext is committed, as
+`data/latest.enc`. Staff decrypt it in their own browser when they type the password.
 
-**Never commit a report export to this repo.** `.gitignore` blocks spreadsheets by default.
+So a leaked URL does not leak member data. The file is unreadable without the password.
+
+What this does not protect against:
+
+- Anyone who has the password. Treat it like a door key and reissue it when people leave.
+- Git history. Once an encrypted file is committed it is in the history for good. If the
+  password is ever exposed, rotate the password **and** republish, and treat the old file as
+  compromised.
+- Anything staff export. A downloaded .csv is plain text on their machine, same as an emailed
+  spreadsheet would be.
+
+**Make the repo private anyway.** Encryption is the control that matters, but there is no
+reason to publish even ciphertext to the world. Render deploys from private repos.
+
+**Never commit a raw report export.** `.gitignore` blocks spreadsheets by default.
 
 ---
 
@@ -50,21 +70,28 @@ red flags before anything ships.
 
 ---
 
-## Setting a password
+## The team password
 
-The site is otherwise reachable by anyone with the link. To put a lock on it:
+One password does two jobs: it gates `build.html` and `sop.html`, and it is the encryption key
+for the published list. Set it once:
 
-1. Open `set-password.html` and type the password you want.
-2. Copy the generated block and paste it over `window.NOBOX_CONFIG` in `config.js`.
-3. Commit. Render redeploys in about a minute.
+1. Open `set-password.html`, type the password, hit Generate.
+2. Paste the block over `window.NOBOX_CONFIG` in `config.js`. Commit.
+3. Use that same password when you publish. The builder refuses to publish with a different
+   one, so staff can never be locked out of a file you posted.
 
-The password is never stored, only a SHA-256 hash of it. Unlocking lasts for the browser tab.
-To remove the password, set `passwordHash` back to `''` and commit.
+To rotate it: set a new one in `config.js`, then republish `latest.enc` with the new password.
+Both steps, or staff will hit a file they cannot open.
 
-**What this is:** a lock on the front door that keeps casual visitors out.
-**What this is not:** encryption. The hash is visible in page source. That trade is fine here
-because the site holds code and no member data. If that ever changes, move to real auth
-(Cloudflare Access is free for small teams and takes about 20 minutes).
+## Publishing each month
+
+1. Open **build.html** on the live site, not off your hard drive. Encryption needs a secure
+   page, and a local file is not one.
+2. Run stages 1 through 4 as usual.
+3. Stage 5: type the team password, click **Encrypt and download**. You get `latest.enc`.
+4. In GitHub, open the `data` folder, **Add file → Upload files**, drop in `latest.enc`,
+   commit. It replaces last month's.
+5. Render redeploys in about a minute. Staff see the new month next time they open the page.
 
 ## Column mapping
 
@@ -110,8 +137,12 @@ box to see them.
 ## Files
 
 ```
-index.html          the tool
-app.js              parsing, matching, status rules, exports
+index.html          staff viewer
+build.html          the builder
+viewer.js           fetch, decrypt, render for staff
+core.js             shared helpers, views, exports, encryption
+app.js              parsing, matching, status rules, publishing
+data/latest.enc     the published list, encrypted
 styles.css          styling for every page
 config.js           your password hash, the one file you edit
 gate.js             the lock screen
