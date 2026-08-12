@@ -13,12 +13,9 @@
    ============================================================ */
 
 window.NOBOX_CONFIG = {
-  passwordHash: '',       // team password. Empty = no sign in, list opens to anyone.
-  adminHash: '',          // admin password. Empty = anyone who reaches the page can run a report.
+  passwordHash: '993b149becc003454368476b6e7f1aa897b46b68dd1c0a06fc32b3acaed89f2e',
+  adminHash: '02db35715383f3b0982ee56b885bea24c579ffec4048d60aa7e802befa49eee8',
   hint: '',
-
-  /* Where the published list gets committed. Not secret.
-     owner must be your GitHub USERNAME, not your display name. */
   github: {
     owner: 'CheesyGrunt',
     repo:  'no-box-builder',
