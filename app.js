@@ -388,7 +388,8 @@ async function publish(){
     download(new Blob([text], { type:'application/json' }), 'latest.enc');
     out.innerHTML = '<div class="note"><div class="lbl">Encrypted and downloaded</div>' +
       '<p><strong>latest.enc</strong> is in your downloads, ' + Math.round(text.length / 1024) + ' KB, covering ' + label + '.</p>' +
-      '<p>Upload it to the <code>data</code> folder in GitHub, replacing the old one. Render redeploys on its own and staff see the new month next time they open the page.</p></div>';
+      '<p>Upload it to the <code>data</code> folder in GitHub, replacing the old one. Render redeploys on its own and staff see the new month next time they open the page.</p>' +
+      '<p class="hint" style="margin:8px 0 0">Mischief managed.</p></div>';
   } catch(e){
     out.innerHTML = '<div class="note warn"><div class="lbl">Encryption failed</div><p>' + String(e.message || e) + '</p></div>';
   }
@@ -501,7 +502,8 @@ async function publishLive(){
     out.innerHTML = '<div class="note"><div class="lbl">Published</div>' +
       '<p>' + label + ' is live, ' + state.rows.length + ' members, ' + Math.round(text.length / 1024) + ' KB encrypted.' +
       (url ? ' <a href="' + url + '" target="_blank" rel="noopener">See the commit</a>.' : '') + '</p>' +
-      '<p>Render is rebuilding now. Give it about a minute, then staff will see this month when they sign in.</p></div>';
+      '<p>Render is rebuilding now. Give it about a minute, then staff will see this month when they sign in.</p>' +
+      '<p class="hint" style="margin:8px 0 0">Mischief managed.</p></div>';
   } catch(e){
     note('warn', 'Could not reach GitHub', String(e.message || e) + '. Check your connection, then try the manual download below.');
   }

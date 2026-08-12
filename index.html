@@ -21,6 +21,13 @@
   .role.log{border-top-color:var(--ok)}
   .role.vol{border-top-color:var(--blue)}
   .role.rev{border-top-color:var(--red)}
+  .pubstamp{display:inline-flex;align-items:baseline;gap:10px;background:var(--card);
+    border:1px solid var(--rule);border-left:4px solid var(--gold);padding:10px 16px;margin:0 0 24px}
+  .pubstamp .lb{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
+  .pubstamp .dt{font-family:var(--display);font-size:21px;font-weight:700;letter-spacing:.02em;color:var(--maroon);text-transform:uppercase}
+  .pubstamp .ago{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft)}
+  .pubstamp.old{border-left-color:var(--red)}
+  .pubstamp.old .ago{color:var(--red)}
   .empty{background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--gold);padding:44px 32px;text-align:center;margin-bottom:24px}
   .empty h3{font-size:27px;margin-bottom:10px}
   .empty p{max-width:46ch;margin:0 auto 6px;color:var(--ink-soft)}
@@ -67,6 +74,7 @@
 
     <h1>Members Without a Box</h1>
     <p class="sub" id="subLine"></p>
+    <div class="pubstamp" id="pubStamp" style="display:none"></div>
 
     <div class="empty" id="emptyState" style="display:none">
       <h3>No current data</h3>

@@ -132,6 +132,15 @@ const COLS = {
     ['addr1','Mailing Address Line 1'],['addr2','Mailing Address Line 2'],['city','Mailing City'],['state','State/Province'],['zip','Zip/Postal Code'],
     ['mailStop','Mail Stop Date'],['review','Review']
   ],
+  /* Review queue: what is wrong, who it is, and the ID to jump to the record. */
+  review: [
+    ['name','Client Name'],['review','Review'],['clientId','Client ID'],
+    ['status','Status'],['mailStop','Mail Stop Date'],['reportBy','Report by Date'],
+    ['serviceDelivery','Service Delivery'],
+    ['addr1','Mailing Address Line 1'],['addr2','Mailing Address Line 2'],
+    ['city','Mailing City'],['state','State/Province'],['zip','Zip/Postal Code'],
+    ['first','First Name'],['last','Last Name']
+  ],
   /* What Logistics actually ships from. One cell per field, nothing else. */
   shipping: [
     ['first','First Name'],['last','Last Name'],
@@ -139,8 +148,8 @@ const COLS = {
     ['city','Mailing City'],['state','State/Province'],['zip','Zip/Postal Code']
   ],
   volunteer: [
-    ['name','Client Name'],['clientId','Client ID'],['first','First Name'],['last','Last Name'],
-    ['reportBy','Report by Date'],['serviceDelivery','Service Delivery'],['mailStop','Mail Stop Date']
+    ['reportBy','Report by Date'],['name','Client Name'],['first','First Name'],['last','Last Name'],
+    ['clientId','Client ID'],['serviceDelivery','Service Delivery'],['mailStop','Mail Stop Date']
   ]
 };
 const VIEWS = {
@@ -157,8 +166,9 @@ const VIEWS = {
   },
   volunteer: {
     title:'Volunteer Services: reach out',
-    desc:'These members have a service delivery this month and are waiting on an Angel to make contact. No box yet.',
-    cols: COLS.volunteer, rows: () => state.rows.filter(r => r.status === STATUS.ANGEL)
+    desc:'These members have a service delivery this month and are waiting on an Angel to make contact. Soonest Report by Date first, so the top of the list is the most urgent. No box yet.',
+    cols: COLS.volunteer, sort:'reportBy',
+    rows: () => state.rows.filter(r => r.status === STATUS.ANGEL)
   },
   waitlisted: {
     title:'Already waitlisted',
@@ -167,8 +177,9 @@ const VIEWS = {
   },
   review: {
     title:'Needs review before anything ships',
-    desc:'Red means the Mail Stop Date lands in the reporting month, so confirm eligibility. Purple means the mailing city is not APO, FPO, or DPO, so verify the address.',
-    cols: COLS.logistics, rows: () => state.rows.filter(r => r.flagRed || r.flagPurple || (r.status === STATUS.SEND && (!r.addr1 || !r.city || !r.zip)))
+    desc:'What is wrong is in the Review column, and the Client ID is right there to look the record up. Red means the Mail Stop Date lands in the reporting month, so confirm eligibility. Purple means the mailing city is not APO, FPO, or DPO. Incomplete means the address would not parse into city, state, and zip.',
+    cols: COLS.review,
+    rows: () => state.rows.filter(r => r.flagRed || r.flagPurple || (r.status === STATUS.SEND && (!r.addr1 || !r.city || !r.zip)))
   }
 };
 function cellVal(r, k){
@@ -183,10 +194,22 @@ function cellVal(r, k){
   }
   return r[k] == null ? '' : String(r[k]);
 }
+/* Rows with no date sort to the bottom rather than the top, so a missing
+   date never looks like the most urgent thing on the list. */
+function byDate(field){
+  return (a, b) => {
+    const x = a[field], y = b[field];
+    if (!x && !y) return String(a.last || a.name).localeCompare(String(b.last || b.name));
+    if (!x) return 1;
+    if (!y) return -1;
+    return x - y;
+  };
+}
 function activeRows(){
   const v = VIEWS[state.view];
   let rows = v.rows();
   if (v.filter === 'review' && state.hideUnreviewed) rows = rows.filter(r => !r.flagRed && !r.flagPurple && r.addr1 && r.city && r.zip);
+  if (v.sort) rows = rows.slice().sort(byDate(v.sort));
   return rows;
 }
 function renderView(){
@@ -320,7 +343,8 @@ async function exportWorkbook(){
   sheetFrom(ws, COLS.full, state.rows, { startRow:5, color:true });
 
   sheetFrom(wb.addWorksheet('Logistics - Send Box'), COLS.shipping, state.rows.filter(r => r.status === STATUS.SEND), {});
-  sheetFrom(wb.addWorksheet('Volunteer Svcs - Outreach'), COLS.volunteer, state.rows.filter(r => r.status === STATUS.ANGEL), {});
+  sheetFrom(wb.addWorksheet('Volunteer Svcs - Outreach'), COLS.volunteer,
+    state.rows.filter(r => r.status === STATUS.ANGEL).sort(byDate('reportBy')), {});
   sheetFrom(wb.addWorksheet('Waitlisted'), COLS.volunteer, state.rows.filter(r => r.status === STATUS.WAIT), {});
 
   const buf = await wb.xlsx.writeBuffer();

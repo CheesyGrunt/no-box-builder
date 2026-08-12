@@ -70,13 +70,28 @@
     $('monthChip').textContent = payload.month || 'Published';
     $('monthChip').className = 'stage-chip on';
     $('subLine').textContent =
-      (payload.month ? payload.month + '. ' : '') + state.rows.length + ' members did not receive a box' +
-      (gen ? '. Published ' + gen.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + '.' : '.');
+      (payload.month ? payload.month + '. ' : '') + state.rows.length + ' members did not receive a box.';
+    stamp(gen);
 
     $('emptyState').style.display = 'none';
     $('dataArea').style.display = '';
     paint();
     setAdmin(gen);
+  }
+
+  /* The date this list was published, said plainly. Staff should never have to
+     wonder whether they are working from something a month stale. */
+  function stamp(gen){
+    const box = $('pubStamp');
+    if (!gen){ box.style.display = 'none'; return; }
+    const days = Math.floor((Date.now() - gen.getTime()) / 86400000);
+    const ago = days <= 0 ? 'today' : days === 1 ? 'yesterday' :
+                days < 30 ? days + ' days ago' : 'over a month ago';
+    box.className = 'pubstamp' + (days > 35 ? ' old' : '');
+    box.innerHTML = '<span class="lb">Last updated</span>' +
+      '<span class="dt">' + gen.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) + '</span>' +
+      '<span class="ago">' + ago + '</span>';
+    box.style.display = '';
   }
 
   function showEmpty(reason){
@@ -85,6 +100,7 @@
     $('dataArea').style.display = 'none';
     $('emptyState').style.display = '';
     $('subLine').textContent = '';
+    $('pubStamp').style.display = 'none';
     if (reason === 'locked'){
       $('emptyState').querySelector('h3').textContent = 'This list will not open';
       $('emptyState').innerHTML =
