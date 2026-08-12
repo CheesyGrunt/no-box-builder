@@ -345,7 +345,7 @@ function renderView(){
         }
       }
       const pc = (r.flagPurple && ['addr1','addr2','city','state','zip'].includes(c[0])) ? ' class="flag-purple"' : '';
-      return `<td${pc}>${val || ''}</td>`;
+      return `<td${pc} data-l="${c[1]}">${val || ''}</td>`;
     }).join('') + '</tr>';
   }).join('') || `<tr><td colspan="${v.cols.length}" style="padding:20px;color:var(--ink-soft)">Nothing in this list.</td></tr>`;
   $('#vFoot').textContent = rows.length + ' row' + (rows.length === 1 ? '' : 's') + ' shown.';

@@ -112,3 +112,21 @@ a{color:var(--maroon)}
 :focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 @media(max-width:700px){.bar-in{gap:10px}.stages{width:100%;margin-left:0}td,th{white-space:normal}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+
+/* Small screens: keep the desktop layout, just stop it overflowing.
+   This tool is built for a desk, where the monthly run actually happens. */
+@media(max-width:720px){
+  .wrap{padding:20px 14px 70px}
+  .bar-in{padding:9px 14px;gap:10px}
+  .bar-title{font-size:15px}
+  h1{font-size:clamp(26px,7vw,36px)}
+  .stats{grid-template-columns:1fr 1fr}
+  .viewhead{flex-direction:column}
+  .tools{width:100%}
+  .tools .btn{flex:1}
+  .tw{overflow-x:auto}
+  .drops{grid-template-columns:1fr}
+  .batches{grid-template-columns:1fr}
+  .pubstamp{flex-wrap:wrap}
+}
