@@ -140,8 +140,9 @@
       ['Boxes to send', total - wait - angel, 'o']
     ].map(([l, v, k]) => `<div class="stat ${k}"><dt>${l}</dt><dd>${v}</dd></div>`).join('');
 
-    const held = state.rows.filter(r => r.status === STATUS.SEND && (r.flagRed || r.flagPurple || !r.addr1)).length;
-    $('r-log').textContent = state.rows.filter(r => r.status === STATUS.SEND && !r.flagRed && !r.flagPurple && r.addr1).length;
+    const ship = r => r.status === STATUS.SEND && !r.flagRed && !r.flagPurple && r.addr1 && r.city && r.zip;
+    const held = state.rows.filter(r => r.status === STATUS.SEND && !ship(r)).length;
+    $('r-log').textContent = state.rows.filter(ship).length;
     $('r-vol').textContent = angel;
     $('r-rev').textContent = VIEWS.review.rows().length;
 

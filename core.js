@@ -74,22 +74,46 @@ const isMilCity = c => /^(apo|fpo|dpo)\b/i.test(String(c || '').trim());
 const isTotalRow = n => /^(grand\s+)?(total|subtotal|sum)\b|copyright|confidential|do not distribute|salesforce\.com|all rights reserved/i.test(String(n || '').trim());
 function hasNumber(row){ return (row || []).some(v => typeof v === 'number' || (v !== '' && v != null && !isNaN(parseFloat(v)) && /^[\s$,.\d%-]+$/.test(String(v)))); }
 
-// "CPR 1690, Box #12<br>APO, AE 09240"  ->  street / city / state / zip
+/* Address parsing. Real exports arrive in more than one shape:
+     "CPR 1690, Box #12<br>APO, AE 09240"
+     "379 Efss / v2x OPC 1201 Box 65, APO, AE 09309 US"
+     "CSOJTF-C (J-8),, APO, AE 09315 United States"
+   Normalize the line break to a comma, drop the trailing country, then read
+   city / state / zip off the end. Whatever is left is the street. */
 function parseAddress(v){
   const out = { addr1:'', addr2:'', city:'', state:'', zip:'' };
   if (v == null) return out;
-  const parts = String(v).replace(/<br\s*\/?>/gi, '\n').split(/\n|\r/).map(x => x.trim()).filter(Boolean);
-  if (!parts.length) return out;
-  const last = parts[parts.length - 1];
-  const m = last.match(/^(.*?)[,\s]+([A-Za-z]{2})[,\s]+(\d{5}(?:-\d{4})?)\s*$/);
+
+  let s = String(v)
+    .replace(/<br\s*\/?>/gi, ', ')
+    .replace(/[\r\n]+/g, ', ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  s = s.replace(/[,\s]+(united states of america|united states|u\.?s\.?a\.?|usa|us)\s*$/i, '');
+  s = s.replace(/(\s*,\s*){2,}/g, ', ').replace(/^[,\s]+|[,\s]+$/g, '');
+  if (!s) return out;
+
+  // street , city , ST 12345
+  let m = s.match(/^(.*?),\s*([^,]{1,60}),\s*([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+  if (!m) m = s.match(/^(.*?),\s*([^,]{1,60})\s+([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
   if (m){
-    out.city = m[1].replace(/,\s*$/,'').trim();
-    out.state = m[2].toUpperCase();
-    out.zip = m[3];
-    parts.pop();
+    out.addr1 = m[1].replace(/[,\s]+$/,'').trim();
+    out.city  = m[2].replace(/[,\s]+$/,'').trim();
+    out.state = m[3].toUpperCase();
+    out.zip   = m[4];
+    return out;
   }
-  out.addr1 = (parts.shift() || '').replace(/,\s*$/,'').trim();
-  out.addr2 = parts.join(', ').replace(/,\s*$/,'').trim();
+
+  // no street, just city / state / zip
+  m = s.match(/^([^,]{1,60})[,\s]+([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+  if (m){
+    out.city = m[1].trim(); out.state = m[2].toUpperCase(); out.zip = m[3];
+    return out;
+  }
+
+  // could not read it: keep it whole so nothing is silently lost
+  out.addr1 = s;
   return out;
 }
 
@@ -108,6 +132,12 @@ const COLS = {
     ['addr1','Mailing Address Line 1'],['addr2','Mailing Address Line 2'],['city','Mailing City'],['state','State/Province'],['zip','Zip/Postal Code'],
     ['mailStop','Mail Stop Date'],['review','Review']
   ],
+  /* What Logistics actually ships from. One cell per field, nothing else. */
+  shipping: [
+    ['first','First Name'],['last','Last Name'],
+    ['addr1','Mailing Address Line 1'],['addr2','Mailing Address Line 2'],
+    ['city','Mailing City'],['state','State/Province'],['zip','Zip/Postal Code']
+  ],
   volunteer: [
     ['name','Client Name'],['clientId','Client ID'],['first','First Name'],['last','Last Name'],
     ['reportBy','Report by Date'],['serviceDelivery','Service Delivery'],['mailStop','Mail Stop Date']
@@ -122,7 +152,8 @@ const VIEWS = {
   logistics: {
     title:'Logistics: send a box',
     desc:'Nothing is blocking these members. Status reads "Unsupported, send Box." Export this and hand it to Logistics for fulfillment.',
-    cols: COLS.logistics, rows: () => state.rows.filter(r => r.status === STATUS.SEND), filter:'review'
+    cols: COLS.logistics, exportCols: COLS.shipping,
+    rows: () => state.rows.filter(r => r.status === STATUS.SEND), filter:'review'
   },
   volunteer: {
     title:'Volunteer Services: reach out',
@@ -137,7 +168,7 @@ const VIEWS = {
   review: {
     title:'Needs review before anything ships',
     desc:'Red means the Mail Stop Date lands in the reporting month, so confirm eligibility. Purple means the mailing city is not APO, FPO, or DPO, so verify the address.',
-    cols: COLS.logistics, rows: () => state.rows.filter(r => r.flagRed || r.flagPurple || (r.status === STATUS.SEND && !r.addr1))
+    cols: COLS.logistics, rows: () => state.rows.filter(r => r.flagRed || r.flagPurple || (r.status === STATUS.SEND && (!r.addr1 || !r.city || !r.zip)))
   }
 };
 function cellVal(r, k){
@@ -147,6 +178,7 @@ function cellVal(r, k){
     if (r.flagRed) t.push('Confirm eligibility');
     if (r.flagPurple) t.push('Verify address');
     if (!r.addr1) t.push('No address');
+    else if (!r.city || !r.zip) t.push('Incomplete address');
     return t.join(' · ');
   }
   return r[k] == null ? '' : String(r[k]);
@@ -154,7 +186,7 @@ function cellVal(r, k){
 function activeRows(){
   const v = VIEWS[state.view];
   let rows = v.rows();
-  if (v.filter === 'review' && state.hideUnreviewed) rows = rows.filter(r => !r.flagRed && !r.flagPurple && r.addr1);
+  if (v.filter === 'review' && state.hideUnreviewed) rows = rows.filter(r => !r.flagRed && !r.flagPurple && r.addr1 && r.city && r.zip);
   return rows;
 }
 function renderView(){
@@ -203,11 +235,12 @@ function download(blob, name){
   const a = el('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 400);
 }
+function colsFor(v){ return v.exportCols || v.cols; }
 function exportCsv(){
-  const v = VIEWS[state.view], rows = activeRows();
+  const v = VIEWS[state.view], rows = activeRows(), cols = colsFor(v);
   const esc = s => '"' + String(s == null ? '' : s).replace(/"/g,'""') + '"';
-  const lines = [v.cols.map(c => esc(c[1])).join(',')];
-  rows.forEach(r => lines.push(v.cols.map(c => esc(cellVal(r, c[0]))).join(',')));
+  const lines = [cols.map(c => esc(c[1])).join(',')];
+  rows.forEach(r => lines.push(cols.map(c => esc(cellVal(r, c[0]))).join(',')));
   download(new Blob(['\ufeff' + lines.join('\r\n')], { type:'text/csv;charset=utf-8' }), `${state.view}-no-box-${stamp()}.csv`);
 }
 const ARGB = { gold:'FFFFC72C', blue:'FF4472C4', purple:'FF7030A0', red:'FFC00000', maroon:'FF6E1B2C', wash:'FFF2DEDE', white:'FFFFFFFF' };
@@ -253,7 +286,7 @@ async function exportXlsx(){
   const v = VIEWS[state.view];
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(v.title.slice(0, 28).replace(/[\\\/\?\*\[\]:]/g,''));
-  sheetFrom(ws, v.cols, activeRows(), { color: state.view === 'all' });
+  sheetFrom(ws, colsFor(v), activeRows(), { color: state.view === 'all' });
   const buf = await wb.xlsx.writeBuffer();
   download(new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${state.view}-no-box-${stamp()}.xlsx`);
 }
@@ -286,7 +319,7 @@ async function exportWorkbook(){
 
   sheetFrom(ws, COLS.full, state.rows, { startRow:5, color:true });
 
-  sheetFrom(wb.addWorksheet('Logistics - Send Box'), COLS.logistics, state.rows.filter(r => r.status === STATUS.SEND), {});
+  sheetFrom(wb.addWorksheet('Logistics - Send Box'), COLS.shipping, state.rows.filter(r => r.status === STATUS.SEND), {});
   sheetFrom(wb.addWorksheet('Volunteer Svcs - Outreach'), COLS.volunteer, state.rows.filter(r => r.status === STATUS.ANGEL), {});
   sheetFrom(wb.addWorksheet('Waitlisted'), COLS.volunteer, state.rows.filter(r => r.status === STATUS.WAIT), {});
 

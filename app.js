@@ -507,6 +507,52 @@ async function publishLive(){
   }
 }
 
+/* ---------- connection check ----------
+   GitHub answers 404 for "repo does not exist" AND for "your token cannot
+   see this repo", which makes a bad token look like a bad name. This pulls
+   the two apart and says which one it is. */
+async function checkConnection(){
+  const out = $('#pubOut');
+  const note = (k, t, b) => { out.innerHTML = '<div class="note' + (k ? ' ' + k : '') + '"><div class="lbl">' + t + '</div><p>' + b + '</p></div>'; };
+  const g = GH.cfg();
+
+  if (!g.owner || !g.repo) return note('warn', 'Fill in the repo', 'Owner and repository are both needed.');
+  if (!GH.token()) return note('warn', 'Token needed', 'Paste your GitHub access token first.');
+
+  out.innerHTML = '<p class="hint">Checking...</p>';
+  try {
+    const repo = await GH.call('https://api.github.com/repos/' + g.owner + '/' + g.repo);
+    if (repo.status === 401)
+      return note('warn', 'The token is not valid', 'GitHub rejected it outright. It was probably truncated when pasted, or it has expired. Generate a new one.');
+    if (repo.status === 404)
+      return note('warn', 'Cannot see that repository',
+        'Either <strong>' + g.owner + '/' + g.repo + '</strong> does not exist, or your token was not given access to it. ' +
+        'Check the spelling first. If it is right, edit the token in GitHub: under Repository access it must list this repo, ' +
+        'and under Permissions it needs <strong>Contents: Read and write</strong>. A token without Contents access returns this same 404.');
+    if (!repo.ok) return note('warn', 'GitHub said no', 'Status ' + repo.status + ' looking up the repository.');
+
+    const info = await repo.json();
+    const perms = (info.permissions || {});
+    let line = 'Found <strong>' + info.full_name + '</strong>' + (info.private ? ', private' : ', public') + '.';
+
+    // can we actually write? probe the data path
+    const probe = await GH.call('https://api.github.com/repos/' + g.owner + '/' + g.repo +
+      '/contents/' + g.path + '?ref=' + encodeURIComponent(g.branch));
+    if (probe.status === 200) line += ' A published file is already there and can be replaced.';
+    else if (probe.status === 404) line += ' Nothing published yet, so the first publish will create ' + g.path + '.';
+    else if (probe.status === 403) return note('warn', 'Token cannot write here',
+      'The repo is visible but the token lacks write access. Set <strong>Contents</strong> to <strong>Read and write</strong> on the token.');
+
+    if (perms.push === false) return note('warn', 'Read only',
+      'The token can see the repo but cannot write to it. Set Contents to Read and write.');
+
+    GH.remember(GH.token());
+    note('', 'Connection is good', line + ' Publish to the live site will work.');
+  } catch(e){
+    note('warn', 'Could not reach GitHub', String(e.message || e));
+  }
+}
+
 /* ---------- open mode banner ---------- */
 function openModeBanner(){
   if (siteLocked()) return;
@@ -539,6 +585,7 @@ $('#btnDocs').addEventListener('click', () => window.open('sop.html', '_blank'))
 $('#btnBack').addEventListener('click', () => { location.href = 'index.html'; });
 $('#btnPublish').addEventListener('click', publish);
 $('#btnPublishLive').addEventListener('click', publishLive);
+$('#btnCheck').addEventListener('click', checkConnection);
 GH.restore();
 openModeBanner();
 $('#btnReset').addEventListener('click', () => { if (confirm('Clear the loaded files and start over?')) location.reload(); });
