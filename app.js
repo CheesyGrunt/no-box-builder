@@ -361,12 +361,14 @@ async function publish(){
     out.innerHTML = '<div class="note warn"><div class="lbl">Not available here</div><p>Encryption needs a secure page. Open the tool at its https address (or http://localhost) and publish from there. Opening the file straight off your hard drive will not work for this step.</p></div>';
     return;
   }
-  const pw = $('#pubPw').value;
-  if (!pw){ out.innerHTML = '<div class="note warn"><div class="lbl">Password needed</div><p>Type the team password. It is the key, so staff cannot open the file without it.</p></div>'; return; }
   const cfg = window.NOBOX_CONFIG || {};
-  if (cfg.passwordHash && window.noboxHash && window.noboxHash(pw) !== cfg.passwordHash){
-    out.innerHTML = '<div class="note warn"><div class="lbl">That is not the team password</div><p>It does not match the one set in config.js, so staff would not be able to open this file. Use the team password, or reset it in set-password.html first.</p></div>';
-    return;
+  const pw = keyFor($('#pubPw').value);
+  if (siteLocked()){
+    if (!$('#pubPw').value){ out.innerHTML = '<div class="note warn"><div class="lbl">Password needed</div><p>Type the team password. It is the key, so staff cannot open the file without it.</p></div>'; return; }
+    if (window.noboxHash && window.noboxHash($('#pubPw').value) !== cfg.passwordHash){
+      out.innerHTML = '<div class="note warn"><div class="lbl">That is not the team password</div><p>It does not match config.js, so staff would not be able to open this file.</p></div>';
+      return;
+    }
   }
   out.innerHTML = '<p class="hint">Encrypting ' + state.rows.length + ' rows...</p>';
   const label = new Date(state.month.y, state.month.m, 1).toLocaleString('en-US', { month:'long', year:'numeric' });
@@ -434,11 +436,13 @@ async function publishLive(){
   if (!state.rows.length) return note('warn', 'Nothing to publish', 'Finish stage 3 first.');
   if (!cryptoReady()) return note('warn', 'Open the live site', 'Encryption needs a secure page. Use the https address, not a file on your hard drive.');
 
-  const pw = $('#pubPw').value;
-  if (!pw) return note('warn', 'Password needed', 'Type the team password. It is the encryption key.');
   const cfg = window.NOBOX_CONFIG || {};
-  if (cfg.passwordHash && window.noboxHash && window.noboxHash(pw) !== cfg.passwordHash)
-    return note('warn', 'That is not the team password', 'It does not match config.js, so staff could not open the file.');
+  const pw = keyFor($('#pubPw').value);
+  if (siteLocked()){
+    if (!$('#pubPw').value) return note('warn', 'Password needed', 'Type the team password. It is the encryption key.');
+    if (window.noboxHash && window.noboxHash($('#pubPw').value) !== cfg.passwordHash)
+      return note('warn', 'That is not the team password', 'It does not match config.js, so staff could not open the file.');
+  }
 
   const g = GH.cfg();
   if (!g.owner || !g.repo) return note('warn', 'Repo needed', 'Fill in the GitHub owner and repository name.');
@@ -503,6 +507,22 @@ async function publishLive(){
   }
 }
 
+/* ---------- open mode banner ---------- */
+function openModeBanner(){
+  if (siteLocked()) return;
+  const box = document.createElement('div');
+  box.className = 'note warn';
+  box.style.marginBottom = '18px';
+  box.innerHTML = '<div class="lbl">No password set</div>' +
+    '<p>Anyone with the link can open the published list, and the password box below is ignored. ' +
+    'Fine while you are testing. Set a password in <a href="set-password.html">set-password.html</a> ' +
+    'and republish before staff or real member data go anywhere near this.</p>';
+  const p1 = document.getElementById('p1');
+  p1.parentNode.insertBefore(box, p1);
+  const pw = document.getElementById('pubPw');
+  if (pw){ pw.disabled = true; pw.placeholder = 'Not needed while no password is set'; }
+}
+
 /* ---------- wire up ---------- */
 document.querySelectorAll('.drop').forEach(wireDrop);
 $('#btnBuild').addEventListener('click', build);
@@ -520,6 +540,7 @@ $('#btnBack').addEventListener('click', () => { location.href = 'index.html'; })
 $('#btnPublish').addEventListener('click', publish);
 $('#btnPublishLive').addEventListener('click', publishLive);
 GH.restore();
+openModeBanner();
 $('#btnReset').addEventListener('click', () => { if (confirm('Clear the loaded files and start over?')) location.reload(); });
 document.querySelectorAll('.view-tab').forEach(t => t.addEventListener('click', () => {
   document.querySelectorAll('.view-tab').forEach(x => x.classList.remove('on'));

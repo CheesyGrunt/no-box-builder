@@ -299,6 +299,13 @@ async function exportWorkbook(){
    password. What lands in the repo is ciphertext. Without the password
    the file is noise, so a leaked URL does not leak member data. */
 const CRYPTO_ITER = 250000;
+/* Open mode: no password set in config.js. The list is still encrypted on the
+   wire, but with a key that is sitting right here in the code, so it protects
+   nothing. It exists so the tool can be tested end to end before passwords are
+   turned on. Both pages shout about it while it is active. */
+const OPEN_KEY = 'nobox-open-mode-no-password-set';
+function siteLocked(){ return !!(window.NOBOX_CONFIG || {}).passwordHash; }
+function keyFor(pw){ return siteLocked() ? pw : OPEN_KEY; }
 const b64 = {
   enc: buf => {
     const a = new Uint8Array(buf);

@@ -21,6 +21,9 @@
   .role.log{border-top-color:var(--ok)}
   .role.vol{border-top-color:var(--blue)}
   .role.rev{border-top-color:var(--red)}
+  .empty{background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--gold);padding:44px 32px;text-align:center;margin-bottom:24px}
+  .empty h3{font-size:27px;margin-bottom:10px}
+  .empty p{max-width:46ch;margin:0 auto 6px;color:var(--ink-soft)}
 </style>
 </head>
 <body>
@@ -28,9 +31,9 @@
 <div class="bar">
   <div class="bar-in">
     <div class="bar-title">Members Without a Box</div>
-    <div class="stages"><div class="stage-chip" id="monthChip">Not loaded</div></div>
+    <div class="stages"><div class="stage-chip" id="monthChip">Not signed in</div></div>
     <div class="bar-actions">
-      <button class="ghost" id="btnRun" style="display:none">Run new report</button>
+      <button class="ghost" id="btnUpdate" style="display:none">Update report</button>
       <button class="ghost" id="btnSop">SOP</button>
     </div>
   </div>
@@ -38,71 +41,80 @@
 
 <div class="wrap">
 
-  <!-- lock -->
+  <!-- ============ sign in ============ -->
   <section id="unlock">
     <div class="eyebrow">Soldiers' Angels &nbsp;·&nbsp; Virtual Services</div>
     <h2 style="margin-bottom:6px">Sign in</h2>
-    <p class="hint" style="margin-bottom:16px">Enter the team password to open this month's list.</p>
+    <p class="hint" id="signinHint" style="margin-bottom:16px">Enter the team password.</p>
     <input type="password" id="pw" placeholder="Team password" autocomplete="current-password">
-    <button class="btn" id="go">Open the list</button>
+    <button class="btn" id="go">Sign in</button>
     <div id="unlockMsg" style="margin-top:14px"></div>
   </section>
 
-  <!-- content -->
+  <!-- ============ signed in ============ -->
   <section id="content" style="display:none">
-    <h1>Members Without a Box</h1>
-    <p class="sub" id="subLine"></p>
 
-    <div class="roles">
-      <button class="role log" data-goto="logistics">
-        <div class="rn">Logistics</div>
-        <div class="rc" id="r-log">0</div>
-        <div class="rd">members cleared to receive a box</div>
-      </button>
-      <button class="role vol" data-goto="volunteer">
-        <div class="rn">Volunteer Services</div>
-        <div class="rc" id="r-vol">0</div>
-        <div class="rd">members waiting on Angel contact</div>
-      </button>
-      <button class="role rev" data-goto="review">
-        <div class="rn">Held for review</div>
-        <div class="rc" id="r-rev">0</div>
-        <div class="rd">address or eligibility to confirm</div>
-      </button>
-    </div>
-
-    <dl class="stats" id="stats2"></dl>
-    <div id="alerts"></div>
-
-    <section class="panel" id="adminPanel" style="border-left-color:var(--gold);margin-bottom:22px">
+    <section class="panel" id="adminPanel" style="border-left-color:var(--gold);margin-bottom:24px">
       <div class="eyebrow">Director of Virtual Services</div>
-      <h3>Time to run a new month?</h3>
+      <h3 id="adminHead">Update the report</h3>
       <p class="hint" id="staleLine" style="margin-bottom:12px"></p>
       <div class="rowline">
         <input type="password" id="adminPw" placeholder="Admin password" style="min-width:230px">
-        <button class="btn" id="adminGo">Run new report</button>
+        <button class="btn" id="adminGo">Update report</button>
       </div>
       <div id="adminMsg"></div>
     </section>
 
-    <div class="views" id="views">
-      <button class="view-tab on" data-view="all">Full list <span class="n" id="n-all">0</span></button>
-      <button class="view-tab" data-view="logistics">Logistics: send a box <span class="n" id="n-logistics">0</span></button>
-      <button class="view-tab" data-view="volunteer">Volunteer Services: reach out <span class="n" id="n-volunteer">0</span></button>
-      <button class="view-tab" data-view="waitlisted">Waitlisted <span class="n" id="n-waitlisted">0</span></button>
-      <button class="view-tab" data-view="review">Needs review <span class="n" id="n-review">0</span></button>
+    <h1>Members Without a Box</h1>
+    <p class="sub" id="subLine"></p>
+
+    <div class="empty" id="emptyState" style="display:none">
+      <h3>No current data</h3>
+      <p>Nothing has been published yet, so there is no list to show.</p>
+      <p>The Director of Virtual Services posts it once the monthly run is finished.</p>
     </div>
-    <div class="viewbox">
-      <div class="viewhead">
-        <div class="txt"><h3 id="vTitle"></h3><p id="vDesc"></p></div>
-        <div class="tools">
-          <button class="btn sm out" id="btnCsv">Export .csv</button>
-          <button class="btn sm gold" id="btnXlsx">Export .xlsx</button>
-        </div>
+
+    <div id="dataArea" style="display:none">
+      <div class="roles">
+        <button class="role log" data-goto="logistics">
+          <div class="rn">Logistics</div>
+          <div class="rc" id="r-log">0</div>
+          <div class="rd">members cleared to receive a box</div>
+        </button>
+        <button class="role vol" data-goto="volunteer">
+          <div class="rn">Volunteer Services</div>
+          <div class="rc" id="r-vol">0</div>
+          <div class="rd">members waiting on Angel contact</div>
+        </button>
+        <button class="role rev" data-goto="review">
+          <div class="rn">Held for review</div>
+          <div class="rc" id="r-rev">0</div>
+          <div class="rd">address or eligibility to confirm</div>
+        </button>
       </div>
-      <div class="filters" id="vFilters"></div>
-      <div class="tw"><table id="vTable"><thead></thead><tbody></tbody></table></div>
-      <p class="hint" id="vFoot" style="margin-top:10px"></p>
+
+      <dl class="stats" id="stats2"></dl>
+      <div id="alerts"></div>
+
+      <div class="views" id="views">
+        <button class="view-tab on" data-view="all">Full list <span class="n" id="n-all">0</span></button>
+        <button class="view-tab" data-view="logistics">Logistics: send a box <span class="n" id="n-logistics">0</span></button>
+        <button class="view-tab" data-view="volunteer">Volunteer Services: reach out <span class="n" id="n-volunteer">0</span></button>
+        <button class="view-tab" data-view="waitlisted">Waitlisted <span class="n" id="n-waitlisted">0</span></button>
+        <button class="view-tab" data-view="review">Needs review <span class="n" id="n-review">0</span></button>
+      </div>
+      <div class="viewbox">
+        <div class="viewhead">
+          <div class="txt"><h3 id="vTitle"></h3><p id="vDesc"></p></div>
+          <div class="tools">
+            <button class="btn sm out" id="btnCsv">Export .csv</button>
+            <button class="btn sm gold" id="btnXlsx">Export .xlsx</button>
+          </div>
+        </div>
+        <div class="filters" id="vFilters"></div>
+        <div class="tw"><table id="vTable"><thead></thead><tbody></tbody></table></div>
+        <p class="hint" id="vFoot" style="margin-top:10px"></p>
+      </div>
     </div>
 
     <footer>

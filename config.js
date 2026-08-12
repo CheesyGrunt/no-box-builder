@@ -1,24 +1,27 @@
 /* ============================================================
-   Site settings. Edit this file, commit it, done.
+   Site settings.
 
-   passwordHash  Leave as an empty string for no password.
-                 To set one, open set-password.html, type the
-                 password you want, and paste the generated line here.
-   hint          Optional. Shown on the lock screen. Never put the
-                 password itself here.
+   TESTING MODE. Both passwords are empty on purpose, so the site
+   opens for anyone with the link while you get it working.
+
+   Turn passwords on before staff or real member data:
+     1. open set-password.html
+     2. type a team password and an admin password
+     3. paste the generated block over this whole file
+     4. run the report again and publish, so the file is re-encrypted
+        with the real password
    ============================================================ */
 
 window.NOBOX_CONFIG = {
-  passwordHash: '',       // team password: everyone. Opens the list.
-  adminHash: '',          // admin password: you. Unlocks Run new report.
+  passwordHash: '',       // team password. Empty = no sign in, list opens to anyone.
+  adminHash: '',          // admin password. Empty = anyone who reaches the page can run a report.
   hint: '',
 
-  /* Where the published list gets committed. Safe to put here, it is not a
-     secret. Your access token is NEVER stored in this file. You type it into
-     the builder page once and it stays in that browser. */
+  /* Where the published list gets committed. Not secret.
+     owner must be your GitHub USERNAME, not your display name. */
   github: {
-    owner: '',                    // e.g. 'CheesyGrunt'
-    repo:  '',                    // e.g. 'no-box-builder'
+    owner: 'CheesyGrunt',
+    repo:  'no-box-builder',
     branch:'main',
     path:  'data/latest.enc'
   }
