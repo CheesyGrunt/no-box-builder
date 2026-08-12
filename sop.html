@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deployed Monthly: Members Without a Box | SOP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#171310;
+    --ink-soft:#4A423C;
+    --paper:#EDEAE3;
+    --card:#FFFDF8;
+    --maroon:#6E1B2C;
+    --maroon-deep:#42101C;
+    --maroon-wash:#F3E4E4;
+    --gold:#FFC72C;
+    --rule:#D8D2C6;
+    --blue:#4472C4;
+    --purple:#7030A0;
+    --red:#C00000;
+    --ok:#2F6B4F;
+    --display:'Barlow Condensed', 'Arial Narrow', sans-serif;
+    --body:'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+    --mono:'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth; scroll-padding-top:88px}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--body); font-size:16px; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- sticky command bar ---------- */
+  .bar{
+    position:sticky; top:0; z-index:50;
+    background:var(--maroon-deep); color:#fff;
+    border-bottom:3px solid var(--gold);
+  }
+  .bar-in{
+    max-width:1180px; margin:0 auto; padding:10px 24px;
+    display:flex; align-items:center; gap:18px;
+  }
+  .bar-title{
+    font-family:var(--display); font-weight:600; font-size:17px;
+    letter-spacing:.09em; text-transform:uppercase; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis;
+  }
+  .bar-title span{color:var(--gold)}
+  .bar-prog{margin-left:auto; display:flex; align-items:center; gap:12px; flex:0 0 auto}
+  .track{width:190px; height:7px; background:rgba(255,255,255,.18); border-radius:0}
+  .track i{display:block; height:100%; width:0; background:var(--gold); transition:width .25s ease}
+  .prog-txt{
+    font-family:var(--mono); font-size:12px; letter-spacing:.04em;
+    color:#F0E6DE; white-space:nowrap;
+  }
+  .reset{
+    font-family:var(--display); text-transform:uppercase; letter-spacing:.1em;
+    font-size:13px; background:none; border:1px solid rgba(255,255,255,.3);
+    color:#F0E6DE; padding:4px 10px; cursor:pointer;
+  }
+  .reset:hover{border-color:var(--gold); color:var(--gold)}
+
+  /* ---------- cover plate ---------- */
+  .cover{background:var(--maroon); color:#fff; padding:52px 24px 0}
+  .cover-in{max-width:1180px; margin:0 auto}
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--gold); margin-bottom:14px;
+  }
+  h1{
+    font-family:var(--display); font-weight:700; text-transform:uppercase;
+    font-size:clamp(44px,8.4vw,104px); line-height:.9; letter-spacing:-.005em;
+    margin:0 0 6px;
+  }
+  h1 .thin{display:block; font-weight:500; color:#E7C9CD; font-size:.4em; letter-spacing:.06em; margin-bottom:10px}
+  .kicker{font-size:17px; color:#EBD9DC; max-width:60ch; margin:18px 0 34px}
+  .plate{
+    display:grid; grid-template-columns:repeat(4,1fr);
+    background:var(--maroon-deep); border-top:3px solid var(--gold);
+    transform:translateY(3px);
+  }
+  .plate div{padding:14px 18px; border-right:1px solid rgba(255,255,255,.12)}
+  .plate div:last-child{border-right:none}
+  .plate dt{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.16em;
+    text-transform:uppercase; color:#C9A7AC; margin-bottom:4px;
+  }
+  .plate dd{margin:0; font-family:var(--display); font-size:20px; font-weight:600; letter-spacing:.02em}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px 90px; display:grid; grid-template-columns:212px 1fr; gap:44px}
+  nav.rail{position:sticky; top:96px; align-self:start; padding-top:44px}
+  .rail-h{font-family:var(--mono); font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px}
+  .rail a{
+    display:flex; gap:10px; align-items:baseline; text-decoration:none;
+    color:var(--ink-soft); padding:5px 0 5px 10px; border-left:2px solid var(--rule);
+    font-size:13.5px; line-height:1.3;
+  }
+  .rail a b{font-family:var(--mono); font-size:11px; color:#9A9086; flex:0 0 22px}
+  .rail a:hover{color:var(--maroon); border-left-color:var(--maroon)}
+  .rail a.on{color:var(--maroon); border-left-color:var(--gold); font-weight:600}
+  .rail a.done b{color:var(--ok)}
+  .rail a.done b::after{content:' ✓'}
+  main{padding-top:44px; min-width:0}
+
+  section{margin-bottom:52px; scroll-margin-top:96px}
+  h2{
+    font-family:var(--display); text-transform:uppercase; font-weight:700;
+    font-size:30px; letter-spacing:.03em; margin:0 0 6px; color:var(--maroon);
+  }
+  .h2rule{height:3px; background:var(--gold); width:56px; margin-bottom:20px}
+  h3{font-family:var(--display); text-transform:uppercase; letter-spacing:.06em; font-size:19px; margin:0 0 10px}
+  p{margin:0 0 14px; max-width:74ch}
+  ul{margin:0 0 14px; padding-left:20px; max-width:74ch}
+  li{margin-bottom:6px}
+  strong{font-weight:600}
+
+  /* ---------- callouts ---------- */
+  .note{
+    background:var(--card); border-left:4px solid var(--gold);
+    padding:16px 20px; margin:0 0 22px; box-shadow:0 1px 0 rgba(23,19,16,.06);
+  }
+  .note .lbl{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--maroon); margin-bottom:8px;
+  }
+  .note p:last-child{margin-bottom:0}
+  .note.stop{border-left-color:var(--red)}
+  .note.stop .lbl{color:var(--red)}
+
+  /* ---------- tables ---------- */
+  .tw{overflow-x:auto; margin-bottom:22px; background:var(--card); box-shadow:0 1px 0 rgba(23,19,16,.06)}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:520px}
+  th{
+    background:var(--maroon); color:#fff; text-align:left; padding:10px 14px;
+    font-family:var(--display); text-transform:uppercase; letter-spacing:.09em;
+    font-size:14px; font-weight:600;
+  }
+  td{padding:11px 14px; border-bottom:1px solid var(--rule); vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td code{font-family:var(--mono); font-size:13px; background:var(--maroon-wash); padding:1px 5px}
+  .swatch{display:inline-block; width:13px; height:13px; margin-right:8px; transform:translateY(1px); border:1px solid rgba(0,0,0,.25)}
+
+  /* ---------- steps ---------- */
+  .step{
+    background:var(--card); border:1px solid var(--rule); border-left:3px solid var(--maroon);
+    padding:22px 26px 24px; margin-bottom:16px; position:relative;
+  }
+  .step.checked{border-left-color:var(--ok); background:#FBFBF6}
+  .step-top{display:flex; align-items:flex-start; gap:16px; margin-bottom:14px}
+  .num{
+    font-family:var(--display); font-weight:700; font-size:34px; line-height:1;
+    color:var(--maroon); background:var(--gold); width:46px; height:46px;
+    display:flex; align-items:center; justify-content:center; flex:0 0 46px;
+  }
+  .step.checked .num{background:var(--ok); color:#fff}
+  .step-h{flex:1; min-width:0}
+  .step-h h3{margin-bottom:3px}
+  .time{font-family:var(--mono); font-size:12px; color:var(--ink-soft); letter-spacing:.03em}
+  .mark{
+    font-family:var(--display); text-transform:uppercase; letter-spacing:.09em; font-size:13px;
+    border:1px solid var(--rule); background:#fff; color:var(--ink-soft);
+    padding:7px 12px; cursor:pointer; flex:0 0 auto; white-space:nowrap;
+  }
+  .mark:hover{border-color:var(--maroon); color:var(--maroon)}
+  .step.checked .mark{background:var(--ok); border-color:var(--ok); color:#fff}
+  .step-body{padding-left:62px}
+  @media(max-width:640px){.step-body{padding-left:0}}
+
+  /* ---------- prompt blocks ---------- */
+  .prompt{background:var(--maroon-deep); color:#F6EFE9; margin:16px 0 8px}
+  .prompt-top{
+    display:flex; align-items:center; gap:12px; padding:9px 14px;
+    background:rgba(255,255,255,.07); border-bottom:1px solid rgba(255,255,255,.12);
+  }
+  .prompt-top .t{
+    font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold);
+  }
+  .copy{
+    margin-left:auto; font-family:var(--display); text-transform:uppercase; letter-spacing:.1em;
+    font-size:12.5px; background:var(--gold); border:none; color:var(--maroon-deep);
+    padding:5px 12px; cursor:pointer;
+  }
+  .copy:hover{background:#FFD764}
+  .copy.done{background:var(--ok); color:#fff}
+  .prompt pre{
+    margin:0; padding:16px 18px; font-family:var(--mono); font-size:13px; line-height:1.6;
+    white-space:pre-wrap; word-wrap:break-word; max-height:none;
+  }
+  .swap{
+    display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.1em;
+    text-transform:uppercase; background:var(--gold); color:var(--maroon-deep);
+    padding:2px 7px; margin-bottom:10px;
+  }
+  .formula{
+    font-family:var(--mono); font-size:15px; background:var(--maroon-wash);
+    border-left:3px solid var(--maroon); padding:10px 14px; display:inline-block; margin:2px 0 14px;
+  }
+
+  /* ---------- checklist ---------- */
+  .check{background:var(--card); border:1px solid var(--rule); padding:8px 4px}
+  .check label{
+    display:flex; gap:13px; align-items:flex-start; padding:11px 16px; cursor:pointer;
+    border-bottom:1px solid var(--rule); font-size:15px;
+  }
+  .check label:last-child{border-bottom:none}
+  .check input{
+    appearance:none; width:19px; height:19px; flex:0 0 19px; margin:2px 0 0;
+    border:2px solid var(--maroon); background:#fff; cursor:pointer;
+  }
+  .check input:checked{background:var(--ok); border-color:var(--ok)}
+  .check input:checked+span{color:var(--ink-soft); text-decoration:line-through}
+  .check label:hover{background:#F7F4EC}
+
+  .ready{
+    margin-top:16px; padding:16px 20px; background:var(--maroon); color:#fff;
+    font-family:var(--display); text-transform:uppercase; letter-spacing:.08em; font-size:18px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+  }
+  .ready.go{background:var(--ok)}
+  .ready .cnt{font-family:var(--mono); font-size:13px; letter-spacing:.06em; text-transform:none}
+
+  footer{
+    border-top:2px solid var(--rule); padding-top:18px; color:var(--ink-soft); font-size:14px;
+  }
+  a.top{color:var(--maroon); text-decoration:none; font-family:var(--display); text-transform:uppercase; letter-spacing:.09em}
+
+  :focus-visible{outline:3px solid var(--blue); outline-offset:2px}
+
+  @media(max-width:900px){
+    .wrap{grid-template-columns:1fr; gap:0; padding-bottom:60px}
+    nav.rail{display:none}
+    .plate{grid-template-columns:repeat(2,1fr)}
+    .bar-prog .track{width:110px}
+  }
+  @media(max-width:560px){
+    .cover{padding-top:34px}
+    .bar-title{font-size:14px}
+    .reset{display:none}
+  }
+  @media(prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *{transition:none !important}
+  }
+  @media print{
+    .bar,nav.rail,.mark,.copy,.reset{display:none !important}
+    body{background:#fff}
+    .wrap{display:block; padding:0}
+    .step,.note,.tw,.check{break-inside:avoid; box-shadow:none}
+    .prompt{background:#fff; color:#000; border:1px solid #999}
+    .prompt-top{background:#eee; border-bottom:1px solid #999}
+    .prompt-top .t{color:#000}
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="bar-title">Deployed Monthly <span>/</span> Members Without a Box</div>
+    <div class="bar-prog">
+      <div class="track"><i id="fill"></i></div>
+      <div class="prog-txt" id="progtxt">0 of 12 steps</div>
+      <button class="reset" id="reset">Reset</button>
+    </div>
+  </div>
+</div>
+
+<header class="cover">
+  <div class="cover-in">
+    <div class="eyebrow">Soldiers' Angels &nbsp;·&nbsp; Virtual Services &nbsp;·&nbsp; Standard Operating Procedure</div>
+    <h1><span class="thin">Deployed Monthly</span>Members<br>Without a Box</h1>
+    <p class="kicker">Pull the reports, run the prompts in order, hand a clean No Box tab to staff for fulfillment. You do not need to know Excel formulas to run this.</p>
+    <dl class="plate">
+      <div><dt>Owner</dt><dd>Director of Virtual Services</dd></div>
+      <div><dt>Runs</dt><dd>Once a month</dd></div>
+      <div><dt>Total time</dt><dd>About 75 minutes</dd></div>
+      <div><dt>Last updated</dt><dd>July 2026</dd></div>
+    </dl>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <nav class="rail" aria-label="Step navigation">
+    <div class="rail-h">The Steps</div>
+    <a href="#s1" data-rail="1"><b>01</b> Pull two reports</a>
+    <a href="#s2" data-rail="2"><b>02</b> Got a Box formula</a>
+    <a href="#s3" data-rail="3"><b>03</b> Prompt 1, No Box tab</a>
+    <a href="#s4" data-rail="4"><b>04</b> Batch Client IDs</a>
+    <a href="#s5" data-rail="5"><b>05</b> Generate Part 2</a>
+    <a href="#s6" data-rail="6"><b>06</b> Prompt 2, fill columns</a>
+    <a href="#s7" data-rail="7"><b>07</b> Waitlisted report</a>
+    <a href="#s8" data-rail="8"><b>08</b> Prompt 3, highlights</a>
+    <a href="#s9" data-rail="9"><b>09</b> Prompt 4, summary</a>
+    <a href="#s10" data-rail="10"><b>10</b> Prompt 5, error checks</a>
+    <a href="#s11" data-rail="11"><b>11</b> Prompt 6, hard-code</a>
+    <a href="#s12" data-rail="12"><b>12</b> Check the work</a>
+    <div class="rail-h" style="margin-top:22px">Reference</div>
+    <a href="#colors"><b>&nbsp;</b> Color key</a>
+    <a href="#trouble"><b>&nbsp;</b> If something looks off</a>
+  </nav>
+
+  <main>
+
+    <section id="about">
+      <h2>What this process does</h2><div class="h2rule"></div>
+      <p>Every month we pull the deployed member list and figure out who did not get a box. This process takes those two reports, builds a clean No Box tab, tells you who is already waitlisted, who is waiting on an Angel to make contact, and who still needs a box shipped. The finished tab gets handed to staff for fulfillment.</p>
+      <p>The prompts do the heavy lifting. Your job is to pull the right reports, check the filters, and paste the prompts in order.</p>
+      <div class="note">
+        <div class="lbl">Read this first</div>
+        <p>Work the steps in order, 1 through 12. Do not work ahead and do not pull reports early. Each step depends on what the step before it produced.</p>
+        <p>Deployed Monthly Part 2 cannot be pulled until Step 4 gives you the batched Client IDs.</p>
+        <p>Before Prompt 3 in Step 8 and Prompt 5 in Step 10, replace <code>[Current Month]</code> with the actual month you are reporting on.</p>
+      </div>
+    </section>
+
+    <section id="reports">
+      <h2>The reports and when you pull them</h2><div class="h2rule"></div>
+      <p>Do not try to gather all four reports up front. Deployed Monthly Part 2 does not exist until Step 4 hands you the batched Client IDs. Pull each report at the step listed and add it to the same workbook as you go.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Report</th><th>Export type</th><th>Tab name</th><th>Pull it at</th></tr></thead>
+          <tbody>
+            <tr><td>Deployed Monthly Part 1</td><td>Formatted Report</td><td><code>Deployed Report</code></td><td>Step 1</td></tr>
+            <tr><td>Deployed Monthly Part 1</td><td>Details Only</td><td><code>Details</code></td><td>Step 1</td></tr>
+            <tr><td>Deployed Monthly Part 2</td><td>Details Only</td><td><code>Deployed Monthly Part2</code></td><td>Step 5, needs Step 4 first</td></tr>
+            <tr><td>Currently Waitlisted</td><td>Details Only</td><td><code>Currently Waitlisted Clients</code></td><td>Step 7</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><em>Tab names have to match exactly. If a tab is named wrong, the formulas will not find it.</em></p>
+    </section>
+
+    <section id="steps">
+      <h2>The steps</h2><div class="h2rule"></div>
+
+      <article class="step" id="s1" data-step="1">
+        <div class="step-top">
+          <div class="num">1</div>
+          <div class="step-h"><h3>Pull your two reports</h3><div class="time">About 5 minutes</div></div>
+          <button class="mark">Mark done</button>
+        </div>
+        <div class="step-body">
+          <p>Open Deployed Monthly Part 1.</p>
+          <ul>
+            <li>Check the filters. Make sure the month matches the month you are pulling. This is the most common place to make a mistake.</li>
+            <li>Export the Formatted Report. Label that tab <code>Deployed Report</code>.</li>
+            <li>Export the Details Only Report. Label that tab <code>Details</code>.</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="step" id="s2" data-step="2">
+        <div class="step-top">
+          <div class="num">2</div>
+          <div class="step-h"><h3>Add the "Got a Box" formula</h3><div class="time">About 3 minutes</div></div>
+          <button class="mark">Mark done</button>
+        </div>
+        <div class="step-body">
+          <p>Go to the <code>Deployed Report</code> tab.</p>
+          <ul>
+            <li>Clear columns J and K (the Fulfilled Flag and Record Count columns).</li>
+            <li>In J, type the header <strong>Got a Box</strong>.</li>
+            <li>Put this formula in J and fill it down the whole column:</li>
+          </ul>
+          <div class="formula">=IF(H18&gt;0,1,0)</div>
+          <p>Then build your totals underneath:</p>
+          <ul>
+            <li>Sum column I</li>
+            <li>Sum column J</li>
+            <li>In K, subtract J from I</li>
+            <li>Below that, divide J by I to get your percentage</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="step" id="s3" data-step="3">
+        <div class="step-top">
+          <div class="num">3</div>
+          <div class="step-h"><h3>Run Prompt 1, build the No Box tab</h3><div class="time">Up to 5 minutes</div></div>
+          <button class="mark">Mark done</button>
+        </div>
+        <div class="step-body">
+          <p>Paste it in exactly as written.</p>
+          <div class="prompt">
+            <div class="prompt-top"><div class="t">Prompt 1</div><button class="copy">Copy</button></div>
+<pre>From the "Deployed Report" tab, build a new tab called "No Box" listing every member with a 0 in the "Got a Box" column (column J, data rows 18-6000). Not a pivot table, a plain sortable table. Do NOT bring over the Unique Client, Fulfilled Flag, or Record Count columns from the report. Set up these exact column headers (row 5), data starting row 6:
+
+Client Name | Status | Client ID | Mail Stop Date | Service Delivery | Report by Date | Client First Name | Client Last Name | Client: Mailing Address Line 1 | Client: Mailing Address Line 2 | Client: Mailing City | Client: Mailing State/Province | Client: Mailing Zip/Postal Code
+
+Fill in this step:
+
+- Client Name: the no-box members, pasted as static values so I can sort/filter
+
+- Client ID: live INDEX/MATCH from the Details tab (name in col L to "Client: Contact ID" in col K)
+
+- Leave Status blank ("Waitlist" gets added later)
+
+Add a maroon title banner "Members Without a Box" top-left and an AutoFilter on the header row.</pre>
+          </div>
+        </div>
+      </article>
+
+      <article class="step" id="s4" data-step="4">
+        <div class="step-top">
+          <div class="num">4</div>
+          <div class="step-h"><h3>Batch the Client IDs</h3><div class="time">Steps 4 and 5 together, about 15 minutes</div></div>
+          <button class="mark">Mark done</button>
+        </div>
+        <div class="step-body">
+          <p>Take the Client IDs and plug them into Claude to have them separated into batches of 70. You need them batched because the report filter cannot handle the full list at once.</p>
+        </div>
+      </article>
+
+      <article class="step" id="s5" data-step="5">
+        <div class="step-top">
+          <div class="num">5</div>
+          <div class="step-h"><h3>Generate Deployed Monthly Part 2</h3><div class="time">Included in the 15 minutes above</div></div>
+          <button class="mark">Mark done</button>
+        </div>
+        <div class="step-body">
+          <p>Take your batches and update the filters on the report. Check your logic before you run it:</p>
+          <div class="formula">Program Engagement Name AND (All your Client IDs with or in between the numbers) AND Created Date AND Service Delivery Name</div>
+          <ul>
+            <li>Export in Details form.</li>
+            <li>Add it to the workbook with the other tabs. Name it <code>Deployed Monthly Part2</code>.</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="step" id="s6" data-step="6">
+        <div class="step-top">
+          <div class="num">6</div>
+          <div class="step-h"><h3>Run Prompt 2, fill dates, names, addresses</h3><div class="time">Up to 5 minutes</div></div>
+          <button class="mark">Mark done</button>
+        </div>
+        <div class="step-body">
+          <div class="prompt">
+            <div class="prompt-top"><div class="t">Prompt 2</div><button class="copy">Copy</button></div>
+<pre>Fill the No Box tab's remaining columns (live formulas, matched on client name):
+
+- Mail Stop Date, Details col H (mm/dd/yyyy)
+
+- Service Delivery, "Yes" if a Status="Assigned" row exists in "Deployed Monthly Part2" (Client col A, Status col F)
+
+- Report by Date, earliest Assigned Report By Date from that tab (col G; dates there are text, so convert with DATEVALUE)
+
+- Client First/Last Name, split from the client name
+
+- Address Line 1 / Line 2 / City / State / Zip, from "Deployment Monthly Part2" (Street J, City K, State L, Zip M), using the first row per client with a non-blank street; Zip must stay text (keep leading zeros)</pre>
+          </div>
+        </div>
+      </article>
+
+      <article class="step" id="s7" data-step="7">
+        <div class="step-top">
+          <div class="num">7</div>
+          <div class="step-h"><h3>Pull the Currently Waitlisted report</h3><div class="time">3 to 5 minutes</div></div>
+          <button class="mark">Mark done</button>
+        </div>
+        <div class="step-body">
+          <p>No filter changes needed on this one. Export it in Details Only and drop it into the workbook with the rest. Name the tab <code>Currently Waitlisted Clients</code>.</p>
+        </div>
+      </article>
+
+      <article class="step" id="s8" data-step="8">
+        <div class="step-top">
+          <div class="num">8</div>
+          <div class="step-h"><h3>Run Prompt 3, highlights and Status column</h3><div class="time">Up to 5 minutes</div></div>
+          <button class="mark">Mark done</button>
+        </div>
+        <div class="step-body">
+          <div class="note">
+            <div class="lbl">Before you paste</div>
+            <p>Replace <code>[Current Month]</code> with the month you are actually reporting on. If you skip this, the blue highlights will be wrong.</p>
+          </div>
+          <div class="prompt">
+            <div class="prompt-top"><div class="t">Prompt 3</div><button class="copy">Copy</button></div>
+<pre>Highlight rules on the data rows, in priority order:
+
+1. GOLD (#FFC72C, bold maroon text): member is on the 'Currently Waitlisted Clients' tab (match name against col K). Gold wins over blue.
+
+2. BLUE (#4472C4, bold white text): Service Delivery = "Yes" AND Report by Date falls in [Current Month].
+
+Then fill the Status column with a live formula using the same logic:
+
+- Gold/waitlisted rows to "Waitlisted"
+
+- Blue rows to "Needs Angel Contact"
+
+- All other rows to "Unsupported, send Box"</pre>
+          </div>
+          <div class="swap">Swap [Current Month] before pasting</div>
+        </div>
+      </article>
+
+      <article class="step" id="s9" data-step="9">
+        <div class="step-top">
+          <div class="num">9</div>
+          <div class="step-h"><h3>Run Prompt 4, summary block</h3><div class="time">Up to 5 minutes</div></div>
+          <button class="mark">Mark done</button>
+        </div>
+        <div class="step-body">
+          <p>This adds the summary block so leadership can see the numbers at a glance.</p>
+          <div class="prompt">
+            <div class="prompt-top"><div class="t">Prompt 4</div><button class="copy">Copy</button></div>
+<pre>Finish the No Box tab with the summary block in E1:F4, next to the title banner, labels in E, live formulas in F:
+
+E1 "True Count of Unsupported" F1 = COUNTIF of Got a Box = 0 on Deployed Report
+
+E2 "Current Waitlist Count" F2 = COUNTIF of Status column = "Waitlisted"
+
+E3 "Pending Service Delivery" F3 = COUNTIF of Status column = "Needs Angel Contact"
+
+E4 "Total Boxes to Send" F4 = F1 - F2 - F3
+
+Style: labels bold maroon on light maroon #F2DEDE; F2 on gold #FFC72C; counts centered, #,##0.</pre>
+          </div>
+        </div>
+      </article>
+
+      <article class="step" id="s10" data-step="10">
+        <div class="step-top">
+          <div class="num">10</div>
+          <div class="step-h"><h3>Run Prompt 5, check for errors</h3><div class="time">Up to 5 minutes</div></div>
+          <button class="mark">Mark done</button>
+        </div>
+        <div class="step-body">
+          <p>Every one of these members should have a military mail address. Anything that is not APO, FPO, or DPO gets flagged purple so you can eyeball it before shipping. This step also flags in red anyone whose Mail Stop Date falls in the month you are reporting on, so you can confirm they are still eligible before a box goes out.</p>
+          <div class="prompt">
+            <div class="prompt-top"><div class="t">Prompt 5</div><button class="copy">Copy</button></div>
+<pre>On the No Box tab, add a PURPLE error flag (#7030A0 fill, bold white text) on the address columns (Mailing Address Line 1 through Zip) for any row where the Mailing City is filled in but is NOT "APO", "FPO", or "DPO" (case-insensitive), those should all be military mail cities, so anything else is a potential address error.
+
+Also add a RED flag (#C00000 fill, bold white text) across the entire data row for any row where the Mail Stop Date falls in [Current Month].
+
+Priority order: gray empty-cell rule first, then this red current-month Mail Stop Date flag, then the purple address flag, then the gold waitlist and blue pending highlights.</pre>
+          </div>
+          <div class="swap">Swap [Current Month] before pasting</div>
+          <div class="note stop" style="margin-top:16px">
+            <div class="lbl">Stop here</div>
+            <p>Look at the purple and red rows before you move on. Fix bad addresses and confirm the red current-month Mail Stop Dates now, not after the file is locked down.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="step" id="s11" data-step="11">
+        <div class="step-top">
+          <div class="num">11</div>
+          <div class="step-h"><h3>Run Prompt 6, hard-code the tab</h3><div class="time">Up to 5 minutes</div></div>
+          <button class="mark">Mark done</button>
+        </div>
+        <div class="step-body">
+          <p>Last step before this goes to staff. This converts every formula to a plain value so the rows can be copied into other files without breaking.</p>
+          <div class="prompt">
+            <div class="prompt-top"><div class="t">Prompt 6</div><button class="copy">Copy</button></div>
+<pre>On the No Box tab, convert every formula to its current value (hard-code the whole tab):
+
+- All data columns (Status, Client ID, Mail Stop Date, Service Delivery, Report by Date, First/Last Name, and all address columns)
+
+- The summary counts in F1:F4
+
+Keep all formatting, highlights, and number formats exactly as they are, just replace the formulas with their calculated values, so the rows can be copied and pasted into other files without breaking. Confirm afterward that no formulas remain on the tab.</pre>
+          </div>
+        </div>
+      </article>
+
+      <article class="step" id="s12" data-step="12">
+        <div class="step-top">
+          <div class="num">12</div>
+          <div class="step-h"><h3>Check the work</h3><div class="time">Up to 15 minutes</div></div>
+          <button class="mark">Mark done</button>
+        </div>
+        <div class="step-body">
+          <p>Nothing gets sent until this step is done. Open the finished No Box tab and look at it with fresh eyes. Adjust column widths, wrapped text, number formats, and the title banner. Then run down this list. If all seven are true, the file is ready for staff.</p>
+          <div class="check" id="final">
+            <label><input type="checkbox"><span>Column widths and wrapped text look right, and the title banner is intact.</span></label>
+            <label><input type="checkbox"><span>The month on the filters matches the month you are reporting.</span></label>
+            <label><input type="checkbox"><span>All four tabs are in the workbook and named exactly right.</span></label>
+            <label><input type="checkbox"><span>Every purple flagged address has been reviewed or corrected.</span></label>
+            <label><input type="checkbox"><span>Every red row (Mail Stop Date in the current month) has been reviewed and confirmed eligible.</span></label>
+            <label><input type="checkbox"><span>The summary block in E1:F4 adds up: F4 equals F1 minus F2 minus F3.</span></label>
+            <label><input type="checkbox"><span>Prompt 6 has been run and no formulas remain on the No Box tab.</span></label>
+          </div>
+          <div class="ready" id="ready">
+            <span id="readytxt">Not ready to send</span>
+            <span class="cnt" id="readycnt">0 of 7 confirmed</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section id="colors">
+      <h2>Color key</h2><div class="h2rule"></div>
+      <p>When you open the finished tab, here is what the colors are telling you.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Color</th><th>What it means</th><th>What you do</th></tr></thead>
+          <tbody>
+            <tr><td><span class="swatch" style="background:#FFC72C"></span><strong>Gold</strong></td><td>Already on the waitlist</td><td>No box. Status reads "Waitlisted."</td></tr>
+            <tr><td><span class="swatch" style="background:#4472C4"></span><strong>Blue</strong></td><td>Service delivery this month</td><td>No box yet. Status reads "Needs Angel Contact."</td></tr>
+            <tr><td><span class="swatch" style="background:#7030A0"></span><strong>Purple</strong></td><td>Address is not APO, FPO, or DPO</td><td>Verify the address before shipping anything.</td></tr>
+            <tr><td><span class="swatch" style="background:#C00000"></span><strong>Red</strong></td><td>Mail Stop Date is in the current month</td><td>Confirm the member is still eligible before shipping.</td></tr>
+            <tr><td><span class="swatch" style="background:#fff"></span><strong>No color</strong></td><td>Nothing blocking them</td><td>Send a box. Status reads "Unsupported, send Box."</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="trouble">
+      <h2>If something looks off</h2><div class="h2rule"></div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>What you see</th><th>What is probably wrong</th></tr></thead>
+          <tbody>
+            <tr><td>#N/A in Client ID or address columns</td><td>The client name does not match between tabs, or a tab name is off. Check spelling on the tab names first.</td></tr>
+            <tr><td>Nobody is highlighted gold</td><td>The Currently Waitlisted Clients tab is missing or named differently.</td></tr>
+            <tr><td>Nobody is highlighted blue</td><td>You forgot to swap [Current Month] in Prompt 3, or Part 2 did not export right.</td></tr>
+            <tr><td>Nobody is highlighted red</td><td>You forgot to swap [Current Month] in Prompt 5, or the Mail Stop Date column is stored as text instead of a date.</td></tr>
+            <tr><td>Zip codes lost their leading zero</td><td>The Zip column got formatted as a number. It has to stay text.</td></tr>
+            <tr><td>Counts in F1:F4 do not add up</td><td>Prompt 3 ran before Prompt 2 finished, or a Status cell got typed over by hand.</td></tr>
+            <tr><td>A lot of purple flags</td><td>The address pull grabbed a home address instead of the military one. Recheck the Part 2 export.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <footer>
+        <p>Questions on this process go to the Director of Virtual Services. &nbsp; <a class="top" href="#about">Back to top</a></p>
+      </footer>
+    </section>
+
+  </main>
+</div>
+
+<script>
+(function(){
+  var steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
+  var fill = document.getElementById('fill');
+  var progtxt = document.getElementById('progtxt');
+
+  function refresh(){
+    var done = 0;
+    steps.forEach(function(s){
+      var n = s.getAttribute('data-step');
+      var link = document.querySelector('.rail a[data-rail="'+n+'"]');
+      var isDone = s.classList.contains('checked');
+      if(isDone) done++;
+      if(link) link.classList.toggle('done', isDone);
+      s.querySelector('.mark').textContent = isDone ? 'Done' : 'Mark done';
+    });
+    fill.style.width = (done/steps.length*100) + '%';
+    progtxt.textContent = done + ' of ' + steps.length + ' steps';
+  }
+
+  steps.forEach(function(s){
+    s.querySelector('.mark').addEventListener('click', function(){
+      s.classList.toggle('checked');
+      refresh();
+    });
+  });
+
+  document.getElementById('reset').addEventListener('click', function(){
+    steps.forEach(function(s){ s.classList.remove('checked'); });
+    document.querySelectorAll('#final input').forEach(function(c){ c.checked = false; });
+    tally();
+    refresh();
+  });
+
+  // copy buttons
+  document.querySelectorAll('.copy').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var text = btn.closest('.prompt').querySelector('pre').innerText;
+      var flash = function(){
+        btn.textContent = 'Copied';
+        btn.classList.add('done');
+        setTimeout(function(){ btn.textContent = 'Copy'; btn.classList.remove('done'); }, 1600);
+      };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(flash, function(){ legacy(text, flash); });
+      } else { legacy(text, flash); }
+    });
+  });
+  function legacy(text, cb){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); cb(); } catch(e){}
+    document.body.removeChild(ta);
+  }
+
+  // final checklist
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('#final input'));
+  var ready = document.getElementById('ready');
+  var readytxt = document.getElementById('readytxt');
+  var readycnt = document.getElementById('readycnt');
+  function tally(){
+    var n = boxes.filter(function(b){ return b.checked; }).length;
+    readycnt.textContent = n + ' of ' + boxes.length + ' confirmed';
+    var go = n === boxes.length;
+    ready.classList.toggle('go', go);
+    readytxt.textContent = go ? 'Ready for staff' : 'Not ready to send';
+  }
+  boxes.forEach(function(b){ b.addEventListener('change', tally); });
+
+  // scrollspy
+  if('IntersectionObserver' in window){
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          document.querySelectorAll('.rail a.on').forEach(function(a){ a.classList.remove('on'); });
+          var link = document.querySelector('.rail a[data-rail="'+e.target.getAttribute('data-step')+'"]');
+          if(link) link.classList.add('on');
+        }
+      });
+    }, { rootMargin: '-96px 0px -70% 0px' });
+    steps.forEach(function(s){ obs.observe(s); });
+  }
+
+  refresh(); tally();
+})();
+</script>
+<script src="config.js"></script>
+<script src="gate.js"></script>
+</body>
+</html>
