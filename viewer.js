@@ -42,14 +42,16 @@
   }
 
   /* ---------- the published list, if there is one ---------- */
+  let envelope = null;
+
   async function loadList(){
     let text = null;
     try {
-      const res = await fetch(DATA_URL, { cache:'no-store' });
+      const res = await fetch(DATA_URL + '?_=' + Date.now(), { cache:'no-store' });
       if (res.ok){
         const raw = await res.text();
         const probe = JSON.parse(raw);          // an HTML 404 page would throw here
-        if (probe && probe.ct && probe.salt && probe.iv) text = raw;
+        if (probe && probe.ct && probe.salt && probe.iv){ text = raw; envelope = probe; }
       }
     } catch(e){ text = null; }
 
@@ -102,11 +104,31 @@
     $('subLine').textContent = '';
     $('pubStamp').style.display = 'none';
     if (reason === 'locked'){
-      $('emptyState').querySelector('h3').textContent = 'This list will not open';
+      const fileMode = envelope && envelope.mode;
+      const siteMode = siteLocked() ? 'locked' : 'open';
+      let why, fix;
+      if (fileMode === 'open' && siteMode === 'locked'){
+        why = 'The published list was created before a password was set, so it cannot be opened now that one is.';
+        fix = 'Run the report again and publish. The new file will use the team password.';
+      } else if (fileMode === 'locked' && siteMode === 'open'){
+        why = 'The published list was encrypted with a team password, but this site currently has no password set in config.js.';
+        fix = 'Either restore the password block in config.js, or run the report again and publish while no password is set.';
+      } else if (fileMode === 'locked'){
+        why = 'The published list was encrypted with a different team password than the one this site now uses.';
+        fix = 'Run the report again and publish with the current team password.';
+      } else {
+        why = 'The published list could not be decrypted.';
+        fix = 'Run the report again and publish.';
+      }
+      const when = envelope && envelope.published
+        ? ' It was published ' + new Date(envelope.published).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) + '.'
+        : '';
       $('emptyState').innerHTML =
         '<h3>This list will not open</h3>' +
-        '<p>A list is published, but it was encrypted with a different password than the one set on this site.</p>' +
-        '<p>Running the report again and publishing will fix it.</p>';
+        '<p>' + why + when + '</p>' +
+        '<p>' + fix + '</p>' +
+        '<p class="hint" style="margin-top:14px">File was published in <strong>' + (fileMode || 'unknown') +
+        '</strong> mode. This page is in <strong>' + siteMode + '</strong> mode.</p>';
     }
     setAdmin(null);
   }
@@ -147,18 +169,17 @@
 
   /* ---------- rendering ---------- */
   function paint(){
-    const c = s => state.rows.filter(r => r.status === s).length;
+    const c = s => state.rows.filter(r => effStatus(r) === s).length;
     const wait = c(STATUS.WAIT), angel = c(STATUS.ANGEL), total = state.rows.length;
     $('stats2').innerHTML = [
       ['Total without a box', total, ''],
       ['Already waitlisted', wait, 'g'],
       ['Waiting on Angel contact', angel, 'b'],
-      ['Boxes to send', total - wait - angel, 'o']
+      ['Boxes to send', state.rows.filter(shippable).length, 'o']
     ].map(([l, v, k]) => `<div class="stat ${k}"><dt>${l}</dt><dd>${v}</dd></div>`).join('');
 
-    const ship = r => r.status === STATUS.SEND && !r.flagRed && !r.flagPurple && r.addr1 && r.city && r.zip;
-    const held = state.rows.filter(r => r.status === STATUS.SEND && !ship(r)).length;
-    $('r-log').textContent = state.rows.filter(ship).length;
+    const held = state.rows.filter(r => effStatus(r) === STATUS.SEND && heldBack(r)).length;
+    $('r-log').textContent = state.rows.filter(shippable).length;
     $('r-vol').textContent = angel;
     $('r-rev').textContent = VIEWS.review.rows().length;
 
@@ -166,6 +187,9 @@
       ? msg('warn', 'Some rows are held back',
           held + ' member' + (held === 1 ? ' is' : 's are') + ' kept out of the Logistics list until an address or an eligibility date is confirmed. They are on the Needs review tab. Do not ship to a held row without checking with Virtual Services first.')
       : msg('', 'Nothing held back', 'Every member cleared to receive a box has a verified military address.');
+    const decided = state.rows.filter(r => r.override).length;
+    if (decided) $('alerts').innerHTML += msg('', decided + ' reviewed by hand',
+      'Virtual Services looked at ' + decided + ' flagged row' + (decided === 1 ? '' : 's') + ' and made a call. The Decision column on the Needs review tab shows what was decided.');
 
     renderView();
   }

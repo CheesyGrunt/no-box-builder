@@ -321,23 +321,8 @@ function finish(){
     row.flagRed = inMonth(row.mailStop);
   });
 
-  const c = s => state.rows.filter(r => r.status === s).length;
-  const unsupported = state.rows.length, wait = c(STATUS.WAIT), angel = c(STATUS.ANGEL);
-  $('#stats2').innerHTML = statBlock([
-    ['True count of unsupported', unsupported, ''],
-    ['Current waitlist count', wait, 'g'],
-    ['Pending service delivery', angel, 'b'],
-    ['Total boxes to send', unsupported - wait - angel, 'o']
-  ]);
-
-  const noAddr = state.rows.filter(r => r.status === STATUS.SEND && !r.addr1).length;
-  const purple = state.rows.filter(r => r.flagPurple).length;
-  const red = state.rows.filter(r => r.flagRed).length;
-  const alerts = [];
-  if (purple || red) alerts.push(`<div class="note warn"><div class="lbl">Stop and review</div><p>${red} row${red===1?'':'s'} flagged red for a Mail Stop Date in the reporting month, ${purple} flagged purple for a non-military mailing city. Clear these before anything ships.</p></div>`);
-  if (noAddr) alerts.push(`<div class="note warn"><div class="lbl">Missing addresses</div><p>${noAddr} member${noAddr===1?'s':''} in the send-a-box list has no address from Part 2. Recheck that export before handing off to Logistics.</p></div>`);
-  if (!purple && !red && !noAddr) alerts.push(`<div class="note"><div class="lbl">Clean run</div><p>No address or eligibility flags. Spot check a few rows, then hand off.</p></div>`);
-  $('#alerts').innerHTML = alerts.join('');
+  state.editable = true;
+  paintSummary();
 
   $('#p3').classList.add('ready');
   $('#p4').classList.remove('locked');
@@ -395,6 +380,35 @@ async function publish(){
   }
 }
 
+/* ---------- summary, recomputed whenever a decision changes ---------- */
+function paintSummary(){
+  const c = s => state.rows.filter(r => effStatus(r) === s).length;
+  const total = state.rows.length, wait = c(STATUS.WAIT), angel = c(STATUS.ANGEL);
+  $('#stats2').innerHTML = statBlock([
+    ['True count of unsupported', total, ''],
+    ['Current waitlist count', wait, 'g'],
+    ['Pending service delivery', angel, 'b'],
+    ['Total boxes to send', state.rows.filter(shippable).length, 'o']
+  ]);
+
+  const held = state.rows.filter(r => effStatus(r) === STATUS.SEND && heldBack(r)).length;
+  const decided = state.rows.filter(r => r.override).length;
+  const purple = state.rows.filter(r => r.flagPurple && !r.override).length;
+  const red = state.rows.filter(r => r.flagRed && !r.override).length;
+  const zipf = state.rows.filter(r => r.zipFixed).length;
+
+  const bits = [];
+  if (held) bits.push(`<div class="note warn"><div class="lbl">${held} still held back</div><p>` +
+    (red ? red + ' flagged red for a Mail Stop Date in the reporting month. ' : '') +
+    (purple ? purple + ' flagged purple for a non-military mailing city. ' : '') +
+    (zipf ? zipf + ' had a letter O corrected to a zero in the zip, worth a glance. ' : '') +
+    `Work them on the Needs review tab and set a decision on each one, or leave them held.</p></div>`);
+  else bits.push('<div class="note"><div class="lbl">Nothing held back</div><p>Every member cleared to receive a box has a complete military address.</p></div>');
+  if (decided) bits.push(`<div class="note"><div class="lbl">${decided} decision${decided === 1 ? '' : 's'} recorded</div><p>Your overrides travel with the published file, so staff can see a person made the call.</p></div>`);
+  $('#alerts').innerHTML = bits.join('');
+}
+window.onOverrideChange = paintSummary;
+
 /* ---------- publish straight to the live site ---------- */
 const GH = {
   key: 'nobox-gh-token',
@@ -419,14 +433,25 @@ const GH = {
     if (g.repo)  $('#ghRepo').value = g.repo;
   },
   async call(url, opts){
-    const res = await fetch(url, Object.assign({}, opts, {
+    const bust = (opts && opts.method === 'PUT') ? url
+      : url + (url.indexOf('?') > -1 ? '&' : '?') + '_=' + Date.now();
+    const res = await fetch(bust, Object.assign({ cache:'no-store' }, opts, {
       headers: Object.assign({
         'Accept': 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
+        'Cache-Control': 'no-cache',
         'Authorization': 'Bearer ' + GH.token()
       }, (opts || {}).headers || {})
     }));
     return res;
+  },
+  /* Always read the sha immediately before writing, uncached. */
+  async currentSha(g){
+    const res = await GH.call('https://api.github.com/repos/' + g.owner + '/' + g.repo +
+      '/contents/' + g.path + '?ref=' + encodeURIComponent(g.branch));
+    if (res.status === 200) return (await res.json()).sha;
+    if (res.status === 404) return null;
+    throw new Error('status ' + res.status);
   }
 };
 
@@ -484,13 +509,24 @@ async function publishLive(){
       content: content,
       branch: g.branch
     };
-    if (sha) body.sha = sha;
 
-    let put = await GH.call(api, { method:'PUT', body: JSON.stringify(body) });
-    if (put.status === 409 && sha){
-      const again = await GH.call(api + '?ref=' + encodeURIComponent(g.branch));
-      if (again.status === 200){ body.sha = (await again.json()).sha; put = await GH.call(api, { method:'PUT', body: JSON.stringify(body) }); }
+    /* A 409 means the file moved under us between reading the sha and writing.
+       Re-read and try again rather than making it the user's problem. */
+    let put = null;
+    for (let attempt = 0; attempt < 4; attempt++){
+      if (sha) body.sha = sha; else delete body.sha;
+      put = await GH.call(api, { method:'PUT', body: JSON.stringify(body) });
+      if (put.status !== 409) break;
+      out.innerHTML = '<p class="hint">The file changed on GitHub, syncing and retrying...</p>';
+      await new Promise(r => setTimeout(r, 700 * (attempt + 1)));
+      try { sha = await GH.currentSha(g); } catch(e){ break; }
     }
+
+    if (put.status === 409)
+      return note('warn', 'Could not sync with GitHub',
+        'The file kept changing while publishing. Wait a few seconds and click publish again. ' +
+        'If it keeps happening, use the manual fallback below, which never conflicts.');
+
     if (!put.ok){
       const e = await put.json().catch(() => ({}));
       return note('warn', 'Upload failed', 'Status ' + put.status + '. ' + (e.message || 'Check the repo name, branch, and token permissions.'));

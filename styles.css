@@ -88,6 +88,10 @@ tr.gold td{background:#FFF3D0}
 tr.blue td{background:#E3EAF8}
 tr.red td{background:#FBE3E3}
 td.flag-purple{background:#EFE3F7!important;color:var(--purple);font-weight:600}
+select.decide{font-family:var(--body);font-size:12.5px;padding:4px 6px;border:1px solid var(--rule);background:#fff;max-width:200px}
+select.decide:not([value=""]){border-color:var(--maroon)}
+tr.decided td{background:#EDF6F0!important}
+tr.decided-hold td{background:#FBE3E3!important}
 .tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;white-space:nowrap}
 .tag.gold{background:var(--gold);color:var(--maroon-deep)}
 .tag.blue{background:var(--blue);color:#fff}

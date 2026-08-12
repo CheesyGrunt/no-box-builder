@@ -15,8 +15,38 @@ const state = {
   rows: [],           // the No Box records
   batches: [],
   view: 'all',
-  hideUnreviewed: true
+  hideUnreviewed: true,
+  editable: false          // only the builder lets you change a row's bucket
 };
+
+/* ---------- overrides ----------
+   The flags are the tool's best guess. When you know better, your decision
+   wins and travels with the published file so Logistics can see a human
+   cleared it rather than wondering why a flagged row is on their list. */
+const DECISIONS = [
+  ['',         'No change'],
+  ['cleared',  'Cleared, send box'],
+  ['hold',     'Hold, do not ship'],
+  ['angel',    'Move to Volunteer Services'],
+  ['waitlist', 'Move to Waitlisted']
+];
+const DECISION_LABEL = { cleared:'Cleared by VS', hold:'Held by VS', angel:'Moved to Volunteer Services', waitlist:'Moved to Waitlisted' };
+
+function effStatus(r){
+  if (r.override === 'angel') return STATUS.ANGEL;
+  if (r.override === 'waitlist') return STATUS.WAIT;
+  return r.status;
+}
+function autoHold(r){
+  return !!(r.flagRed || r.flagPurple || !r.addr1 || !r.city || !r.zip);
+}
+function heldBack(r){
+  if (r.override === 'hold') return true;
+  // A cleared row still cannot ship with no street address. Nothing to print.
+  if (r.override === 'cleared') return !r.addr1;
+  return autoHold(r);
+}
+function shippable(r){ return effStatus(r) === STATUS.SEND && !heldBack(r); }
 
 /* ---------- tiny helpers ---------- */
 const $ = s => document.querySelector(s);
@@ -188,7 +218,7 @@ const COLS = {
   ],
   /* Review queue: what is wrong, who it is, and the ID to jump to the record. */
   review: [
-    ['name','Client Name'],['review','Review'],['clientId','Client ID'],
+    ['name','Client Name'],['review','Review'],['decision','Decision'],['clientId','Client ID'],
     ['status','Status'],['mailStop','Mail Stop Date'],['reportBy','Report by Date'],
     ['serviceDelivery','Service Delivery'],
     ['addr1','Mailing Address Line 1'],['addr2','Mailing Address Line 2'],
@@ -216,28 +246,29 @@ const VIEWS = {
     title:'Logistics: send a box',
     desc:'Nothing is blocking these members. Status reads "Unsupported, send Box." Export this and hand it to Logistics for fulfillment.',
     cols: COLS.logistics, exportCols: COLS.shipping,
-    rows: () => state.rows.filter(r => r.status === STATUS.SEND), filter:'review'
+    rows: () => state.rows.filter(r => effStatus(r) === STATUS.SEND), filter:'review'
   },
   volunteer: {
     title:'Volunteer Services: reach out',
     desc:'These members have a service delivery this month and are waiting on an Angel to make contact. Soonest Report by Date first, so the top of the list is the most urgent. No box yet.',
     cols: COLS.volunteer, sort:'reportBy',
-    rows: () => state.rows.filter(r => r.status === STATUS.ANGEL)
+    rows: () => state.rows.filter(r => effStatus(r) === STATUS.ANGEL)
   },
   waitlisted: {
     title:'Already waitlisted',
     desc:'On the Currently Waitlisted Clients report. No box, no outreach needed. Here for the record.',
-    cols: COLS.volunteer, rows: () => state.rows.filter(r => r.status === STATUS.WAIT)
+    cols: COLS.volunteer, rows: () => state.rows.filter(r => effStatus(r) === STATUS.WAIT)
   },
   review: {
     title:'Needs review before anything ships',
     desc:'What is wrong is in the Review column, and the Client ID is right there to look the record up. Red means the Mail Stop Date lands in the reporting month, so confirm eligibility. Purple means the mailing city is not APO, FPO, or DPO. Incomplete means the address would not parse into city, state, and zip.',
     cols: COLS.review,
-    rows: () => state.rows.filter(r => r.flagRed || r.flagPurple || r.zipFixed || (r.status === STATUS.SEND && (!r.addr1 || !r.city || !r.zip)))
+    rows: () => state.rows.filter(r => autoHold(r) || r.zipFixed || r.override)
   }
 };
 function cellVal(r, k){
   if (k === 'mailStop' || k === 'reportBy') return fmtDate(r[k]);
+  if (k === 'decision') return r.override ? (DECISION_LABEL[r.override] || r.override) : '';
   if (k === 'review'){
     const t = [];
     if (r.flagRed) t.push('Confirm eligibility');
@@ -245,6 +276,7 @@ function cellVal(r, k){
     if (!r.addr1) t.push('No address');
     else if (!r.city || !r.zip) t.push('Incomplete address');
     if (r.zipFixed) t.push('Check zip');
+    if (!t.length) t.push('Cleared');
     return t.join(' · ');
   }
   return r[k] == null ? '' : String(r[k]);
@@ -263,7 +295,7 @@ function byDate(field){
 function activeRows(){
   const v = VIEWS[state.view];
   let rows = v.rows();
-  if (v.filter === 'review' && state.hideUnreviewed) rows = rows.filter(r => !r.flagRed && !r.flagPurple && r.addr1 && r.city && r.zip);
+  if (v.filter === 'review' && state.hideUnreviewed) rows = rows.filter(r => !heldBack(r));
   if (v.sort) rows = rows.slice().sort(byDate(v.sort));
   return rows;
 }
@@ -286,7 +318,11 @@ function renderView(){
   t.querySelector('thead').innerHTML = '<tr>' + v.cols.map(c => `<th>${c[1]}</th>`).join('') + '</tr>';
   t.querySelector('tbody').innerHTML = rows.map(r => {
     let cls = '';
-    if (r.flagRed) cls = 'red'; else if (r.status === STATUS.WAIT) cls = 'gold'; else if (r.status === STATUS.ANGEL) cls = 'blue';
+    if (r.override === 'hold') cls = 'decided-hold';
+    else if (r.override) cls = 'decided';
+    else if (r.flagRed) cls = 'red';
+    else if (effStatus(r) === STATUS.WAIT) cls = 'gold';
+    else if (effStatus(r) === STATUS.ANGEL) cls = 'blue';
     return '<tr class="' + cls + '">' + v.cols.map(c => {
       let val = cellVal(r, c[0]);
       if (c[0] === 'status'){
@@ -294,13 +330,37 @@ function renderView(){
         val = `<span class="tag ${tag}">${val}</span>`;
       }
       if (c[0] === 'review' && val){
-        val = val.split(' · ').map(x => `<span class="tag ${x === 'Verify address' ? 'purple' : 'red'}">${x}</span>`).join(' ');
+        val = val.split(' · ').map(x => {
+          const cls = x === 'Verify address' ? 'purple' : x === 'Cleared' ? 'send' : x === 'Check zip' ? 'gold' : 'red';
+          return `<span class="tag ${cls}">${x}</span>`;
+        }).join(' ');
+      }
+      if (c[0] === 'decision'){
+        if (state.editable){
+          val = `<select class="decide" data-row="${state.rows.indexOf(r)}">` +
+            DECISIONS.map(d => `<option value="${d[0]}"${r.override === d[0] || (!r.override && !d[0]) ? ' selected' : ''}>${d[1]}</option>`).join('') +
+            `</select>`;
+        } else {
+          val = r.override ? `<span class="tag ${r.override === 'hold' ? 'red' : 'send'}">${DECISION_LABEL[r.override]}</span>` : '';
+        }
       }
       const pc = (r.flagPurple && ['addr1','addr2','city','state','zip'].includes(c[0])) ? ' class="flag-purple"' : '';
       return `<td${pc}>${val || ''}</td>`;
     }).join('') + '</tr>';
   }).join('') || `<tr><td colspan="${v.cols.length}" style="padding:20px;color:var(--ink-soft)">Nothing in this list.</td></tr>`;
   $('#vFoot').textContent = rows.length + ' row' + (rows.length === 1 ? '' : 's') + ' shown.';
+
+  if (state.editable){
+    t.querySelectorAll('select.decide').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const row = state.rows[+sel.dataset.row];
+        if (!row) return;
+        row.override = sel.value;
+        renderView();
+        if (typeof window.onOverrideChange === 'function') window.onOverrideChange();
+      });
+    });
+  }
 }
 
 /* ---------- exports ---------- */
@@ -439,7 +499,13 @@ async function encryptPayload(pw, obj){
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await deriveKey(pw, salt, CRYPTO_ITER);
   const ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj)));
-  return JSON.stringify({ v:1, iter:CRYPTO_ITER, salt:b64.enc(salt), iv:b64.enc(iv), ct:b64.enc(ct) }, null, 0);
+  /* mode is plain metadata, not a secret. It lets the reader say "this was
+     published before the password was set" instead of just "wrong password". */
+  return JSON.stringify({
+    v:1, iter:CRYPTO_ITER, mode: siteLocked() ? 'locked' : 'open',
+    published: new Date().toISOString(),
+    salt:b64.enc(salt), iv:b64.enc(iv), ct:b64.enc(ct)
+  }, null, 0);
 }
 async function decryptPayload(pw, fileText){
   const f = JSON.parse(fileText);
