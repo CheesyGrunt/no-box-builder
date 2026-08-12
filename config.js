@@ -9,6 +9,6 @@
    ============================================================ */
 
 window.NOBOX_CONFIG = {
-  passwordHash: '',
-  hint: ''
+  passwordHash: '0826a14b082536f75223aa576f33acef46e6de0813ff65368e4a6fb96b804aab',
+  hint: 'Ask Cody'
 };
