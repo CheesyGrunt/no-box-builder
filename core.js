@@ -74,46 +74,100 @@ const isMilCity = c => /^(apo|fpo|dpo)\b/i.test(String(c || '').trim());
 const isTotalRow = n => /^(grand\s+)?(total|subtotal|sum)\b|copyright|confidential|do not distribute|salesforce\.com|all rights reserved/i.test(String(n || '').trim());
 function hasNumber(row){ return (row || []).some(v => typeof v === 'number' || (v !== '' && v != null && !isNaN(parseFloat(v)) && /^[\s$,.\d%-]+$/.test(String(v)))); }
 
-/* Address parsing. Real exports arrive in more than one shape:
-     "CPR 1690, Box #12<br>APO, AE 09240"
+/* Address parsing.
+
+   Real exports carry more shapes than the SOP suggests:
+     "CPR 1690, Box #12<br>APO, AE 09240"          line break, no country
      "379 Efss / v2x OPC 1201 Box 65, APO, AE 09309 US"
-     "CSOJTF-C (J-8),, APO, AE 09315 United States"
-   Normalize the line break to a comma, drop the trailing country, then read
-   city / state / zip off the end. Whatever is left is the street. */
+     "CSOJTF-C (J-8), APO, AE 09315 Jordan"        host country after the zip
+     "HHC BDE, 1ABCT 1AD, APO, AE O9754"           letter O typed for zero
+     "603rd MP Co, APO, Armed Forces- AE 09755 Latvia"
+     "155 laws ave, Ukiah, California 95482"       spelled out state, not military
+
+   Strategy: look for a military block anywhere in the string first, since APO,
+   FPO, and DPO with an AA/AE/AP state is unambiguous and survives whatever
+   noise surrounds it. Fall back to reading the last zip and working backwards. */
+
+const STATE_NAMES = {
+  alabama:'AL', alaska:'AK', arizona:'AZ', arkansas:'AR', california:'CA', colorado:'CO',
+  connecticut:'CT', delaware:'DE', 'district of columbia':'DC', florida:'FL', georgia:'GA',
+  hawaii:'HI', idaho:'ID', illinois:'IL', indiana:'IN', iowa:'IA', kansas:'KS', kentucky:'KY',
+  louisiana:'LA', maine:'ME', maryland:'MD', massachusetts:'MA', michigan:'MI', minnesota:'MN',
+  mississippi:'MS', missouri:'MO', montana:'MT', nebraska:'NE', nevada:'NV',
+  'new hampshire':'NH', 'new jersey':'NJ', 'new mexico':'NM', 'new york':'NY',
+  'north carolina':'NC', 'north dakota':'ND', ohio:'OH', oklahoma:'OK', oregon:'OR',
+  pennsylvania:'PA', 'rhode island':'RI', 'south carolina':'SC', 'south dakota':'SD',
+  tennessee:'TN', texas:'TX', utah:'UT', vermont:'VT', virginia:'VA', washington:'WA',
+  'west virginia':'WV', wisconsin:'WI', wyoming:'WY', 'puerto rico':'PR', guam:'GU',
+  'virgin islands':'VI', 'american samoa':'AS', 'northern mariana islands':'MP'
+};
+
+function fixZip(z){
+  // O typed for zero happens constantly in APO zips
+  return String(z || '').replace(/^([O0-9]{5})/i, m => m.replace(/O/gi, '0'));
+}
+function splitStreet(street, out){
+  const s = String(street || '').replace(/[,\s]+$/,'').replace(/^[,\s]+/,'').trim();
+  const i = s.indexOf(',');
+  if (i > 0){
+    out.addr1 = s.slice(0, i).trim();
+    out.addr2 = s.slice(i + 1).replace(/^[,\s]+/,'').trim();
+  } else {
+    out.addr1 = s;
+    out.addr2 = '';
+  }
+}
 function parseAddress(v){
-  const out = { addr1:'', addr2:'', city:'', state:'', zip:'' };
+  const out = { addr1:'', addr2:'', city:'', state:'', zip:'', zipFixed:false };
   if (v == null) return out;
 
   let s = String(v)
     .replace(/<br\s*\/?>/gi, ', ')
     .replace(/[\r\n]+/g, ', ')
+    .replace(/&amp;/g, '&')
     .replace(/\s+/g, ' ')
-    .trim();
-
-  s = s.replace(/[,\s]+(united states of america|united states|u\.?s\.?a\.?|usa|us)\s*$/i, '');
-  s = s.replace(/(\s*,\s*){2,}/g, ', ').replace(/^[,\s]+|[,\s]+$/g, '');
+    .replace(/(\s*,\s*){2,}/g, ', ')
+    .replace(/^[,\s]+|[,\s]+$/g, '');
   if (!s) return out;
 
-  // street , city , ST 12345
-  let m = s.match(/^(.*?),\s*([^,]{1,60}),\s*([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
-  if (!m) m = s.match(/^(.*?),\s*([^,]{1,60})\s+([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+  // 1. military block, wherever it sits. "Armed Forces-" and stray commas allowed between.
+  const mil = /\b(APO|FPO|DPO)\b[\s,]*(?:armed forces[\s\-,]*)?\b(AA|AE|AP)\b[\s,]*([O0-9]{5}(?:-\d{4})?)/i;
+  let m = s.match(mil);
   if (m){
-    out.addr1 = m[1].replace(/[,\s]+$/,'').trim();
-    out.city  = m[2].replace(/[,\s]+$/,'').trim();
-    out.state = m[3].toUpperCase();
-    out.zip   = m[4];
+    out.city  = m[1].toUpperCase();
+    out.state = m[2].toUpperCase();
+    const z = fixZip(m[3]);
+    out.zipFixed = z !== m[3];
+    out.zip = z;
+    splitStreet(s.slice(0, m.index), out);
     return out;
   }
 
-  // no street, just city / state / zip
-  m = s.match(/^([^,]{1,60})[,\s]+([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
-  if (m){
-    out.city = m[1].trim(); out.state = m[2].toUpperCase(); out.zip = m[3];
+  // 2. no military block: read the last zip and work backwards
+  const zips = [...s.matchAll(/\d{5}(?:-\d{4})?/g)];
+  if (zips.length){
+    const z = zips[zips.length - 1];
+    out.zip = z[0];
+    const head = s.slice(0, z.index).replace(/[,\s]+$/,'');
+    const st = head.match(/^(.*?)[,\s]+([A-Za-z][A-Za-z .]{0,24})$/);
+    if (st){
+      const raw = st[2].toLowerCase().replace(/[.]/g,'').trim();
+      const abbr = raw.length === 2 ? raw.toUpperCase() : STATE_NAMES[raw];
+      if (abbr){
+        out.state = abbr;
+        const rest = st[1].replace(/[,\s]+$/,'');
+        const ci = rest.lastIndexOf(',');
+        if (ci > 0){ out.city = rest.slice(ci + 1).trim(); splitStreet(rest.slice(0, ci), out); }
+        else { out.city = rest.trim(); }
+        return out;
+      }
+    }
+    splitStreet(head, out);
     return out;
   }
 
-  // could not read it: keep it whole so nothing is silently lost
-  out.addr1 = s;
+  // 3. unreadable: keep it whole rather than lose it
+  splitStreet(s, out);
   return out;
 }
 
@@ -179,7 +233,7 @@ const VIEWS = {
     title:'Needs review before anything ships',
     desc:'What is wrong is in the Review column, and the Client ID is right there to look the record up. Red means the Mail Stop Date lands in the reporting month, so confirm eligibility. Purple means the mailing city is not APO, FPO, or DPO. Incomplete means the address would not parse into city, state, and zip.',
     cols: COLS.review,
-    rows: () => state.rows.filter(r => r.flagRed || r.flagPurple || (r.status === STATUS.SEND && (!r.addr1 || !r.city || !r.zip)))
+    rows: () => state.rows.filter(r => r.flagRed || r.flagPurple || r.zipFixed || (r.status === STATUS.SEND && (!r.addr1 || !r.city || !r.zip)))
   }
 };
 function cellVal(r, k){
@@ -190,6 +244,7 @@ function cellVal(r, k){
     if (r.flagPurple) t.push('Verify address');
     if (!r.addr1) t.push('No address');
     else if (!r.city || !r.zip) t.push('Incomplete address');
+    if (r.zipFixed) t.push('Check zip');
     return t.join(' · ');
   }
   return r[k] == null ? '' : String(r[k]);

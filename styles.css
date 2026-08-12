@@ -13,6 +13,8 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);f
 .bar-in{max-width:1240px;margin:0 auto;padding:11px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
 .bar-title{font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:.09em;text-transform:uppercase}
 .bar-title span{color:var(--gold)}
+.bolt{color:var(--gold);opacity:.85;vertical-align:-2px;margin-left:9px}
+.bolt-ink{color:var(--maroon);opacity:.5;vertical-align:-2px;margin-left:7px}
 .stages{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
 .stage-chip{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:5px 11px;border:1px solid rgba(255,255,255,.25);color:#E4D3D6}
 .stage-chip.on{background:var(--gold);color:var(--maroon-deep);border-color:var(--gold);font-weight:500}
