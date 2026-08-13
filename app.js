@@ -187,7 +187,9 @@ function ok(key){
 }
 function gate(){
   $('#btnBuild').disabled = !(ok('deployed') && ok('details'));
-  $('#btnFinish').disabled = !(ok('part2') && ok('waitlist') && state.rows.length);
+  $('#btnFinish').disabled = !(ok('part2') && state.rows.length);
+  const fin = $('#btnFinish');
+  if (fin) fin.textContent = ok('waitlist') ? 'Fill, flag, and finish' : 'Fill, flag, and finish without a waitlist';
 }
 
 /* ---------- Stage 1: build the No Box list ---------- */
@@ -323,7 +325,7 @@ function legacyCopy(t){
 
 /* ---------- Stage 3: fill, flag, finish ---------- */
 function finish(){
-  const p2 = state.files.part2, wl = state.files.waitlist;
+  const p2 = state.files.part2, wl = state.files.waitlist || { map:{}, rows:[], headerRow:1 };
 
   const byClient = {}, byId = {};
   memberRows('part2').forEach(r => {
@@ -336,7 +338,9 @@ function finish(){
   });
 
   const waitset = new Set();
-  memberRows('waitlist').forEach(r => { const n = norm(r[wl.map.name]); if (n) waitset.add(n); });
+  const haveWaitlist = ok('waitlist');
+  if (haveWaitlist) memberRows('waitlist').forEach(r => { const n = norm(r[wl.map.name]); if (n) waitset.add(n); });
+  state.hadWaitlist = haveWaitlist;
 
   const g = (r, k) => (p2.map[k] > -1 ? r[p2.map[k]] : null);
 
@@ -410,6 +414,7 @@ function finish(){
   const angels = state.rows.filter(r => effStatus(r) === STATUS.ANGEL);
   const noProv = angels.filter(r => !r.provider).length;
   const bits = [];
+  if (!state.hadWaitlist) bits.push('No waitlist file was loaded, so nobody is marked Waitlisted this month.');
   if (unmatched) bits.push(unmatched + ' member(s) had no matching row in Part 2, so their dates and addresses are blank.');
   if (angels.length && noProv === angels.length) bits.push('No provider names came through. Check the Provider and Provider email dropdowns on the Part 2 file above.');
   else if (noProv) bits.push(noProv + ' of ' + angels.length + ' outreach rows have no provider listed.');
@@ -445,6 +450,12 @@ async function publish(){
     monthKey: state.month.y + '-' + String(state.month.m + 1).padStart(2, '0'),
     generated: new Date().toISOString(),
     updatedBy: updatedBy(),
+    stats: state.stage1 ? {
+      total: state.stage1.total,
+      got: state.stage1.got,
+      noBox: state.stage1.noBox,
+      coverage: state.stage1.total ? Math.round(state.stage1.got / state.stage1.total * 100) : 0
+    } : null,
     counts: {
       unsupported: state.rows.length,
       waitlisted: state.rows.filter(r => r.status === STATUS.WAIT).length,
@@ -579,6 +590,46 @@ const GH = {
   }
 };
 
+/* A plain, unencrypted record of each month's coverage. Counts only, no member
+   data, so staff can open the history without a key. The newest publish for a
+   month wins, which means the run on the 1st becomes that month's final word. */
+async function updateHistory(g, payload){
+  const dir = g.path.indexOf('/') > -1 ? g.path.slice(0, g.path.lastIndexOf('/')) : 'data';
+  const url = 'https://api.github.com/repos/' + g.owner + '/' + g.repo + '/contents/' + dir + '/history.json';
+
+  let history = [], sha = null;
+  const cur = await GH.call(url + '?ref=' + encodeURIComponent(g.branch));
+  if (cur.status === 200){
+    const meta = await cur.json();
+    sha = meta.sha;
+    try { history = JSON.parse(decodeURIComponent(escape(atob(meta.content.replace(/\s/g, ''))))); } catch(e){ history = []; }
+    if (!Array.isArray(history)) history = [];
+  }
+
+  const entry = {
+    monthKey: payload.monthKey,
+    month: payload.month,
+    published: payload.generated,
+    updatedBy: payload.updatedBy || '',
+    total: payload.stats ? payload.stats.total : null,
+    got: payload.stats ? payload.stats.got : null,
+    noBox: payload.stats ? payload.stats.noBox : null,
+    coverage: payload.stats ? payload.stats.coverage : null
+  };
+  history = history.filter(h => h.monthKey !== entry.monthKey);
+  history.push(entry);
+  history.sort((x, y) => String(x.monthKey).localeCompare(String(y.monthKey)));
+
+  const body = {
+    message: 'Record ' + payload.month + ' coverage',
+    content: b64.enc(new TextEncoder().encode(JSON.stringify(history, null, 2))),
+    branch: g.branch
+  };
+  if (sha) body.sha = sha;
+  const put = await GH.call(url, { method:'PUT', body: JSON.stringify(body) });
+  return put.ok ? history.length : 0;
+}
+
 /* Anything ending .enc in the data folder that is not the live file is left
    over from a manual upload. Remove it so nobody opens the wrong month. */
 async function sweepOldFiles(g){
@@ -631,6 +682,12 @@ async function publishLive(){
     monthKey: state.month.y + '-' + String(state.month.m + 1).padStart(2, '0'),
     generated: new Date().toISOString(),
     updatedBy: updatedBy(),
+    stats: state.stage1 ? {
+      total: state.stage1.total,
+      got: state.stage1.got,
+      noBox: state.stage1.noBox,
+      coverage: state.stage1.total ? Math.round(state.stage1.got / state.stage1.total * 100) : 0
+    } : null,
     counts: {
       unsupported: state.rows.length,
       waitlisted: state.rows.filter(r => r.status === STATUS.WAIT).length,
@@ -691,8 +748,9 @@ async function publishLive(){
     /* The publish overwrites data/latest.enc in place, so there is never a
        second copy of the current list. This only sweeps up strays, such as a
        file uploaded by hand under another name during the manual fallback. */
-    let swept = [];
+    let swept = [], months = 0;
     try { swept = await sweepOldFiles(g); } catch(e){}
+    try { months = await updateHistory(g, payload); } catch(e){}
 
     out.innerHTML = '<div class="note"><div class="lbl">Published</div>' +
       '<p>' + label + ' is live, ' + state.rows.length + ' members, ' + Math.round(text.length / 1024) + ' KB encrypted.' +
@@ -700,6 +758,7 @@ async function publishLive(){
       '<p>It replaced last month\'s file at the same path, so there is only ever one list.' +
       (swept.length ? ' Also cleared ' + swept.length + ' stray file' + (swept.length === 1 ? '' : 's') +
         ' left in the data folder: ' + swept.join(', ') + '.' : '') + '</p>' +
+      (months ? '<p>Coverage recorded. The history now holds ' + months + ' month' + (months === 1 ? '' : 's') + '.</p>' : '') +
       '<p>Render is rebuilding now. Give it about a minute, then the staff site will show this month.</p>' +
       '<div class="rowline" style="margin-top:14px">' +
         '<button class="btn gold" id="btnStaffSite">Open the staff site</button>' +

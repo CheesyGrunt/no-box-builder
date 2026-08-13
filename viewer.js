@@ -69,6 +69,11 @@
     if (mk.length === 2) state.month = { y:+mk[0], m:+mk[1] - 1 };
 
     state.updatedBy = payload.updatedBy || '';
+    state.stats = payload.stats || null;
+    if (payload.month){
+      $('monthBig').textContent = payload.month;
+      $('monthHero').style.display = '';
+    }
     const gen = payload.generated ? new Date(payload.generated) : null;
     $('monthChip').textContent = payload.month || 'Published';
     $('monthChip').className = 'stage-chip on';
@@ -77,6 +82,7 @@
     stamp(gen);
 
     showSchedule();
+    $('btnHistory').style.display = '';
     $('emptyState').style.display = 'none';
     $('dataArea').style.display = '';
     paint();
@@ -205,12 +211,16 @@
   function paint(){
     const c = s => state.rows.filter(r => effStatus(r) === s).length;
     const wait = c(STATUS.WAIT), angel = c(STATUS.ANGEL), total = state.rows.length;
-    $('stats2').innerHTML = [
+    const cells = [
       ['Total without a box', total, ''],
       ['Already waitlisted', wait, 'g'],
       ['Waiting on Angel contact', angel, 'b'],
       ['Boxes to send', state.rows.filter(shippable).length, 'o']
-    ].map(([l, v, k]) => `<div class="stat ${k}"><dt>${l}</dt><dd>${v}</dd></div>`).join('');
+    ];
+    if (state.stats && state.stats.coverage != null)
+      cells.push(['Coverage this month', state.stats.coverage + '%', '']);
+    $('stats2').innerHTML = cells
+      .map(([l, v, k]) => `<div class="stat ${k}"><dt>${l}</dt><dd>${v}</dd></div>`).join('');
 
     $('r-log').textContent = state.rows.filter(shippable).length;
     $('r-vol').textContent = angel;
@@ -224,6 +234,44 @@
       : '';
 
     renderView();
+  }
+
+  /* Month by month coverage. Counts only, so it needs no password. */
+  let history = null, histOpen = false;
+  async function loadHistory(){
+    if (history) return history;
+    try {
+      const res = await fetch('data/history.json?_=' + Date.now(), { cache:'no-store' });
+      if (!res.ok) return (history = []);
+      const j = await res.json();
+      history = Array.isArray(j) ? j : [];
+    } catch(e){ history = []; }
+    return history;
+  }
+  async function toggleHistory(){
+    const box = $('history');
+    histOpen = !histOpen;
+    if (!histOpen){ box.style.display = 'none'; return; }
+    box.style.display = '';
+    box.innerHTML = '<p class="hint">Loading...</p>';
+    const list = (await loadHistory()).slice().sort((a, b) => String(b.monthKey).localeCompare(String(a.monthKey)));
+    if (!list.length){
+      box.innerHTML = '<h3>Past months</h3><p class="hint">Nothing recorded yet. Each published month is added here from now on.</p>';
+      return;
+    }
+    const now = state.month ? state.month.y + '-' + String(state.month.m + 1).padStart(2, '0') : '';
+    const rows = list.map(m => {
+      const pct = m.coverage == null ? 0 : m.coverage;
+      return '<div class="hrow' + (m.monthKey === now ? ' now' : '') + '">' +
+        '<div class="hm">' + (m.month || m.monthKey) + '</div>' +
+        '<div class="hbar"><i style="width:' + Math.max(0, Math.min(100, pct)) + '%"></i></div>' +
+        '<div class="hp">' + pct + '%</div></div>';
+    }).join('');
+    const avg = Math.round(list.reduce((s, m) => s + (m.coverage || 0), 0) / list.length);
+    box.innerHTML = '<h3>Coverage by month</h3>' + rows +
+      '<p class="hnote">Share of deployed members on the report who received a box. ' +
+      list.length + ' month' + (list.length === 1 ? '' : 's') + ' recorded, averaging ' + avg + '%. ' +
+      'A month is finalised by the run on the 1st, which closes out the month before.</p>';
   }
 
   function switchTo(v){
@@ -252,6 +300,7 @@
     if (cfg().adminHash) $('adminPw').focus();
   });
   $('btnSop').addEventListener('click', () => window.open('sop.html', '_blank'));
+  $('btnHistory').addEventListener('click', toggleHistory);
   $('btnCsv').addEventListener('click', exportCsv);
   $('btnXlsx').addEventListener('click', exportXlsx);
   document.querySelectorAll('.view-tab').forEach(t => t.addEventListener('click', () => switchTo(t.dataset.view)));
