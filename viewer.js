@@ -93,6 +93,7 @@
 
     showSchedule();
     $('btnHistory').style.display = '';
+    $('btnUpdate').style.display = '';
     $('emptyState').style.display = 'none';
     $('dataArea').style.display = '';
     paint();
@@ -183,38 +184,67 @@
     setAdmin(null);
   }
 
-  /* ---------- update report ---------- */
-  function setAdmin(gen){
-    const c = cfg();
-    $('btnUpdate').style.display = '';
-    if (!c.adminHash){
-      $('adminPw').style.display = 'none';
-      $('staleLine').textContent = 'No admin password is set, so anyone signed in can replace the list.';
-    } else if (!gen){
-      $('staleLine').textContent = 'Nothing is published yet. Run the report to post the first month.';
-    } else {
-      const now = new Date();
-      const stale = now.getFullYear() !== gen.getFullYear() || now.getMonth() !== gen.getMonth();
-      $('staleLine').textContent = stale
-        ? 'This list is from a previous month. Publishing a new run replaces it everywhere.'
-        : 'This month is already published. Running again replaces it.';
-      if (stale) $('adminPanel').style.borderLeftColor = 'var(--red)';
-    }
+  /* ---------- update report ----------
+     No panel on the page. The button lives in the top bar and asks for the
+     admin password in a dialog, so nobody browsing the list is tempted by a
+     text box sitting under the headline. */
+  let published = null;
+
+  function stateOfMonth(){
+    if (!published) return 'Nothing is published yet. Running the report posts the first month.';
+    const now = new Date();
+    const stale = now.getFullYear() !== published.getFullYear() || now.getMonth() !== published.getMonth();
+    return stale
+      ? 'The published list is from a previous month. Publishing a new run replaces it everywhere.'
+      : 'This month is already published. Running again replaces it.';
   }
 
-  function toBuilder(){
+  function setAdmin(gen){
+    published = gen || null;
+    $('btnUpdate').style.display = '';
+  }
+
+  function askAdmin(){
     const c = cfg();
-    const pw = $('adminPw').value;
-    if (c.adminHash){
-      if (!pw){ $('adminMsg').innerHTML = msg('warn', 'Password needed', 'Enter the admin password.'); return; }
-      if (!window.noboxHash || window.noboxHash(pw) !== c.adminHash){
-        $('adminMsg').innerHTML = msg('warn', 'Not the admin password', 'This is the second password, the one only you have.');
-        $('adminPw').select();
-        return;
+    const back = document.createElement('div');
+    back.className = 'modal-back';
+    back.innerHTML =
+      '<div class="modal" role="dialog" aria-modal="true">' +
+        '<h3 class="mt"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">' +
+        '<path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg>Update the report</h3>' +
+        '<p>' + stateOfMonth() + '</p>' +
+        (c.adminHash
+          ? '<p><input type="password" id="mPw" placeholder="Admin password" style="width:100%;font-size:16px;padding:11px 13px"></p><div id="mErr"></div>'
+          : '<p class="hint">No admin password is set, so anyone signed in can replace the list.</p>') +
+        '<div class="mact">' +
+          '<button class="btn" id="mGo">Continue</button>' +
+          '<button class="btn out" id="mNo">Cancel</button>' +
+        '</div></div>';
+    document.body.appendChild(back);
+
+    const close = () => { back.remove(); document.removeEventListener('keydown', esc); };
+    const esc = e => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', esc);
+    back.addEventListener('click', e => { if (e.target === back) close(); });
+    back.querySelector('#mNo').addEventListener('click', close);
+
+    const go = () => {
+      if (c.adminHash){
+        const pw = back.querySelector('#mPw').value;
+        if (!pw || !window.noboxHash || window.noboxHash(pw) !== c.adminHash){
+          back.querySelector('#mErr').innerHTML = msg('warn', 'Not the admin password',
+            'This is the second password, the one only the Director of Virtual Services has.');
+          back.querySelector('#mPw').select();
+          return;
+        }
+        try { sessionStorage.setItem('nobox-admin', c.adminHash); } catch(e){}
       }
-      try { sessionStorage.setItem('nobox-admin', c.adminHash); } catch(e){}
-    }
-    location.href = 'build.html';
+      location.href = 'build.html';
+    };
+    back.querySelector('#mGo').addEventListener('click', go);
+    const pwBox = back.querySelector('#mPw');
+    if (pwBox){ pwBox.addEventListener('keydown', e => { if (e.key === 'Enter') go(); }); pwBox.focus(); }
+    else back.querySelector('#mNo').focus();
   }
 
   /* ---------- rendering ---------- */
@@ -264,6 +294,7 @@
     if (!histOpen){ box.style.display = 'none'; return; }
     box.style.display = '';
     box.innerHTML = '<p class="hint">Loading...</p>';
+    window.scrollTo({ top:0, behavior:'smooth' });
     const list = (await loadHistory()).slice().sort((a, b) => String(b.monthKey).localeCompare(String(a.monthKey)));
     if (!list.length){
       box.innerHTML = '<h3>Past months</h3><p class="hint">Nothing recorded yet. Each published month is added here from now on.</p>';
@@ -303,12 +334,7 @@
   /* ---------- wire up ---------- */
   $('go').addEventListener('click', signIn);
   $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
-  $('adminGo').addEventListener('click', toBuilder);
-  $('adminPw').addEventListener('keydown', e => { if (e.key === 'Enter') toBuilder(); });
-  $('btnUpdate').addEventListener('click', () => {
-    $('adminPanel').scrollIntoView({ behavior:'smooth', block:'center' });
-    if (cfg().adminHash) $('adminPw').focus();
-  });
+  $('btnUpdate').addEventListener('click', askAdmin);
   $('btnSop').addEventListener('click', () => window.open('sop.html', '_blank'));
   $('btnHistory').addEventListener('click', toggleHistory);
   $('btnCsv').addEventListener('click', exportCsv);
