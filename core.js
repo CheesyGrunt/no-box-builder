@@ -38,7 +38,7 @@ function effStatus(r){
   return r.status;
 }
 function autoHold(r){
-  return !!(r.flagRed || r.flagPurple || !r.addr1 || !r.city || !r.zip);
+  return !!(r.matched === false || r.flagRed || r.flagPurple || !r.addr1 || !r.city || !r.zip);
 }
 function heldBack(r){
   if (r.override === 'hold') return true;
@@ -276,7 +276,8 @@ function cellVal(r, k){
     const t = [];
     if (r.flagRed) t.push('Confirm eligibility');
     if (r.flagPurple) t.push('Verify address');
-    if (!r.addr1) t.push('No address');
+    if (r.matched === false) t.push('Missing from Part 2');
+    else if (!r.addr1) t.push('No address');
     else if (!r.city || !r.zip) t.push('Incomplete address');
     if (r.zipFixed) t.push('Check zip');
     if (!t.length) t.push('Cleared');

@@ -32,6 +32,7 @@ const SPECS = {
     headerRow: 1,
     fields: [
       { key:'name',     label:'Client', col:'A', hints:['client name','client','account','member'] },
+      { key:'clientId', label:'Client ID (if present)', col:'', hints:['client: contact id','contact id','client id'] },
       { key:'status',   label:'Status', col:'F', hints:['status'] },
       { key:'reportBy', label:'Report by date', col:'G', hints:['report by date','report by','assigned report'] },
       { key:'provider',  label:'Provider', col:'', hints:['provider name','provider','angel','assigned to','volunteer name','service provider','owner'] },
@@ -279,10 +280,14 @@ function legacyCopy(t){
 function finish(){
   const p2 = state.files.part2, wl = state.files.waitlist;
 
-  const byClient = {};
+  const byClient = {}, byId = {};
   memberRows('part2').forEach(r => {
-    const n = norm(r[p2.map.name]); if (!n) return;
-    (byClient[n] = byClient[n] || []).push(r);
+    const n = norm(r[p2.map.name]);
+    if (n) (byClient[n] = byClient[n] || []).push(r);
+    if (p2.map.clientId > -1){
+      const id = String(r[p2.map.clientId] == null ? '' : r[p2.map.clientId]).trim();
+      if (id) (byId[id] = byId[id] || []).push(r);
+    }
   });
 
   const waitset = new Set();
@@ -291,8 +296,11 @@ function finish(){
   const g = (r, k) => (p2.map[k] > -1 ? r[p2.map[k]] : null);
 
   state.rows.forEach(row => {
-    const hits = byClient[row.key] || [];
+    /* Match on Client ID when Part 2 carries one, since names drift and IDs do
+       not. Fall back to the name. */
+    const hits = (row.clientId && byId[row.clientId]) || byClient[row.key] || [];
     row.matched = hits.length > 0;
+    row.matchedBy = hits.length ? ((row.clientId && byId[row.clientId]) ? 'id' : 'name') : '';
 
     const assigned = hits.filter(r => String(g(r, 'status') || '').trim().toLowerCase() === 'assigned');
     row.serviceDelivery = assigned.length ? 'Yes' : '';
@@ -337,6 +345,13 @@ function finish(){
 
     row.flagPurple = !!row.city && !isMilCity(row.city);
     row.flagRed = inMonth(row.mailStop);
+  });
+
+  const size = Math.max(10, +$('#batchSize').value || 70);
+  const ids = state.rows.map(r => r.clientId).filter(Boolean);
+  state.missing = state.rows.filter(r => !r.matched).map(r => {
+    const pos = ids.indexOf(r.clientId);
+    return { name:r.name, clientId:r.clientId, batch: pos > -1 ? Math.floor(pos / size) + 1 : null };
   });
 
   state.editable = true;
@@ -422,6 +437,25 @@ function paintSummary(){
   const zipf = state.rows.filter(r => r.zipFixed).length;
 
   const bits = [];
+
+  /* Every no-box member should come back in Part 2. One that does not usually
+     means a batch was skipped or its export was cut short, so name the batch. */
+  const miss = state.missing || [];
+  if (miss.length){
+    const byBatch = {};
+    miss.forEach(m => { const k = m.batch || '?'; byBatch[k] = (byBatch[k] || 0) + 1; });
+    const lines = Object.keys(byBatch).sort((x, y) => x - y)
+      .map(k => (k === '?' ? 'no batch' : 'batch ' + k) + ': ' + byBatch[k]);
+    const whole = Object.keys(byBatch).filter(k => byBatch[k] >= Math.min(state.batches.length ? state.batches[0].length : 70, 60));
+    bits.push('<div class="note warn"><div class="lbl">' + miss.length + ' of ' + state.rows.length +
+      ' did not come back in Part 2</div>' +
+      '<p>These members have no service delivery rows, so they have no address, no date, and no provider. ' +
+      'They are held out of every handoff list and sit on the Needs review tab marked <strong>Missing from Part 2</strong>.</p>' +
+      '<p>Spread across ' + lines.join(', ') + '.' +
+      (whole.length ? ' A whole batch missing usually means that filter was never run, or the export was cut short.' : '') +
+      '</p><p><button class="btn sm out" id="btnMissing">Copy the ' + miss.length + ' missing Client IDs</button></p></div>');
+  }
+
   if (held) bits.push(`<div class="note warn"><div class="lbl">${held} still held back</div><p>` +
     (red ? red + ' flagged red for a Mail Stop Date in the reporting month. ' : '') +
     (purple ? purple + ' flagged purple for a non-military mailing city. ' : '') +
@@ -430,6 +464,13 @@ function paintSummary(){
   else bits.push('<div class="note"><div class="lbl">Nothing held back</div><p>Every member cleared to receive a box has a complete military address.</p></div>');
   if (decided) bits.push(`<div class="note"><div class="lbl">${decided} decision${decided === 1 ? '' : 's'} recorded</div><p>Your overrides travel with the published file, so staff can see a person made the call.</p></div>`);
   $('#alerts').innerHTML = bits.join('');
+
+  const mb = $('#btnMissing');
+  if (mb) mb.addEventListener('click', () => {
+    copyText((state.missing || []).map(m => m.clientId).filter(Boolean).join(', '));
+    mb.textContent = 'Copied, re-run those in Part 2';
+    setTimeout(() => { mb.textContent = 'Copy the ' + (state.missing || []).length + ' missing Client IDs'; }, 2500);
+  });
 }
 window.onOverrideChange = paintSummary;
 
