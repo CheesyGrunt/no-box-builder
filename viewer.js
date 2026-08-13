@@ -70,6 +70,13 @@
 
     state.updatedBy = payload.updatedBy || '';
     state.stats = payload.stats || null;
+    if (state.stats && state.stats.coverage != null){
+      $('covStamp').innerHTML =
+        '<span class="lb">Coverage this month</span>' +
+        '<span class="dt">' + state.stats.coverage + '%</span>' +
+        '<span class="sm">' + state.stats.got + ' of ' + state.stats.total + ' received a box</span>';
+      $('covStamp').style.display = '';
+    }
     if (payload.month){
       $('monthBig').textContent = payload.month;
       $('monthHero').style.display = '';
