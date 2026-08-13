@@ -68,6 +68,7 @@
     const mk = String(payload.monthKey || '').split('-');
     if (mk.length === 2) state.month = { y:+mk[0], m:+mk[1] - 1 };
 
+    state.updatedBy = payload.updatedBy || '';
     const gen = payload.generated ? new Date(payload.generated) : null;
     $('monthChip').textContent = payload.month || 'Published';
     $('monthChip').className = 'stage-chip on';
@@ -75,6 +76,7 @@
       (payload.month ? payload.month + '. ' : '') + state.rows.length + ' members did not receive a box.';
     stamp(gen);
 
+    showSchedule();
     $('emptyState').style.display = 'none';
     $('dataArea').style.display = '';
     paint();
@@ -96,6 +98,37 @@
     box.style.display = '';
   }
 
+  /* The run schedule, with the next date worked out so nobody has to count
+     forward from the 27th and wonder about the weekend. */
+  const RUN_DAYS = [1, 15, 20, 25, 27];   // plus the last day of the month
+  function nextBusinessDay(d){
+    const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    while (x.getDay() === 0 || x.getDay() === 6) x.setDate(x.getDate() + 1);
+    return x;
+  }
+  function nextRun(from){
+    const today = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+    const out = [];
+    for (let m = -1; m <= 2; m++){
+      const base = new Date(today.getFullYear(), today.getMonth() + m, 1);
+      const y = base.getFullYear(), mo = base.getMonth();
+      const last = new Date(y, mo + 1, 0).getDate();
+      RUN_DAYS.concat([last]).forEach(d => out.push(nextBusinessDay(new Date(y, mo, d))));
+    }
+    return out.filter(d => d >= today).sort((a, b) => a - b)[0] || null;
+  }
+  function showSchedule(){
+    const box = $('schedule');
+    if (!box) return;
+    const nx = nextRun(new Date());
+    const when = nx ? nx.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : '';
+    box.innerHTML =
+      (when ? '<span class="nx">Next run &nbsp;<b>' + when + '</b></span>' : '') +
+      'This report is run on the 15th, the 20th, the 25th, the 27th, and the last day of the month. ' +
+      'The final run happens on the 1st, to show the previous month closed out. ' +
+      'Every run lands on a business day, so any of those dates falling on a weekend moves to the following business day.';
+  }
+
   function showEmpty(reason){
     $('monthChip').textContent = 'No data';
     $('monthChip').className = 'stage-chip';
@@ -103,6 +136,7 @@
     $('emptyState').style.display = '';
     $('subLine').textContent = '';
     $('pubStamp').style.display = 'none';
+    showSchedule();
     if (reason === 'locked'){
       const fileMode = envelope && envelope.mode;
       const siteMode = siteLocked() ? 'locked' : 'open';
@@ -178,18 +212,16 @@
       ['Boxes to send', state.rows.filter(shippable).length, 'o']
     ].map(([l, v, k]) => `<div class="stat ${k}"><dt>${l}</dt><dd>${v}</dd></div>`).join('');
 
-    const held = state.rows.filter(r => effStatus(r) === STATUS.SEND && heldBack(r)).length;
     $('r-log').textContent = state.rows.filter(shippable).length;
     $('r-vol').textContent = angel;
     $('r-rev').textContent = VIEWS.review.rows().length;
 
-    $('alerts').innerHTML = held
-      ? msg('warn', 'Some rows are held back',
-          held + ' member' + (held === 1 ? ' is' : 's are') + ' kept out of the Logistics list until an address or an eligibility date is confirmed. They are on the Needs review tab. Do not ship to a held row without checking with Virtual Services first.')
-      : msg('', 'Nothing held back', 'Every member cleared to receive a box has a verified military address.');
-    const decided = state.rows.filter(r => r.override).length;
-    if (decided) $('alerts').innerHTML += msg('', decided + ' reviewed by hand',
-      'Virtual Services looked at ' + decided + ' flagged row' + (decided === 1 ? '' : 's') + ' and made a call. The Decision column on the Needs review tab shows what was decided.');
+    const who = (state.updatedBy || 'Director of Virtual Services').replace(/^The\s+/i, '');
+    const settled = state.rows.filter(isSettled).length;
+    $('alerts').innerHTML = settled
+      ? msg('', 'Reviewed', 'The ' + who + ' has reviewed everything annotated under Needs review. ' +
+            'Those rows are shown in the applicable tab.')
+      : '';
 
     renderView();
   }

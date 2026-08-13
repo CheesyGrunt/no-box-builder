@@ -144,6 +144,7 @@
       <button class="view-tab" data-view="volunteer">Volunteer Services: reach out <span class="n" id="n-volunteer">0</span></button>
       <button class="view-tab" data-view="waitlisted">Waitlisted <span class="n" id="n-waitlisted">0</span></button>
       <button class="view-tab" data-view="review">Needs review <span class="n" id="n-review">0</span></button>
+        <button class="view-tab" data-view="decisions" style="display:none">Decisions <span class="n" id="n-decisions">0</span></button>
     </div>
     <div class="viewbox">
       <div class="viewhead">
@@ -165,7 +166,7 @@
 
     <div class="rowline" style="margin-top:22px;padding-top:18px;border-top:1px solid var(--rule)">
       <button class="btn" id="btnToPublish">Review done, go to publish</button>
-      <span class="hint">Clear the Needs review tab first. Whatever is held back stays off the Logistics list.</span>
+      <span class="hint">The Needs review tab empties as you fix or decide each row. Anything left on it stays off the Logistics list.</span>
     </div>
   </section>
 
@@ -184,11 +185,27 @@
     </div>
 
     <h3 style="margin-top:20px">Where it goes</h3>
+    <div class="note" style="max-width:620px">
+      <div class="lbl">Leave this alone</div>
+      <p>These three fields are set once and should not be changed. If any of them are blank,
+      stop and reach out to the <strong>Director of Virtual Services</strong>, who will give you what goes here.</p>
+    </div>
     <div class="map show" style="border-top:none;padding-top:0;max-width:520px">
       <div class="map-row"><label>GitHub owner</label><input type="text" id="ghOwner" placeholder="your GitHub username" style="flex:1"></div>
       <div class="map-row"><label>Repository</label><input type="text" id="ghRepo" placeholder="no-box-builder" style="flex:1"></div>
       <div class="map-row"><label>Access token</label><input type="password" id="ghToken" placeholder="github_pat_..." style="flex:1"></div>
       <div class="map-row"><label></label><label class="hint" style="flex:1;display:flex;gap:7px;align-items:center;cursor:pointer"><input type="checkbox" id="ghSave" style="width:auto"> Remember the token in this browser</label></div>
+    </div>
+
+    <h3 style="margin-top:24px">Updated by</h3>
+    <p class="hint" style="margin-bottom:10px">Whoever ran this month. The name shows on the staff site next to the reviewed rows.</p>
+    <div class="rowline">
+      <select id="updatedBy" style="min-width:300px;font-size:15px;padding:9px 10px">
+        <option value="">Choose one</option>
+        <option>Director of Virtual Services</option>
+        <option>Salesforce Administrator</option>
+        <option>Vice President of Programs</option>
+      </select>
     </div>
 
     <div class="rowline" style="margin-top:14px">

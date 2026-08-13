@@ -429,6 +429,7 @@ async function publish(){
     return;
   }
   const cfg = window.NOBOX_CONFIG || {};
+  if (!updatedBy()){ out.innerHTML = '<div class="note warn"><div class="lbl">Pick who ran this</div><p>Choose a name under <strong>Updated by</strong> before publishing. It shows on the staff site.</p></div>'; return; }
   const pw = keyFor($('#pubPw').value);
   if (siteLocked()){
     if (!$('#pubPw').value){ out.innerHTML = '<div class="note warn"><div class="lbl">Password needed</div><p>Type the team password. It is the key, so staff cannot open the file without it.</p></div>'; return; }
@@ -443,6 +444,7 @@ async function publish(){
     month: label,
     monthKey: state.month.y + '-' + String(state.month.m + 1).padStart(2, '0'),
     generated: new Date().toISOString(),
+    updatedBy: updatedBy(),
     counts: {
       unsupported: state.rows.length,
       waitlisted: state.rows.filter(r => r.status === STATUS.WAIT).length,
@@ -452,6 +454,7 @@ async function publish(){
   };
   try {
     const text = await encryptPayload(pw, payload);
+    rememberWho();
     download(new Blob([text], { type:'application/json' }), 'latest.enc');
     out.innerHTML = '<div class="note"><div class="lbl">Encrypted and downloaded</div>' +
       '<p><strong>latest.enc</strong> is in your downloads, ' + Math.round(text.length / 1024) + ' KB, covering ' + label + '.</p>' +
@@ -473,8 +476,8 @@ function paintSummary(){
     ['Total boxes to send', state.rows.filter(shippable).length, 'o']
   ]);
 
-  const held = state.rows.filter(r => effStatus(r) === STATUS.SEND && heldBack(r)).length;
-  const decided = state.rows.filter(r => r.override).length;
+  const held = state.rows.filter(needsDecision).length;
+  const decided = state.rows.filter(isSettled).length;
   const purple = state.rows.filter(r => r.flagPurple && !r.override).length;
   const red = state.rows.filter(r => r.flagRed && !r.override).length;
   const zipf = state.rows.filter(r => r.zipFixed).length;
@@ -499,13 +502,13 @@ function paintSummary(){
       '</p><p><button class="btn sm out" id="btnMissing">Copy the ' + miss.length + ' missing Client IDs</button></p></div>');
   }
 
-  if (held) bits.push(`<div class="note warn"><div class="lbl">${held} still held back</div><p>` +
+  if (held) bits.push(`<div class="note warn"><div class="lbl">${held} still waiting on a decision</div><p>` +
     (red ? red + ' flagged red for a Mail Stop Date in the reporting month. ' : '') +
     (purple ? purple + ' flagged purple for a non-military mailing city. ' : '') +
     (zipf ? zipf + ' had a letter O corrected to a zero in the zip, worth a glance. ' : '') +
-    `Work them on the Needs review tab and set a decision on each one, or leave them held.</p></div>`);
-  else bits.push('<div class="note"><div class="lbl">Nothing held back</div><p>Every member cleared to receive a box has a complete military address.</p></div>');
-  if (decided) bits.push(`<div class="note"><div class="lbl">${decided} decision${decided === 1 ? '' : 's'} recorded</div><p>Your overrides travel with the published file, so staff can see a person made the call.</p></div>`);
+    `Work them on the Needs review tab. Fix the address or pick a decision, and each one drops off the tab as you go.</p></div>`);
+  else bits.push('<div class="note"><div class="lbl">Needs review is clear</div><p>Every flagged row has been fixed or decided. Nothing is waiting on you.</p></div>');
+  if (decided) bits.push(`<div class="note"><div class="lbl">${decided} row${decided === 1 ? '' : 's'} settled by hand</div><p>Fixes and decisions travel with the published file, so staff can see a person made the call. They are on the Decisions tab if you want to change one.</p></div>`);
   $('#alerts').innerHTML = bits.join('');
 
   const mb = $('#btnMissing');
@@ -518,6 +521,16 @@ function paintSummary(){
 window.onOverrideChange = paintSummary;
 
 /* ---------- publish straight to the live site ---------- */
+const WHO_KEY = 'nobox-updated-by';
+function updatedBy(){ return ($('#updatedBy') && $('#updatedBy').value || '').trim(); }
+function rememberWho(){ try{ localStorage.setItem(WHO_KEY, updatedBy()); }catch(e){} }
+function restoreWho(){
+  try{
+    const v = localStorage.getItem(WHO_KEY);
+    if (v && $('#updatedBy')) $('#updatedBy').value = v;
+  }catch(e){}
+}
+
 const GH = {
   key: 'nobox-gh-token',
   cfg(){
@@ -599,6 +612,7 @@ async function publishLive(){
   if (!cryptoReady()) return note('warn', 'Open the live site', 'Encryption needs a secure page. Use the https address, not a file on your hard drive.');
 
   const cfg = window.NOBOX_CONFIG || {};
+  if (!updatedBy()) return note('warn', 'Pick who ran this', 'Choose a name under <strong>Updated by</strong> before publishing. It shows on the staff site.');
   const pw = keyFor($('#pubPw').value);
   if (siteLocked()){
     if (!$('#pubPw').value) return note('warn', 'Password needed', 'Type the team password. It is the encryption key.');
@@ -616,6 +630,7 @@ async function publishLive(){
     month: label,
     monthKey: state.month.y + '-' + String(state.month.m + 1).padStart(2, '0'),
     generated: new Date().toISOString(),
+    updatedBy: updatedBy(),
     counts: {
       unsupported: state.rows.length,
       waitlisted: state.rows.filter(r => r.status === STATUS.WAIT).length,
@@ -669,6 +684,7 @@ async function publishLive(){
     }
 
     GH.remember(GH.token());
+    rememberWho();
     const res = await put.json();
     const url = res.commit && res.commit.html_url;
 
@@ -818,15 +834,14 @@ $('#btnToStage3').addEventListener('click', () => {
   openStage('#p3', '#chip2', '#chip3');
 });
 $('#btnToPublish').addEventListener('click', async () => {
-  const held = state.rows.filter(r => effStatus(r) === STATUS.SEND && heldBack(r)).length;
-  if (held){
+  const open_ = state.rows.filter(needsDecision).length;
+  if (open_){
     const okay = await askConfirm({
-      title: held === 1 ? 'You left a sock on the floor' : 'You left ' + held + ' socks on the floor',
-      body: '<p><strong>' + held + ' member' + (held === 1 ? '' : 's') + '</strong> ' +
-            (held === 1 ? 'is' : 'are') + ' still held back, so ' + (held === 1 ? 'it' : 'they') +
-            ' will not reach Logistics and no box goes out.</p>' +
-            '<p>Fix the address on the Needs review tab, or set a decision on each one. ' +
-            'If you meant to hold ' + (held === 1 ? 'it' : 'them') + ', carry on.</p>',
+      title: open_ === 1 ? 'You left a sock on the floor' : 'You left ' + open_ + ' socks on the floor',
+      body: '<p><strong>' + open_ + ' member' + (open_ === 1 ? '' : 's') + '</strong> on the Needs review tab ' +
+            (open_ === 1 ? 'has' : 'have') + ' no decision yet, so ' + (open_ === 1 ? 'it stays' : 'they stay') +
+            ' off the Logistics list and no box goes out.</p>' +
+            '<p>Fix the address, or pick a decision on each one. Holding on purpose counts as a decision.</p>',
       yes: 'Publish anyway',
       no: 'Go back and finish'
     });
@@ -835,6 +850,7 @@ $('#btnToPublish').addEventListener('click', async () => {
   openStage('#p5', '#chip4', null);
 });
 GH.restore();
+restoreWho();
 openModeBanner();
 $('#btnReset').addEventListener('click', () => { if (confirm('Clear the loaded files and start over?')) location.reload(); });
 document.querySelectorAll('.view-tab').forEach(t => t.addEventListener('click', () => {

@@ -60,6 +60,10 @@ function heldBack(r){
   return autoHold(r);
 }
 function shippable(r){ return effStatus(r) === STATUS.SEND && !heldBack(r); }
+/* Still open: flagged, and nobody has said what to do about it yet. A row with
+   a decision on it is settled, whichever way it went. */
+function needsDecision(r){ return (autoHold(r) || r.zipFixed) && !r.override; }
+function isSettled(r){ return !!r.override || !!r.edited; }
 
 /* ---------- tiny helpers ---------- */
 const $ = s => document.querySelector(s);
@@ -275,11 +279,17 @@ const VIEWS = {
     desc:'On the Currently Waitlisted Clients report. No box, no outreach needed. Here for the record.',
     cols: COLS.waitlisted, rows: () => state.rows.filter(r => effStatus(r) === STATUS.WAIT)
   },
+  decisions: {
+    title:'Decisions you made',
+    desc:'Rows you cleared, held, moved, or whose address you corrected. Change any of them here and everything downstream updates.',
+    cols: COLS.review, hideWhenEmpty:true,
+    rows: () => state.rows.filter(isSettled)
+  },
   review: {
     title:'Needs review before anything ships',
     desc:'What is wrong is in the Review column, and the Client ID is right there to look the record up. Red means the Mail Stop Date lands in the reporting month, so confirm eligibility. Purple means the mailing city is not APO, FPO, or DPO. Incomplete means the address would not parse into city, state, and zip.',
-    cols: COLS.review,
-    rows: () => state.rows.filter(r => autoHold(r) || r.zipFixed || r.override || r.edited)
+    cols: COLS.review, hideWhenEmpty:true,
+    rows: () => state.rows.filter(needsDecision)
   }
 };
 function cellVal(r, k){
@@ -322,6 +332,15 @@ function activeRows(){
   return rows;
 }
 function renderView(){
+  document.querySelectorAll('.view-tab').forEach(t => {
+    const def = VIEWS[t.dataset.view];
+    if (def && def.hideWhenEmpty) t.style.display = def.rows().length ? '' : 'none';
+  });
+  if (VIEWS[state.view] && VIEWS[state.view].hideWhenEmpty && !VIEWS[state.view].rows().length){
+    state.view = 'all';
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('on', t.dataset.view === 'all'));
+  }
+
   const v = VIEWS[state.view];
   $('#vTitle').textContent = v.title;
   $('#vDesc').textContent = v.desc;
