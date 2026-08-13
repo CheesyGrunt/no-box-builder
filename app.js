@@ -450,12 +450,7 @@ async function publish(){
     monthKey: state.month.y + '-' + String(state.month.m + 1).padStart(2, '0'),
     generated: new Date().toISOString(),
     updatedBy: updatedBy(),
-    stats: state.stage1 ? {
-      total: state.stage1.total,
-      got: state.stage1.got,
-      noBox: state.stage1.noBox,
-      coverage: state.stage1.total ? Math.round(state.stage1.got / state.stage1.total * 100) : 0
-    } : null,
+    stats: coverageStats(),
     counts: {
       unsupported: state.rows.length,
       waitlisted: state.rows.filter(r => r.status === STATUS.WAIT).length,
@@ -590,6 +585,26 @@ const GH = {
   }
 };
 
+/* Coverage measured against members who could actually receive a box.
+   Waitlisted members are already covered another way, so counting them as
+   misses understates the month. They come out of the denominator. */
+function coverageStats(){
+  if (!state.stage1) return null;
+  const total = state.stage1.total, got = state.stage1.got;
+  const waitlisted = state.rows.filter(r => effStatus(r) === STATUS.WAIT).length;
+  const eligible = Math.max(0, total - waitlisted);
+  return {
+    total: total,
+    got: got,
+    noBox: state.stage1.noBox,
+    waitlisted: waitlisted,
+    eligible: eligible,
+    /* Floor, not round. 601 of 604 is 99.5%, and showing that as 100% hides
+       three members who never got a box. 100 means 100. */
+    coverage: eligible ? Math.floor(got / eligible * 100) : 0
+  };
+}
+
 /* A plain, unencrypted record of each month's coverage. Counts only, no member
    data, so staff can open the history without a key. The newest publish for a
    month wins, which means the run on the 1st becomes that month's final word. */
@@ -614,6 +629,8 @@ async function updateHistory(g, payload){
     total: payload.stats ? payload.stats.total : null,
     got: payload.stats ? payload.stats.got : null,
     noBox: payload.stats ? payload.stats.noBox : null,
+    waitlisted: payload.stats ? payload.stats.waitlisted : null,
+    eligible: payload.stats ? payload.stats.eligible : null,
     coverage: payload.stats ? payload.stats.coverage : null
   };
   history = history.filter(h => h.monthKey !== entry.monthKey);
@@ -682,12 +699,7 @@ async function publishLive(){
     monthKey: state.month.y + '-' + String(state.month.m + 1).padStart(2, '0'),
     generated: new Date().toISOString(),
     updatedBy: updatedBy(),
-    stats: state.stage1 ? {
-      total: state.stage1.total,
-      got: state.stage1.got,
-      noBox: state.stage1.noBox,
-      coverage: state.stage1.total ? Math.round(state.stage1.got / state.stage1.total * 100) : 0
-    } : null,
+    stats: coverageStats(),
     counts: {
       unsupported: state.rows.length,
       waitlisted: state.rows.filter(r => r.status === STATUS.WAIT).length,

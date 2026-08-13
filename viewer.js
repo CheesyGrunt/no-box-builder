@@ -71,10 +71,13 @@
     state.updatedBy = payload.updatedBy || '';
     state.stats = payload.stats || null;
     if (state.stats && state.stats.coverage != null){
+      const s = state.stats;
+      const denom = s.eligible != null ? s.eligible : s.total;
       $('covStamp').innerHTML =
         '<span class="lb">Coverage this month</span>' +
-        '<span class="dt">' + state.stats.coverage + '%</span>' +
-        '<span class="sm">' + state.stats.got + ' of ' + state.stats.total + ' received a box</span>';
+        '<span class="dt">' + s.coverage + '%</span>' +
+        '<span class="sm">' + s.got + ' of ' + denom + ' eligible received a box' +
+        (s.waitlisted ? '<br>' + s.waitlisted + ' waitlisted, not counted' : '') + '</span>';
       $('covStamp').style.display = '';
     }
     if (payload.month){
@@ -225,7 +228,7 @@
       ['Boxes to send', state.rows.filter(shippable).length, 'o']
     ];
     if (state.stats && state.stats.coverage != null)
-      cells.push(['Coverage this month', state.stats.coverage + '%', '']);
+      cells.push(['Coverage, waitlist excluded', state.stats.coverage + '%', '']);
     $('stats2').innerHTML = cells
       .map(([l, v, k]) => `<div class="stat ${k}"><dt>${l}</dt><dd>${v}</dd></div>`).join('');
 
@@ -276,7 +279,7 @@
     }).join('');
     const avg = Math.round(list.reduce((s, m) => s + (m.coverage || 0), 0) / list.length);
     box.innerHTML = '<h3>Coverage by month</h3>' + rows +
-      '<p class="hnote">Share of deployed members on the report who received a box. ' +
+      '<p class="hnote">Share of eligible members who received a box. Waitlisted members are left out of the count, since they are already covered another way. ' +
       list.length + ' month' + (list.length === 1 ? '' : 's') + ' recorded, averaging ' + avg + '%. ' +
       'A month is finalised by the run on the 1st, which closes out the month before.</p>';
   }
