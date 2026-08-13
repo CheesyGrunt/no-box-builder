@@ -114,6 +114,7 @@ tr.decided-hold td{background:#FBE3E3!important}
 .tag.send{background:var(--ok);color:#fff}
 .tag.red{background:var(--red);color:#fff}
 .tag.purple{background:var(--purple);color:#fff}
+.tag.grey{background:#8C8377;color:#fff}
 .modal-back{position:fixed;inset:0;z-index:200;background:rgba(23,19,16,.62);
   display:flex;align-items:center;justify-content:center;padding:24px}
 .modal{background:var(--card);border:1px solid var(--rule);border-top:5px solid var(--gold);

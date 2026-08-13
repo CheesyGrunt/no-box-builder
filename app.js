@@ -529,7 +529,15 @@ function paintSummary(){
     (zipf ? zipf + ' had a letter O corrected to a zero in the zip, worth a glance. ' : '') +
     `Work them on the Needs review tab. Fix the address or pick a decision, and each one drops off the tab as you go.</p></div>`);
   else bits.push('<div class="note"><div class="lbl">Needs review is clear</div><p>Every flagged row has been fixed or decided. Nothing is waiting on you.</p></div>');
-  if (skipped) bits.push(`<div class="note"><div class="lbl">${skipped} row${skipped === 1 ? '' : 's'} not counted</div><p>Marked as not real members, so they are out of every count, list, and percentage. They stay on the Decisions tab so nothing looks like it vanished.</p></div>`);
+  if (skipped){
+    const msd = state.rows.filter(r => r.override === 'passedmsd').length;
+    const test = state.rows.filter(r => r.override === 'exclude').length;
+    const parts = [];
+    if (msd) parts.push(msd + ' past their Mail Stop Date');
+    if (test) parts.push(test + ' not a real member');
+    bits.push(`<div class="note"><div class="lbl">${skipped} row${skipped === 1 ? '' : 's'} not counted</div>` +
+      `<p>${parts.join(', ')}. They are out of every count, list, and percentage, and stay on the Decisions tab so nothing looks like it vanished.</p></div>`);
+  }
   if (decided) bits.push(`<div class="note"><div class="lbl">${decided} row${decided === 1 ? '' : 's'} settled by hand</div><p>Fixes and decisions travel with the published file, so staff can see a person made the call. They are on the Decisions tab if you want to change one.</p></div>`);
   $('#alerts').innerHTML = bits.join('');
 

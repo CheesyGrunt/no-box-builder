@@ -28,18 +28,23 @@ const DECISIONS = [
   ['hold',     'Hold, do not ship'],
   ['angel',    'Move to Volunteer Services'],
   ['waitlist', 'Move to Waitlisted'],
+  ['passedmsd','Passed MSD, do not count'],
   ['exclude',  'Do not count, not a real member']
 ];
+/* Decisions that take a member out of every number. Kept as a list so the
+   reason stays visible on the row while the effect is the same. */
+const NOT_COUNTED = ['exclude', 'passedmsd'];
 const DECISION_LABEL = {
   cleared:'Cleared by VS', hold:'Held by VS',
   angel:'Moved to Volunteer Services', waitlist:'Moved to Waitlisted',
-  exclude:'Not counted'
+  exclude:'Not counted',
+  passedmsd:'Passed MSD'
 };
 
 /* Test accounts and other records that are not real members. They stay visible
    so nobody wonders where a row went, but they are out of every count, every
    handoff list, and every percentage. */
-function excluded(r){ return r.override === 'exclude'; }
+function excluded(r){ return NOT_COUNTED.indexOf(r.override) > -1; }
 function counted(){ return state.rows.filter(r => !excluded(r)); }
 
 /* Editing an address in the review queue. The flags recompute immediately, so
@@ -313,13 +318,17 @@ function cellVal(r, k){
   }
   if (k === 'decision') return r.override ? (DECISION_LABEL[r.override] || r.override) : '';
   if (k === 'review'){
+    /* A row taken out of the counts says so and nothing else. The original
+       flag is no longer the useful fact about it. */
+    if (excluded(r)) return r.override === 'passedmsd' ? 'Passed MSD, not counted' : 'Not counted';
     const t = [];
-    if (r.flagRed) t.push('Confirm eligibility');
-    if (r.flagPurple) t.push('Verify address');
     if (r.matched === false) t.push('Missing from Part 2');
     else if (!r.addr1) t.push('No address');
     else if (!r.city || !r.zip) t.push('Incomplete address');
+    if (r.flagRed) t.push('Confirm eligibility');
+    if (r.flagPurple) t.push('Verify address');
     if (r.zipFixed) t.push('Check zip');
+    if (r.edited) t.push('Address updated');
     if (!t.length) t.push('Cleared');
     return t.join(' · ');
   }
@@ -384,7 +393,11 @@ function renderView(){
       }
       if (c[0] === 'review' && val){
         val = val.split(' · ').map(x => {
-          const cls = x === 'Verify address' ? 'purple' : x === 'Cleared' ? 'send' : x === 'Check zip' ? 'gold' : 'red';
+          const cls = x === 'Verify address' ? 'purple'
+                    : x === 'Cleared' ? 'send'
+                    : x === 'Check zip' || x === 'Address updated' ? 'gold'
+                    : /not counted/i.test(x) ? 'grey'
+                    : 'red';
           return `<span class="tag ${cls}">${x}</span>`;
         }).join(' ');
       }
