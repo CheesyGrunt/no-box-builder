@@ -320,10 +320,10 @@
         <table>
           <thead><tr><th>Report</th><th>Export type</th><th>Tab name</th><th>Pull it at</th></tr></thead>
           <tbody>
-            <tr><td>Deployed Monthly Part 1</td><td>Formatted Report</td><td><code>Deployed Report</code></td><td>Step 1</td></tr>
-            <tr><td>Deployed Monthly Part 1</td><td>Details Only</td><td><code>Details</code></td><td>Step 1</td></tr>
-            <tr><td>Deployed Monthly Part 2</td><td>Details Only</td><td><code>Deployed Monthly Part2</code></td><td>Step 5, needs Step 4 first</td></tr>
-            <tr><td>Currently Waitlisted</td><td>Details Only</td><td><code>Currently Waitlisted Clients</code></td><td>Step 7</td></tr>
+            <tr><td><a href="https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR000008nOUP2A2/view?queryScope=userFolders" target="_blank" rel="noopener">Deployed Monthly Part 1</a></td><td>Formatted Report</td><td><code>Deployed Report</code></td><td>Step 1</td></tr>
+            <tr><td><a href="https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR000008nOUP2A2/view?queryScope=userFolders" target="_blank" rel="noopener">Deployed Monthly Part 1</a></td><td>Details Only</td><td><code>Details</code></td><td>Step 1</td></tr>
+            <tr><td><a href="https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR0000093WJ72AM/view?queryScope=userFolders" target="_blank" rel="noopener">Deployed Monthly Part 2</a></td><td>Details Only</td><td><code>Deployed Monthly Part2</code></td><td>Step 5, needs Step 4 first</td></tr>
+            <tr><td><a href="https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR000008pmpB2AQ/view" target="_blank" rel="noopener">Currently Waitlisted</a></td><td>Details Only</td><td><code>Currently Waitlisted Clients</code></td><td>Step 7</td></tr>
           </tbody>
         </table>
       </div>
@@ -407,7 +407,8 @@ Add a maroon title banner "Members Without a Box" top-left and an AutoFilter on 
           <button class="mark">Mark done</button>
         </div>
         <div class="step-body">
-          <p>Take the Client IDs and plug them into Claude to have them separated into batches of 70. You need them batched because the report filter cannot handle the full list at once.</p>
+          <p>Take the Client IDs and separate them into batches. <strong>70 is the ceiling</strong>, since that is the most Client IDs Salesforce will accept in one filter. Under 70 is fine, over 70 will not run.</p>
+          <p>Aim for <strong>7 batches</strong>. If the list is long enough that you would need more than 7 even at 70 per batch, stop and reach out to the Director of Virtual Services or the Salesforce Administrator.</p>
         </div>
       </article>
 
@@ -418,6 +419,10 @@ Add a maroon title banner "Members Without a Box" top-left and an AutoFilter on 
           <button class="mark">Mark done</button>
         </div>
         <div class="step-body">
+          <div class="note stop">
+            <div class="lbl">Do not save over the report</div>
+            <p>Update the filter and click <strong>Run</strong>. Never click Save. Saving rewrites the shared report for everyone who uses it.</p>
+          </div>
           <p>Take your batches and update the filters on the report. Check your logic before you run it:</p>
           <div class="formula">Program Engagement Name AND (All your Client IDs with or in between the numbers) AND Created Date AND Service Delivery Name</div>
           <ul>

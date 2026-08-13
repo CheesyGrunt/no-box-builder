@@ -15,7 +15,6 @@ const state = {
   rows: [],           // the No Box records
   batches: [],
   view: 'all',
-  hideUnreviewed: true,
   editable: false          // only the builder lets you change a row's bucket
 };
 
@@ -247,9 +246,9 @@ const VIEWS = {
   },
   logistics: {
     title:'Logistics: send a box',
-    desc:'Nothing is blocking these members. Status reads "Unsupported, send Box." Export this and hand it to Logistics for fulfillment.',
+    desc:'Cleared to ship. Anything with an unresolved address or eligibility question is not here, it is on the Needs review tab. Export this and hand it over as is.',
     cols: COLS.logistics, exportCols: COLS.shipping,
-    rows: () => state.rows.filter(r => effStatus(r) === STATUS.SEND), filter:'review'
+    rows: () => state.rows.filter(shippable)
   },
   volunteer: {
     title:'Volunteer Services: reach out',
@@ -305,7 +304,6 @@ function byDate(field){
 function activeRows(){
   const v = VIEWS[state.view];
   let rows = v.rows();
-  if (v.filter === 'review' && state.hideUnreviewed) rows = rows.filter(r => !heldBack(r));
   if (v.sort) rows = rows.slice().sort(byDate(v.sort));
   return rows;
 }
@@ -316,11 +314,11 @@ function renderView(){
   for (const k in VIEWS) { const n = document.getElementById('n-' + k); if (n) n.textContent = VIEWS[k].rows().length; }
 
   const fbox = $('#vFilters');
-  if (v.filter === 'review'){
-    const hidden = v.rows().length - activeRows().length;
-    fbox.innerHTML = `<label><input type="checkbox" id="hideUn" ${state.hideUnreviewed ? 'checked' : ''}> Hold back rows that still need review</label>
-      <span class="hint">${hidden} held back</span>`;
-    $('#hideUn').addEventListener('change', e => { state.hideUnreviewed = e.target.checked; renderView(); });
+  if (state.view === 'logistics'){
+    const held = state.rows.filter(r => effStatus(r) === STATUS.SEND && heldBack(r)).length;
+    fbox.innerHTML = held
+      ? `<span class="hint">${held} more would ship once resolved on the Needs review tab.</span>`
+      : `<span class="hint">Nothing outstanding. Every send-a-box member is on this list.</span>`;
   } else fbox.innerHTML = '';
 
   const rows = activeRows();

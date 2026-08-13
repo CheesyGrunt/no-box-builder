@@ -98,6 +98,18 @@ tr.decided-hold td{background:#FBE3E3!important}
 .tag.send{background:var(--ok);color:#fff}
 .tag.red{background:var(--red);color:#fff}
 .tag.purple{background:var(--purple);color:#fff}
+.loud{background:var(--red);color:#fff;border:3px solid var(--gold);padding:16px 20px;margin:0 0 18px;
+  box-shadow:0 2px 0 rgba(23,19,16,.18)}
+.loud .lt{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:23px;
+  font-weight:700;line-height:1.15;display:flex;align-items:center;gap:11px}
+.loud .lt svg{flex:0 0 auto;color:var(--gold)}
+.loud p{margin:7px 0 0 0;font-size:14.5px;color:#FFE9E9;max-width:70ch}
+.loud p strong{color:#fff}
+.golink{display:inline-flex;align-items:center;gap:7px;font-family:var(--display);text-transform:uppercase;
+  letter-spacing:.09em;font-size:13.5px;background:#fff;color:var(--maroon);border:1px solid var(--maroon);
+  padding:8px 14px;text-decoration:none;margin:0 8px 8px 0}
+.golink:hover{background:var(--maroon);color:#fff}
+.golink::after{content:'\2197';font-size:14px;opacity:.75}
 .note{background:#fff;border-left:4px solid var(--gold);padding:13px 16px;margin:0 0 16px;font-size:14px}
 .note.warn{border-left-color:var(--red)}
 .note .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--maroon);margin-bottom:5px}

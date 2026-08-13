@@ -39,6 +39,7 @@
     <div class="eyebrow">Stage 1 &nbsp;·&nbsp; Steps 1 through 3</div>
     <h2>Load Deployed Monthly Part 1</h2><div class="h2rule"></div>
     <p>Pull both exports from Part 1 with the month filter set correctly, then drop them here. Check the column mapping under each file before you build.</p>
+    <p><a class="golink" href="https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR000008nOUP2A2/view?queryScope=userFolders" target="_blank" rel="noopener">Open Deployed Monthly Part 1</a></p>
     <p class="hint" style="margin-bottom:14px">I solemnly swear the month filter is set correctly.</p>
 
     <div class="rowline">
@@ -71,11 +72,27 @@
     <div class="eyebrow">Stage 2 &nbsp;·&nbsp; Steps 4 and 5</div>
     <h2>Client ID batches</h2><div class="h2rule"></div>
     <dl class="stats" id="stats1"></dl>
+
+    <div class="loud">
+      <div class="lt"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg> Never go over 70 per batch</div>
+      <p>70 is the most Client IDs Salesforce will take in one filter. Under 70 is fine, over 70 is not.
+      The batch size box will not let you past it.</p>
+      <p style="margin-top:10px">The goal is <strong>7 batches</strong>. Adjust the size to fit the report.
+      If you need more than 7 batches even at 70 per batch, stop and reach out to the
+      <strong>Director of Virtual Services</strong> or the <strong>Salesforce Administrator</strong>.</p>
+      <p style="margin-top:10px"><strong>And do not save over this report.</strong> Update the filter, click Run, export.
+      Never click Save. Saving rewrites the shared report for everyone who uses it.</p>
+      <p style="margin-top:10px;font-style:italic;opacity:.9">Mess up the report and you will be banished to Azkaban.</p>
+    </div>
+
     <p>Copy each batch into the Part 2 report filter, one batch at a time. Filter logic stays the same: <span class="hint">Program Engagement Name AND (Client IDs) AND Created Date AND Service Delivery Name</span></p>
+    <p><a class="golink" href="https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR0000093WJ72AM/view?queryScope=userFolders" target="_blank" rel="noopener">Open Deployed Monthly Part 2</a></p>
     <div class="rowline">
       <label class="hint" for="batchSize">Batch size</label>
-      <input type="number" id="batchSize" value="70" min="10" max="500" style="width:80px">
+      <input type="number" id="batchSize" value="70" min="5" max="70" style="width:80px">
+      <span class="hint">70 max</span>
       <button class="btn sm out" id="btnRebatch">Rebuild batches</button>
+      <span id="batchCount" class="hint"></span>
       <button class="btn sm out" id="btnDlIds">Download all IDs (.csv)</button>
     </div>
     <div class="batches" id="batches"></div>
@@ -85,7 +102,9 @@
   <section class="panel locked" id="p3">
     <div class="eyebrow">Stage 3 &nbsp;·&nbsp; Steps 6 through 11</div>
     <h2>Load Part 2 and the waitlist</h2><div class="h2rule"></div>
-    <p>Drop in the Part 2 export you just pulled and the Currently Waitlisted export. This fills the dates, names, and addresses, sets every Status, and applies the gold, blue, purple, and red flags in one pass.</p>
+    <p>Drop in the Part 2 export you built from the batches above, plus the Currently Waitlisted export. This fills the dates, names, addresses, and providers, sets every Status, and applies the flags in one pass.</p>
+    <p><a class="golink" href="https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR000008pmpB2AQ/view" target="_blank" rel="noopener">Open Currently Waitlisted Clients</a></p>
+    <p class="hint">The waitlist report needs no filter changes. Export it in Details form and drop it in.</p>
     <div class="drops">
       <div class="drop" id="drop-part2" data-key="part2">
         <div class="dt">Deployed Monthly Part2</div>

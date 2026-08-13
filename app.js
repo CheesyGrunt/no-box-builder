@@ -249,14 +249,50 @@ function build(){
 function statBlock(items){
   return items.map(([l, v, c]) => `<div class="stat ${c || ''}"><dt>${l}</dt><dd>${v}</dd></div>`).join('');
 }
+const BATCH_MAX = 70;      // Salesforce will not take more IDs than this in one filter
+const BATCH_TARGET = 7;
+
 function makeBatches(){
-  const size = Math.max(10, +$('#batchSize').value || 70);
+  let size = Math.max(5, +$('#batchSize').value || BATCH_MAX);
+  const over = size > BATCH_MAX;
+  if (over){ size = BATCH_MAX; $('#batchSize').value = BATCH_MAX; }
   const ids = state.rows.map(r => r.clientId).filter(Boolean);
   state.batches = [];
   for (let i = 0; i < ids.length; i += size) state.batches.push(ids.slice(i, i + size));
   $('#batches').innerHTML = state.batches.map((b, i) =>
     `<div class="batch"><div class="batch-top"><div class="t">Batch ${i+1} of ${state.batches.length} &nbsp;·&nbsp; ${b.length} IDs</div>
       <button class="copy" data-b="${i}">Copy</button></div><pre>${b.join(', ')}</pre></div>`).join('');
+  /* 70 is the ceiling Salesforce enforces. 7 batches is the goal. If the list
+     is big enough that even 70s cannot get there, that is a conversation, not
+     a setting. */
+  const n = state.batches.length, tag = $('#batchCount');
+  if (tag){
+    const ids = state.rows.filter(r => r.clientId).length;
+    const floorBatches = Math.ceil(ids / BATCH_MAX);   // fewest possible, at 70 each
+    const idealSize = Math.ceil(ids / BATCH_TARGET);
+    let msg, colour;
+
+    if (over){
+      msg = 'Salesforce caps a filter at ' + BATCH_MAX + ' IDs, so the size was pulled back to ' + BATCH_MAX + '. ' + n + ' batches.';
+      colour = 'var(--red)';
+    } else if (floorBatches > BATCH_TARGET){
+      msg = ids + ' members needs at least ' + floorBatches + ' batches even at ' + BATCH_MAX +
+            ' each. That is over 7. Reach out to the Director of Virtual Services or the Salesforce Administrator.';
+      colour = 'var(--red)';
+    } else if (n === BATCH_TARGET){
+      msg = '7 batches. That is the target.';
+      colour = 'var(--ok)';
+    } else if (n < BATCH_TARGET){
+      msg = n + ' batches, under the target. Fewer runs, nothing to fix.';
+      colour = 'var(--ok)';
+    } else {
+      msg = n + ' batches. Set the size to ' + Math.min(BATCH_MAX, idealSize) + ' to reach 7.';
+      colour = 'var(--red)';
+    }
+    tag.textContent = msg;
+    tag.style.color = colour;
+  }
+
   document.querySelectorAll('.copy[data-b]').forEach(btn => {
     btn.addEventListener('click', () => {
       copyText(state.batches[+btn.dataset.b].join(', '));
