@@ -73,11 +73,16 @@
     if (state.stats && state.stats.coverage != null){
       const s = state.stats;
       const denom = s.eligible != null ? s.eligible : s.total;
+      const gotPct = s.total ? Math.min(100, s.got / s.total * 100) : 0;
+      const waitPct = s.total && s.waitlisted ? Math.min(100 - gotPct, s.waitlisted / s.total * 100) : 0;
       $('covStamp').innerHTML =
-        '<span class="lb">Coverage this month</span>' +
+        '<span class="lb">Coverage this month, waitlist excluded</span>' +
         '<span class="dt">' + s.coverage + '%</span>' +
+        '<span class="hbar mini"><i style="width:' + gotPct.toFixed(1) + '%"></i>' +
+          (waitPct ? '<u style="width:' + waitPct.toFixed(1) + '%"></u>' : '') + '</span>' +
         '<span class="sm">' + s.got + ' of ' + denom + ' eligible received a box' +
-        (s.waitlisted ? '<br>' + s.waitlisted + ' waitlisted, not counted' : '') + '</span>';
+        (s.waitlisted ? '<br>' + s.waitlisted + ' waitlisted, set aside'
+                      : '<br>no waitlisted members this month, so nothing was set aside') + '</span>';
       $('covStamp').style.display = '';
     }
     if (payload.month){
@@ -88,7 +93,7 @@
     $('monthChip').textContent = payload.month || 'Published';
     $('monthChip').className = 'stage-chip on';
     $('subLine').textContent =
-      (payload.month ? payload.month + '. ' : '') + state.rows.length + ' members did not receive a box.';
+      (payload.month ? payload.month + '. ' : '') + counted().length + ' members did not receive a box.';
     stamp(gen);
 
     showSchedule();
@@ -249,8 +254,8 @@
 
   /* ---------- rendering ---------- */
   function paint(){
-    const c = s => state.rows.filter(r => effStatus(r) === s).length;
-    const wait = c(STATUS.WAIT), angel = c(STATUS.ANGEL), total = state.rows.length;
+    const c = s => counted().filter(r => effStatus(r) === s).length;
+    const wait = c(STATUS.WAIT), angel = c(STATUS.ANGEL), total = counted().length;
     const cells = [
       ['Total without a box', total, ''],
       ['Already waitlisted', wait, 'g'],
@@ -303,14 +308,29 @@
     const now = state.month ? state.month.y + '-' + String(state.month.m + 1).padStart(2, '0') : '';
     const rows = list.map(m => {
       const pct = m.coverage == null ? 0 : m.coverage;
+      /* Green is boxes delivered, gold is waitlisted and therefore left out of
+         the maths, grey is what is still outstanding. */
+      const base = (m.total || 0) + (m.waitlisted || 0) > 0 ? (m.total + (m.eligible != null ? 0 : 0)) : 0;
+      const denom = m.total || 0;
+      const gotPct = denom ? Math.min(100, m.got / denom * 100) : pct;
+      const waitPct = denom && m.waitlisted ? Math.min(100 - gotPct, m.waitlisted / denom * 100) : 0;
+      const legend = m.waitlisted ? m.got + ' of ' + m.eligible + ' eligible, ' + m.waitlisted + ' waitlisted set aside'
+                                  : (m.got != null ? m.got + ' of ' + (m.eligible != null ? m.eligible : m.total) + ' eligible' : '');
       return '<div class="hrow' + (m.monthKey === now ? ' now' : '') + '">' +
-        '<div class="hm">' + (m.month || m.monthKey) + '</div>' +
-        '<div class="hbar"><i style="width:' + Math.max(0, Math.min(100, pct)) + '%"></i></div>' +
+        '<div class="hm">' + (m.month || m.monthKey) +
+          (legend ? '<span class="hsub">' + legend + '</span>' : '') + '</div>' +
+        '<div class="hbar">' +
+          '<i style="width:' + gotPct.toFixed(1) + '%"></i>' +
+          (waitPct ? '<u style="width:' + waitPct.toFixed(1) + '%"></u>' : '') +
+        '</div>' +
         '<div class="hp">' + pct + '%</div></div>';
     }).join('');
     const avg = Math.round(list.reduce((s, m) => s + (m.coverage || 0), 0) / list.length);
     box.innerHTML = '<h3>Coverage by month</h3>' + rows +
-      '<p class="hnote">Share of eligible members who received a box. Waitlisted members are left out of the count, since they are already covered another way. ' +
+      '<p class="hlegend"><span class="k green"></span>received a box' +
+      '<span class="k gold"></span>waitlisted, left out of the percentage' +
+      '<span class="k grey"></span>still without a box</p>' +
+      '<p class="hnote">The percentage counts only eligible members. Waitlisted members are set aside, since they are already covered another way. ' +
       list.length + ' month' + (list.length === 1 ? '' : 's') + ' recorded, averaging ' + avg + '%. ' +
       'A month is finalised by the run on the 1st, which closes out the month before.</p>';
   }

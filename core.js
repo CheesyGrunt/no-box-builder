@@ -27,9 +27,20 @@ const DECISIONS = [
   ['cleared',  'Cleared, send box'],
   ['hold',     'Hold, do not ship'],
   ['angel',    'Move to Volunteer Services'],
-  ['waitlist', 'Move to Waitlisted']
+  ['waitlist', 'Move to Waitlisted'],
+  ['exclude',  'Do not count, not a real member']
 ];
-const DECISION_LABEL = { cleared:'Cleared by VS', hold:'Held by VS', angel:'Moved to Volunteer Services', waitlist:'Moved to Waitlisted' };
+const DECISION_LABEL = {
+  cleared:'Cleared by VS', hold:'Held by VS',
+  angel:'Moved to Volunteer Services', waitlist:'Moved to Waitlisted',
+  exclude:'Not counted'
+};
+
+/* Test accounts and other records that are not real members. They stay visible
+   so nobody wonders where a row went, but they are out of every count, every
+   handoff list, and every percentage. */
+function excluded(r){ return r.override === 'exclude'; }
+function counted(){ return state.rows.filter(r => !excluded(r)); }
 
 /* Editing an address in the review queue. The flags recompute immediately, so
    a fixed address stops being held the moment it is valid. */
@@ -59,7 +70,7 @@ function heldBack(r){
   if (r.override === 'cleared') return !r.addr1;
   return autoHold(r);
 }
-function shippable(r){ return effStatus(r) === STATUS.SEND && !heldBack(r); }
+function shippable(r){ return !excluded(r) && effStatus(r) === STATUS.SEND && !heldBack(r); }
 /* Still open: flagged, and nobody has said what to do about it yet. A row with
    a decision on it is settled, whichever way it went. */
 function needsDecision(r){ return (autoHold(r) || r.zipFixed) && !r.override; }
@@ -272,12 +283,12 @@ const VIEWS = {
     title:'Volunteer Services: reach out',
     desc:'These members have a service delivery this month and are waiting on an Angel to make contact. Soonest Report by Date first, so the top of the list is the most urgent. No box yet.',
     cols: COLS.volunteer, sort:'reportBy',
-    rows: () => state.rows.filter(r => effStatus(r) === STATUS.ANGEL)
+    rows: () => counted().filter(r => effStatus(r) === STATUS.ANGEL)
   },
   waitlisted: {
     title:'Already waitlisted',
     desc:'On the Currently Waitlisted Clients report. No box, no outreach needed. Here for the record.',
-    cols: COLS.waitlisted, rows: () => state.rows.filter(r => effStatus(r) === STATUS.WAIT)
+    cols: COLS.waitlisted, rows: () => counted().filter(r => effStatus(r) === STATUS.WAIT)
   },
   decisions: {
     title:'Decisions you made',
@@ -359,7 +370,8 @@ function renderView(){
   t.querySelector('thead').innerHTML = '<tr>' + v.cols.map(c => `<th>${c[1]}</th>`).join('') + '</tr>';
   t.querySelector('tbody').innerHTML = rows.map(r => {
     let cls = '';
-    if (r.override === 'hold') cls = 'decided-hold';
+    if (excluded(r)) cls = 'excluded';
+    else if (r.override === 'hold') cls = 'decided-hold';
     else if (r.override) cls = 'decided';
     else if (r.flagRed) cls = 'red';
     else if (effStatus(r) === STATUS.WAIT) cls = 'gold';

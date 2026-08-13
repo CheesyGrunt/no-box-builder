@@ -139,13 +139,20 @@ function drawMap(key){
   }
   const box = node.querySelector('.map');
   box.className = 'map show';
+  /* Only the sheet and the row count stay out in the open. The column mapping
+     is right there when a report changes shape, but tucked away so nobody
+     nudges a dropdown while glancing at the page. */
   box.innerHTML =
     `<div class="map-row"><label>Sheet</label><select data-k="${key}" data-sheet>${f.wb.SheetNames.map(s => `<option ${s===f.sheetName?'selected':''}>${s}</option>`).join('')}</select></div>` +
-    `<div class="map-row"><label>Header row</label><input type="number" min="1" value="${f.headerRow}" data-k="${key}" data-hr style="width:70px"><span class="hint" data-count></span></div>` +
-    spec.fields.map(fld =>
-      `<div class="map-row"><label>${fld.label}</label><select data-k="${key}" data-f="${fld.key}">
-        <option value="-1">not in this file</option>${opts.join('')}</select></div>`
-    ).join('');
+    `<div class="map-row"><label></label><span class="hint" data-count></span></div>` +
+    `<details class="mapmore"><summary>Column mapping</summary><div class="mapbody">` +
+      `<div class="map-row"><label>Header row</label><input type="number" min="1" value="${f.headerRow}" data-k="${key}" data-hr style="width:70px"></div>` +
+      spec.fields.map(fld =>
+        `<div class="map-row"><label>${fld.label}</label><select data-k="${key}" data-f="${fld.key}">
+          <option value="-1">not in this file</option>${opts.join('')}</select></div>`
+      ).join('') +
+    `</div></details>`;
+
   spec.fields.forEach(fld => {
     const s = box.querySelector(`[data-f="${fld.key}"]`);
     s.value = String(f.map[fld.key] != null ? f.map[fld.key] : -1);
@@ -443,7 +450,7 @@ async function publish(){
       return;
     }
   }
-  out.innerHTML = '<p class="hint">Encrypting ' + state.rows.length + ' rows...</p>';
+  out.innerHTML = '<p class="hint">Encrypting ' + counted().length + ' counted rows...</p>';
   const label = new Date(state.month.y, state.month.m, 1).toLocaleString('en-US', { month:'long', year:'numeric' });
   const payload = {
     month: label,
@@ -452,9 +459,9 @@ async function publish(){
     updatedBy: updatedBy(),
     stats: coverageStats(),
     counts: {
-      unsupported: state.rows.length,
-      waitlisted: state.rows.filter(r => r.status === STATUS.WAIT).length,
-      angel: state.rows.filter(r => r.status === STATUS.ANGEL).length
+      unsupported: counted().length,
+      waitlisted: counted().filter(r => effStatus(r) === STATUS.WAIT).length,
+      angel: counted().filter(r => effStatus(r) === STATUS.ANGEL).length
     },
     rows: state.rows
   };
@@ -473,8 +480,9 @@ async function publish(){
 
 /* ---------- summary, recomputed whenever a decision changes ---------- */
 function paintSummary(){
-  const c = s => state.rows.filter(r => effStatus(r) === s).length;
-  const total = state.rows.length, wait = c(STATUS.WAIT), angel = c(STATUS.ANGEL);
+  const c = s => counted().filter(r => effStatus(r) === s).length;
+  const total = counted().length, wait = c(STATUS.WAIT), angel = c(STATUS.ANGEL);
+  const skipped = state.rows.filter(excluded).length;
   const cov = coverageStats();
   const cells = [
     ['True count of unsupported', total, ''],
@@ -486,6 +494,7 @@ function paintSummary(){
     cells.push(['Coverage, everyone', cov.rawCoverage + '%', '']);
     cells.push(['Coverage, waitlist excluded', cov.coverage + '%', 'o']);
   }
+  if (skipped) cells.push(['Not counted', skipped, '']);
   $('#stats2').innerHTML = statBlock(cells);
 
   const held = state.rows.filter(needsDecision).length;
@@ -520,6 +529,7 @@ function paintSummary(){
     (zipf ? zipf + ' had a letter O corrected to a zero in the zip, worth a glance. ' : '') +
     `Work them on the Needs review tab. Fix the address or pick a decision, and each one drops off the tab as you go.</p></div>`);
   else bits.push('<div class="note"><div class="lbl">Needs review is clear</div><p>Every flagged row has been fixed or decided. Nothing is waiting on you.</p></div>');
+  if (skipped) bits.push(`<div class="note"><div class="lbl">${skipped} row${skipped === 1 ? '' : 's'} not counted</div><p>Marked as not real members, so they are out of every count, list, and percentage. They stay on the Decisions tab so nothing looks like it vanished.</p></div>`);
   if (decided) bits.push(`<div class="note"><div class="lbl">${decided} row${decided === 1 ? '' : 's'} settled by hand</div><p>Fixes and decisions travel with the published file, so staff can see a person made the call. They are on the Decisions tab if you want to change one.</p></div>`);
   $('#alerts').innerHTML = bits.join('');
 
@@ -596,13 +606,18 @@ const GH = {
    misses understates the month. They come out of the denominator. */
 function coverageStats(){
   if (!state.stage1) return null;
-  const total = state.stage1.total, got = state.stage1.got;
-  const waitlisted = state.rows.filter(r => effStatus(r) === STATUS.WAIT).length;
+  /* Excluded rows are on the source report, so they inflate the totals until
+     they are taken back out of both the members count and the no-box count. */
+  const skipped = state.rows.filter(excluded).length;
+  const total = Math.max(0, state.stage1.total - skipped);
+  const got = state.stage1.got;
+  const waitlisted = counted().filter(r => effStatus(r) === STATUS.WAIT).length;
   const eligible = Math.max(0, total - waitlisted);
   return {
     total: total,
     got: got,
-    noBox: state.stage1.noBox,
+    noBox: counted().length,
+    excluded: skipped,
     waitlisted: waitlisted,
     eligible: eligible,
     /* Floor, not round. 601 of 604 is 99.5%, and showing that as 100% hides
@@ -700,7 +715,7 @@ async function publishLive(){
   if (!g.owner || !g.repo) return note('warn', 'Repo needed', 'Fill in the GitHub owner and repository name.');
   if (!GH.token()) return note('warn', 'Token needed', 'Paste a GitHub token with Contents write access to this repo. Instructions are below.');
 
-  out.innerHTML = '<p class="hint">Encrypting ' + state.rows.length + ' rows...</p>';
+  out.innerHTML = '<p class="hint">Encrypting ' + counted().length + ' counted rows...</p>';
   const label = new Date(state.month.y, state.month.m, 1).toLocaleString('en-US', { month:'long', year:'numeric' });
   const payload = {
     month: label,
@@ -709,9 +724,9 @@ async function publishLive(){
     updatedBy: updatedBy(),
     stats: coverageStats(),
     counts: {
-      unsupported: state.rows.length,
-      waitlisted: state.rows.filter(r => r.status === STATUS.WAIT).length,
-      angel: state.rows.filter(r => r.status === STATUS.ANGEL).length
+      unsupported: counted().length,
+      waitlisted: counted().filter(r => effStatus(r) === STATUS.WAIT).length,
+      angel: counted().filter(r => effStatus(r) === STATUS.ANGEL).length
     },
     rows: state.rows
   };
@@ -773,7 +788,7 @@ async function publishLive(){
     try { months = await updateHistory(g, payload); } catch(e){}
 
     out.innerHTML = '<div class="note"><div class="lbl">Published</div>' +
-      '<p>' + label + ' is live, ' + state.rows.length + ' members, ' + Math.round(text.length / 1024) + ' KB encrypted.' +
+      '<p>' + label + ' is live, ' + counted().length + ' members, ' + Math.round(text.length / 1024) + ' KB encrypted.' +
       (url ? ' <a href="' + url + '" target="_blank" rel="noopener">See the commit</a>.' : '') + '</p>' +
       '<p>It replaced last month\'s file at the same path, so there is only ever one list.' +
       (swept.length ? ' Also cleared ' + swept.length + ' stray file' + (swept.length === 1 ? '' : 's') +

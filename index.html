@@ -39,12 +39,23 @@
   .hist{background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--maroon);
     padding:20px 24px;margin:0 0 24px}
   .hist h3{margin-bottom:14px}
-  .hrow{display:grid;grid-template-columns:150px 1fr 62px;gap:14px;align-items:center;
+  .hrow{display:grid;grid-template-columns:210px 1fr 62px;gap:14px;align-items:center;
     padding:7px 0;border-bottom:1px solid var(--rule);font-size:14px}
   .hrow:last-child{border-bottom:none}
   .hrow .hm{font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;font-size:16px}
-  .hbar{height:16px;background:#E4DED0;position:relative}
+  .hbar{height:16px;background:#E4DED0;position:relative;display:flex;overflow:hidden}
   .hbar i{display:block;height:100%;background:var(--ok)}
+  .hbar u{display:block;height:100%;background:var(--gold)}
+  .hbar.mini{height:10px;width:100%;margin:7px 0 2px}
+  .hrow .hm{display:flex;flex-direction:column;gap:2px}
+  .hrow .hsub{font-family:var(--mono);font-size:10.5px;letter-spacing:.02em;
+    text-transform:none;color:var(--ink-soft);font-weight:400}
+  .hlegend{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;margin:14px 0 6px;
+    font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-soft)}
+  .hlegend .k{width:13px;height:13px;display:inline-block;margin-right:-12px}
+  .hlegend .k.green{background:var(--ok)}
+  .hlegend .k.gold{background:var(--gold)}
+  .hlegend .k.grey{background:#E4DED0}
   .hrow .hp{font-family:var(--display);font-size:19px;font-weight:700;text-align:right;color:var(--maroon)}
   .hrow.now{background:#FFFBEF}
   .hnote{font-size:13px;color:var(--ink-soft);margin-top:12px}

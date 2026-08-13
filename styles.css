@@ -44,6 +44,15 @@ p{margin:0 0 12px;max-width:80ch}
 .map{margin-top:10px;border-top:1px dashed var(--rule);padding-top:12px;display:none}
 .map.show{display:block}
 .map-row{display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:12.5px}
+.mapmore{margin-top:8px;border-top:1px dashed var(--rule);padding-top:8px}
+.mapmore summary{font-family:var(--display);text-transform:uppercase;letter-spacing:.1em;
+  font-size:12px;color:var(--ink-soft);cursor:pointer;padding:4px 0;list-style:none;
+  display:flex;align-items:center;gap:7px}
+.mapmore summary::-webkit-details-marker{display:none}
+.mapmore summary::before{content:'\25B8';font-size:11px;transition:transform .15s}
+.mapmore[open] summary::before{transform:rotate(90deg)}
+.mapmore summary:hover{color:var(--maroon)}
+.mapbody{padding-top:8px}
 .map-row label{flex:0 0 132px;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft)}
 select,input[type=number],input[type=month],input[type=text]{font-family:var(--body);font-size:13px;padding:5px 7px;border:1px solid var(--rule);background:#fff;color:var(--ink);max-width:100%}
 select{flex:1;min-width:0}
@@ -95,6 +104,8 @@ tr.edited td{background:#F1F7F2!important}
 tr.edited{border-left-color:var(--ok)}
 select.decide{font-family:var(--body);font-size:12.5px;padding:4px 6px;border:1px solid var(--rule);background:#fff;max-width:200px}
 select.decide:not([value=""]){border-color:var(--maroon)}
+tr.excluded td{background:#F0EEE9!important;color:#8C8377}
+tr.excluded{border-left-color:#B3AB9C}
 tr.decided td{background:#EDF6F0!important}
 tr.decided-hold td{background:#FBE3E3!important}
 .tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;white-space:nowrap}
