@@ -232,8 +232,11 @@ const COLS = {
     ['city','Mailing City'],['state','State/Province'],['zip','Zip/Postal Code']
   ],
   volunteer: [
-    ['reportBy','Report by Date'],['name','Client Name'],['first','First Name'],['last','Last Name'],
-    ['clientId','Client ID'],['serviceDelivery','Service Delivery'],['mailStop','Mail Stop Date']
+    ['reportBy','Report by Date'],['name','Client'],
+    ['provider','Provider'],['providerEmail','Provider Email']
+  ],
+  waitlisted: [
+    ['name','Client Name'],['clientId','Client ID'],['mailStop','Mail Stop Date'],['reportBy','Report by Date']
   ]
 };
 const VIEWS = {
@@ -257,7 +260,7 @@ const VIEWS = {
   waitlisted: {
     title:'Already waitlisted',
     desc:'On the Currently Waitlisted Clients report. No box, no outreach needed. Here for the record.',
-    cols: COLS.volunteer, rows: () => state.rows.filter(r => effStatus(r) === STATUS.WAIT)
+    cols: COLS.waitlisted, rows: () => state.rows.filter(r => effStatus(r) === STATUS.WAIT)
   },
   review: {
     title:'Needs review before anything ships',
@@ -460,7 +463,7 @@ async function exportWorkbook(){
   sheetFrom(wb.addWorksheet('Logistics - Send Box'), COLS.shipping, state.rows.filter(r => r.status === STATUS.SEND), {});
   sheetFrom(wb.addWorksheet('Volunteer Svcs - Outreach'), COLS.volunteer,
     state.rows.filter(r => r.status === STATUS.ANGEL).sort(byDate('reportBy')), {});
-  sheetFrom(wb.addWorksheet('Waitlisted'), COLS.volunteer, state.rows.filter(r => r.status === STATUS.WAIT), {});
+  sheetFrom(wb.addWorksheet('Waitlisted'), COLS.waitlisted, state.rows.filter(r => effStatus(r) === STATUS.WAIT), {});
 
   const buf = await wb.xlsx.writeBuffer();
   download(new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `No Box - ${stamp()}.xlsx`);

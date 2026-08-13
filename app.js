@@ -34,6 +34,8 @@ const SPECS = {
       { key:'name',     label:'Client', col:'A', hints:['client name','client','account','member'] },
       { key:'status',   label:'Status', col:'F', hints:['status'] },
       { key:'reportBy', label:'Report by date', col:'G', hints:['report by date','report by','assigned report'] },
+      { key:'provider',  label:'Provider', col:'', hints:['provider name','provider','angel','assigned to','volunteer name','service provider','owner'] },
+      { key:'providerEmail', label:'Provider email', col:'', hints:['provider email','provider: email','angel email','volunteer email','assigned to email','email'] },
       { key:'addrFull', label:'Client Address (one column)', col:'', hints:['client address','mailing address','address'] },
       { key:'street',   label:'Street (if separate)', col:'J', hints:['street','address line 1','mailing street'] },
       { key:'street2',  label:'Address line 2', col:'', hints:['address line 2','line 2','suite','apt'] },
@@ -214,6 +216,7 @@ function build(){
       mailStop: stopBy[n] || null,
       first: sp.first, last: sp.last,
       serviceDelivery:'', reportBy:null,
+      provider:'', providerEmail:'',
       addr1:'', addr2:'', city:'', state:'', zip:'',
       status:'', flagPurple:false, flagRed:false, matched:true
     });
@@ -294,9 +297,24 @@ function finish(){
     const assigned = hits.filter(r => String(g(r, 'status') || '').trim().toLowerCase() === 'assigned');
     row.serviceDelivery = assigned.length ? 'Yes' : '';
 
-    let earliest = null;
-    assigned.forEach(r => { const d = toDate(g(r, 'reportBy')); if (d && (!earliest || d < earliest)) earliest = d; });
+    /* Earliest assigned date drives the outreach order, and the provider on
+       that same row is the person Volunteer Services needs to reach. */
+    let earliest = null, earliestRow = null;
+    assigned.forEach(r => {
+      const d = toDate(g(r, 'reportBy'));
+      if (d && (!earliest || d < earliest)){ earliest = d; earliestRow = r; }
+    });
     row.reportBy = earliest;
+
+    const provRow = earliestRow || assigned.find(r => String(g(r, 'provider') || '').trim() !== '') || hits[0];
+    if (provRow){
+      row.provider = String(g(provRow, 'provider') || '').trim();
+      row.providerEmail = String(g(provRow, 'providerEmail') || '').trim();
+    }
+    if (!row.provider){
+      const any = hits.find(r => String(g(r, 'provider') || '').trim() !== '');
+      if (any){ row.provider = String(g(any, 'provider') || '').trim(); row.providerEmail = String(g(any, 'providerEmail') || '').trim(); }
+    }
 
     const useFull = p2.map.addrFull > -1;
     const addr = hits.find(r => String((useFull ? g(r, 'addrFull') : g(r, 'street')) || '').trim() !== '');
@@ -331,7 +349,13 @@ function finish(){
   $('#chip3').className = 'stage-chip done';
   $('#chip4').className = 'stage-chip on';
   const unmatched = state.rows.filter(r => !r.matched).length;
-  $('#hint3').textContent = unmatched ? unmatched + ' member(s) had no matching row in Part 2. They will show with blank dates and addresses.' : '';
+  const angels = state.rows.filter(r => effStatus(r) === STATUS.ANGEL);
+  const noProv = angels.filter(r => !r.provider).length;
+  const bits = [];
+  if (unmatched) bits.push(unmatched + ' member(s) had no matching row in Part 2, so their dates and addresses are blank.');
+  if (angels.length && noProv === angels.length) bits.push('No provider names came through. Check the Provider and Provider email dropdowns on the Part 2 file above.');
+  else if (noProv) bits.push(noProv + ' of ' + angels.length + ' outreach rows have no provider listed.');
+  $('#hint3').textContent = bits.join(' ');
   $('#hint3').style.color = 'var(--red)';
 
   renderView();

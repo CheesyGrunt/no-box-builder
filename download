@@ -1,0 +1,9 @@
+# Never commit report data
+*.xlsx
+*.xls
+*.xlsm
+*.csv
+*.tsv
+samples/
+exports/
+.DS_Store
