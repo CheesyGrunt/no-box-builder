@@ -8,5 +8,15 @@
     "got": 601,
     "noBox": 46,
     "coverage": 93
+  },
+  {
+    "monthKey": "2026-08",
+    "month": "August 2026",
+    "published": "2026-08-13T18:23:26.108Z",
+    "updatedBy": "Director of Virtual Services",
+    "total": 661,
+    "got": 222,
+    "noBox": 439,
+    "coverage": 34
   }
 ]
