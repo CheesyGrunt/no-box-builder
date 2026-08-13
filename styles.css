@@ -30,7 +30,7 @@ h2{font-family:var(--display);text-transform:uppercase;font-weight:700;font-size
 h3{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:17px;margin:0 0 8px}
 .h2rule{height:3px;background:var(--gold);width:48px;margin-bottom:18px}
 .panel{background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--maroon);padding:22px 24px;margin-bottom:18px}
-.panel.locked{opacity:.5;pointer-events:none;border-left-color:var(--rule)}
+.panel.locked{display:none}
 .panel.ready{border-left-color:var(--ok)}
 .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--maroon);margin-bottom:8px}
 p{margin:0 0 12px;max-width:80ch}

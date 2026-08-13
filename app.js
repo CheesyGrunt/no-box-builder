@@ -235,7 +235,6 @@ function build(){
 
   makeBatches();
   $('#p2').classList.remove('locked');
-  $('#p3').classList.remove('locked');
   $('#p1').classList.add('ready');
   $('#chip1').className = 'stage-chip done';
   $('#chip2').className = 'stage-chip on';
@@ -395,8 +394,6 @@ function finish(){
 
   $('#p3').classList.add('ready');
   $('#p4').classList.remove('locked');
-  $('#p5').classList.remove('locked');
-  $('#chip2').className = 'stage-chip done';
   $('#chip3').className = 'stage-chip done';
   $('#chip4').className = 'stage-chip on';
   const unmatched = state.rows.filter(r => !r.matched).length;
@@ -729,6 +726,25 @@ $('#btnBack').addEventListener('click', () => { location.href = 'index.html'; })
 $('#btnPublish').addEventListener('click', publish);
 $('#btnPublishLive').addEventListener('click', publishLive);
 $('#btnCheck').addEventListener('click', checkConnection);
+
+/* One stage at a time. The next panel does not exist until this one is done,
+   so there is no scrolling past a step by accident. */
+function openStage(id, chipDone, chipNext){
+  $(id).classList.remove('locked');
+  if (chipDone) $(chipDone).className = 'stage-chip done';
+  if (chipNext) $(chipNext).className = 'stage-chip on';
+  setTimeout(() => $(id).scrollIntoView({ behavior:'smooth', block:'start' }), 60);
+}
+$('#btnToStage3').addEventListener('click', () => {
+  $('#p2').classList.add('ready');
+  openStage('#p3', '#chip2', '#chip3');
+});
+$('#btnToPublish').addEventListener('click', () => {
+  const held = state.rows.filter(r => effStatus(r) === STATUS.SEND && heldBack(r)).length;
+  if (held && !confirm(held + ' member' + (held === 1 ? ' is' : 's are') +
+      ' still held back and will not reach Logistics. Publish anyway?')) return;
+  openStage('#p5', '#chip4', null);
+});
 GH.restore();
 openModeBanner();
 $('#btnReset').addEventListener('click', () => { if (confirm('Clear the loaded files and start over?')) location.reload(); });

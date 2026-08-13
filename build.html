@@ -96,6 +96,11 @@
       <button class="btn sm out" id="btnDlIds">Download all IDs (.csv)</button>
     </div>
     <div class="batches" id="batches"></div>
+
+    <div class="rowline" style="margin-top:22px;padding-top:18px;border-top:1px solid var(--rule)">
+      <button class="btn" id="btnToStage3">I have the Part 2 export, continue</button>
+      <span class="hint">Run every batch and combine them into one export before moving on.</span>
+    </div>
   </section>
 
   <!-- ============ STAGE 3 ============ -->
@@ -151,8 +156,13 @@
     </div>
 
     <div style="margin-top:18px">
-      <button class="btn" id="btnWorkbook">Download the full styled workbook (.xlsx)</button>
+      <button class="btn out" id="btnWorkbook">Download the full styled workbook (.xlsx)</button>
       <span class="hint" style="margin-left:12px">Values only, no formulas. Prompt 6 is already baked in.</span>
+    </div>
+
+    <div class="rowline" style="margin-top:22px;padding-top:18px;border-top:1px solid var(--rule)">
+      <button class="btn" id="btnToPublish">Review done, go to publish</button>
+      <span class="hint">Clear the Needs review tab first. Whatever is held back stays off the Logistics list.</span>
     </div>
   </section>
 
