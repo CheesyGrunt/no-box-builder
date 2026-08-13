@@ -232,7 +232,7 @@ function build(){
     ['Members on report', total, ''],
     ['Got a box', got, 'o'],
     ['No box', rows.length, 'g'],
-    ['Coverage', total ? Math.round(got / total * 100) + '%' : '0%', '']
+    ['Coverage, everyone', total ? Math.floor(got / total * 100) + '%' : '0%', '']
   ]);
 
   makeBatches();
@@ -475,12 +475,18 @@ async function publish(){
 function paintSummary(){
   const c = s => state.rows.filter(r => effStatus(r) === s).length;
   const total = state.rows.length, wait = c(STATUS.WAIT), angel = c(STATUS.ANGEL);
-  $('#stats2').innerHTML = statBlock([
+  const cov = coverageStats();
+  const cells = [
     ['True count of unsupported', total, ''],
     ['Current waitlist count', wait, 'g'],
     ['Pending service delivery', angel, 'b'],
     ['Total boxes to send', state.rows.filter(shippable).length, 'o']
-  ]);
+  ];
+  if (cov){
+    cells.push(['Coverage, everyone', cov.rawCoverage + '%', '']);
+    cells.push(['Coverage, waitlist excluded', cov.coverage + '%', 'o']);
+  }
+  $('#stats2').innerHTML = statBlock(cells);
 
   const held = state.rows.filter(needsDecision).length;
   const decided = state.rows.filter(isSettled).length;
@@ -601,7 +607,8 @@ function coverageStats(){
     eligible: eligible,
     /* Floor, not round. 601 of 604 is 99.5%, and showing that as 100% hides
        three members who never got a box. 100 means 100. */
-    coverage: eligible ? Math.floor(got / eligible * 100) : 0
+    coverage: eligible ? Math.floor(got / eligible * 100) : 0,
+    rawCoverage: total ? Math.floor(got / total * 100) : 0
   };
 }
 
@@ -631,7 +638,8 @@ async function updateHistory(g, payload){
     noBox: payload.stats ? payload.stats.noBox : null,
     waitlisted: payload.stats ? payload.stats.waitlisted : null,
     eligible: payload.stats ? payload.stats.eligible : null,
-    coverage: payload.stats ? payload.stats.coverage : null
+    coverage: payload.stats ? payload.stats.coverage : null,
+    rawCoverage: payload.stats ? payload.stats.rawCoverage : null
   };
   history = history.filter(h => h.monthKey !== entry.monthKey);
   history.push(entry);
