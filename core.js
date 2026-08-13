@@ -213,7 +213,7 @@ const COLS = {
   ],
   logistics: [
     ['name','Client Name'],['first','First Name'],['last','Last Name'],
-    ['addr1','Mailing Address Line 1'],['addr2','Mailing Address Line 2'],['city','Mailing City'],['state','State/Province'],['zip','Zip/Postal Code'],
+    ['street','Mailing Address Line 1'],['city','Mailing City'],['state','State/Province'],['zip','Zip/Postal Code'],
     ['mailStop','Mail Stop Date'],['review','Review']
   ],
   /* Review queue: what is wrong, who it is, and the ID to jump to the record. */
@@ -221,14 +221,14 @@ const COLS = {
     ['name','Client Name'],['review','Review'],['decision','Decision'],['clientId','Client ID'],
     ['status','Status'],['mailStop','Mail Stop Date'],['reportBy','Report by Date'],
     ['serviceDelivery','Service Delivery'],
-    ['addr1','Mailing Address Line 1'],['addr2','Mailing Address Line 2'],
+    ['street','Mailing Address Line 1'],
     ['city','Mailing City'],['state','State/Province'],['zip','Zip/Postal Code'],
     ['first','First Name'],['last','Last Name']
   ],
   /* What Logistics actually ships from. One cell per field, nothing else. */
   shipping: [
     ['first','First Name'],['last','Last Name'],
-    ['addr1','Mailing Address Line 1'],['addr2','Mailing Address Line 2'],
+    ['street','Mailing Address Line 1'],
     ['city','Mailing City'],['state','State/Province'],['zip','Zip/Postal Code']
   ],
   volunteer: [
@@ -271,6 +271,12 @@ const VIEWS = {
 };
 function cellVal(r, k){
   if (k === 'mailStop' || k === 'reportBy') return fmtDate(r[k]);
+  /* Logistics wants one address line, not two. Nothing is dropped: whatever
+     landed in line 2 is joined back on rather than thrown away. */
+  if (k === 'street'){
+    const a = String(r.addr1 || '').trim(), b = String(r.addr2 || '').trim();
+    return b ? a + ', ' + b : a;
+  }
   if (k === 'decision') return r.override ? (DECISION_LABEL[r.override] || r.override) : '';
   if (k === 'review'){
     const t = [];
@@ -348,7 +354,7 @@ function renderView(){
           val = r.override ? `<span class="tag ${r.override === 'hold' ? 'red' : 'send'}">${DECISION_LABEL[r.override]}</span>` : '';
         }
       }
-      const pc = (r.flagPurple && ['addr1','addr2','city','state','zip'].includes(c[0])) ? ' class="flag-purple"' : '';
+      const pc = (r.flagPurple && ['street','addr1','addr2','city','state','zip'].includes(c[0])) ? ' class="flag-purple"' : '';
       return `<td${pc} data-l="${c[1]}">${val || ''}</td>`;
     }).join('') + '</tr>';
   }).join('') || `<tr><td colspan="${v.cols.length}" style="padding:20px;color:var(--ink-soft)">Nothing in this list.</td></tr>`;
@@ -411,7 +417,7 @@ function sheetFrom(ws, cols, rows, opts){
         if (r.flagRed){ fill(cell, ARGB.red); cell.font = { bold:true, color:{ argb:ARGB.white } }; }
         else if (r.status === STATUS.WAIT){ fill(cell, ARGB.gold); cell.font = { bold:true, color:{ argb:ARGB.maroon } }; }
         else if (r.status === STATUS.ANGEL){ fill(cell, ARGB.blue); cell.font = { bold:true, color:{ argb:ARGB.white } }; }
-        if (r.flagPurple && ['addr1','addr2','city','state','zip'].includes(k) && !r.flagRed){
+        if (r.flagPurple && ['street','addr1','addr2','city','state','zip'].includes(k) && !r.flagRed){
           fill(cell, ARGB.purple); cell.font = { bold:true, color:{ argb:ARGB.white } };
         }
       }
