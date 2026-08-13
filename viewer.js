@@ -87,6 +87,14 @@
     }
     if (payload.month){
       $('monthBig').textContent = payload.month;
+      const mk2 = String(payload.monthKey || '').split('-');
+      if (mk2.length === 2){
+        const first = new Date(+mk2[0], +mk2[1] - 1, 1);
+        const last = new Date(+mk2[0], +mk2[1], 0);
+        const f = d => d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+        $('monthHero').querySelector('.sm').textContent =
+          f(first) + ' to ' + f(last) + ', ' + mk2[0] + '\nevery member deployed in this window';
+      }
       $('monthHero').style.display = '';
     }
     const gen = payload.generated ? new Date(payload.generated) : null;
@@ -114,9 +122,10 @@
     const ago = days <= 0 ? 'today' : days === 1 ? 'yesterday' :
                 days < 30 ? days + ' days ago' : 'over a month ago';
     box.className = 'pubstamp' + (days > 35 ? ' old' : '');
+    const who = state.updatedBy ? '\npublished by the ' + String(state.updatedBy).replace(/^The\s+/i, '') : '';
     box.innerHTML = '<span class="lb">Last updated</span>' +
       '<span class="dt">' + gen.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) + '</span>' +
-      '<span class="ago">' + ago + '</span>';
+      '<span class="sm">' + ago + who + '</span>';
     box.style.display = '';
   }
 
