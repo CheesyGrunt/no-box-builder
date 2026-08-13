@@ -31,6 +31,20 @@ const DECISIONS = [
 ];
 const DECISION_LABEL = { cleared:'Cleared by VS', hold:'Held by VS', angel:'Moved to Volunteer Services', waitlist:'Moved to Waitlisted' };
 
+/* Editing an address in the review queue. The flags recompute immediately, so
+   a fixed address stops being held the moment it is valid. */
+const EDITABLE_FIELDS = ['street','city','state','zip'];
+function applyEdit(row, field, raw){
+  const v = String(raw == null ? '' : raw).trim();
+  if (field === 'street'){ row.addr1 = v; row.addr2 = ''; }
+  else if (field === 'city'){ row.city = v; }
+  else if (field === 'state'){ row.state = v.toUpperCase(); }
+  else if (field === 'zip'){ row.zip = cleanZip(v); row.zipFixed = false; }
+  row.flagPurple = !!row.city && !isMilCity(row.city);
+  row.edited = true;
+  return row;
+}
+
 function effStatus(r){
   if (r.override === 'angel') return STATUS.ANGEL;
   if (r.override === 'waitlist') return STATUS.WAIT;
@@ -265,7 +279,7 @@ const VIEWS = {
     title:'Needs review before anything ships',
     desc:'What is wrong is in the Review column, and the Client ID is right there to look the record up. Red means the Mail Stop Date lands in the reporting month, so confirm eligibility. Purple means the mailing city is not APO, FPO, or DPO. Incomplete means the address would not parse into city, state, and zip.',
     cols: COLS.review,
-    rows: () => state.rows.filter(r => autoHold(r) || r.zipFixed || r.override)
+    rows: () => state.rows.filter(r => autoHold(r) || r.zipFixed || r.override || r.edited)
   }
 };
 function cellVal(r, k){
@@ -343,6 +357,13 @@ function renderView(){
           return `<span class="tag ${cls}">${x}</span>`;
         }).join(' ');
       }
+      if (state.editable && state.view === 'review' && EDITABLE_FIELDS.includes(c[0])){
+        const raw = String(cellVal(r, c[0])).replace(/"/g, '&quot;');
+        val = `<input class="cellfix" data-row="${state.rows.indexOf(r)}" data-f="${c[0]}" value="${raw}"` +
+              (c[0] === 'state' ? ' maxlength="2" style="width:52px"' : '') +
+              (c[0] === 'zip' ? ' style="width:92px"' : '') + `>`;
+        return `<td data-l="${c[1]}">${val}</td>`;
+      }
       if (c[0] === 'decision'){
         if (state.editable){
           val = `<select class="decide" data-row="${state.rows.indexOf(r)}">` +
@@ -359,6 +380,17 @@ function renderView(){
   $('#vFoot').textContent = rows.length + ' row' + (rows.length === 1 ? '' : 's') + ' shown.';
 
   if (state.editable){
+    t.querySelectorAll('input.cellfix').forEach(inp => {
+      // change fires on blur, so the table is not rebuilt under the cursor
+      inp.addEventListener('change', () => {
+        const row = state.rows[+inp.dataset.row];
+        if (!row) return;
+        applyEdit(row, inp.dataset.f, inp.value);
+        renderView();
+        if (typeof window.onOverrideChange === 'function') window.onOverrideChange();
+      });
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); });
+    });
     t.querySelectorAll('select.decide').forEach(sel => {
       sel.addEventListener('change', () => {
         const row = state.rows[+sel.dataset.row];

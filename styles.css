@@ -88,6 +88,11 @@ tr.gold td{background:#FFF3D0}
 tr.blue td{background:#E3EAF8}
 tr.red td{background:#FBE3E3}
 td.flag-purple{background:#EFE3F7!important;color:var(--purple);font-weight:600}
+input.cellfix{font-family:var(--body);font-size:13px;padding:5px 7px;border:1px solid var(--rule);
+  background:#fff;width:100%;min-width:90px;color:var(--ink)}
+input.cellfix:focus{border-color:var(--maroon);outline:2px solid rgba(110,27,44,.18);outline-offset:0}
+tr.edited td{background:#F1F7F2!important}
+tr.edited{border-left-color:var(--ok)}
 select.decide{font-family:var(--body);font-size:12.5px;padding:4px 6px;border:1px solid var(--rule);background:#fff;max-width:200px}
 select.decide:not([value=""]){border-color:var(--maroon)}
 tr.decided td{background:#EDF6F0!important}
