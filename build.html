@@ -74,18 +74,19 @@
     <dl class="stats" id="stats1"></dl>
 
     <div class="loud">
-      <div class="lt"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg> Never go over 70 per batch</div>
-      <p>70 is the most Client IDs Salesforce will take in one filter. Under 70 is fine, over 70 is not.
-      The batch size box will not let you past it.</p>
-      <p style="margin-top:10px">The goal is <strong>7 batches</strong>. Adjust the size to fit the report.
-      If you need more than 7 batches even at 70 per batch, stop and reach out to the
-      <strong>Director of Virtual Services</strong> or the <strong>Salesforce Administrator</strong>.</p>
+      <div class="lt"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg> 7 bundles or fewer. Never more than 70 IDs each.</div>
+      <p>70 is the most Client IDs Salesforce will take in one filter, and 7 bundles is the most
+      this process runs. The size box holds you inside both limits, so you cannot land on 13 bundles
+      of 35 by accident.</p>
+      <p style="margin-top:10px">If a month is big enough that it will not fit into 7 bundles even at 70 each,
+      stop and reach out to the <strong>Director of Virtual Services</strong> or the
+      <strong>Salesforce Administrator</strong>.</p>
       <p style="margin-top:10px"><strong>And do not save over this report.</strong> Update the filter, click Run, export.
       Never click Save. Saving rewrites the shared report for everyone who uses it.</p>
       <p style="margin-top:10px;font-style:italic;opacity:.9">Mess up the report and you will be banished to Azkaban.</p>
     </div>
 
-    <p>Copy each batch into the Part 2 report filter, one batch at a time. Filter logic stays the same: <span class="hint">Program Engagement Name AND (Client IDs) AND Created Date AND Service Delivery Name</span></p>
+    <p>Copy each bundle into the Part 2 report filter, one bundle at a time. Filter logic stays the same: <span class="hint">Program Engagement Name AND (Client IDs) AND Created Date AND Service Delivery Name</span></p>
     <p><a class="golink" href="https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR0000093WJ72AM/view?queryScope=userFolders" target="_blank" rel="noopener">Open Deployed Monthly Part 2</a></p>
     <div class="rowline">
       <label class="hint" for="batchSize">Batch size</label>

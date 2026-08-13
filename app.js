@@ -252,41 +252,51 @@ const BATCH_MAX = 70;      // Salesforce will not take more IDs than this in one
 const BATCH_TARGET = 7;
 
 function makeBatches(){
-  let size = Math.max(5, +$('#batchSize').value || BATCH_MAX);
-  const over = size > BATCH_MAX;
-  if (over){ size = BATCH_MAX; $('#batchSize').value = BATCH_MAX; }
   const ids = state.rows.map(r => r.clientId).filter(Boolean);
+  const typed = +$('#batchSize').value || BATCH_MAX;
+
+  /* Two hard edges. Salesforce will not take more than 70 IDs in one filter,
+     and we never want more than 7 bundles. That fixes the size to a range:
+     no smaller than what 7 bundles requires, no larger than 70. */
+  const minSize = Math.max(1, Math.ceil(ids.length / BATCH_TARGET));
+  const impossible = minSize > BATCH_MAX;   // too many members for 7 bundles of 70
+
+  let size = typed, why = '';
+  if (impossible){
+    size = BATCH_MAX;
+    why = 'over';
+  } else if (typed > BATCH_MAX){
+    size = BATCH_MAX; why = 'capped';
+  } else if (typed < minSize){
+    size = minSize; why = 'raised';
+  }
+  if (size !== typed) $('#batchSize').value = size;
+  $('#batchSize').min = impossible ? BATCH_MAX : minSize;
+  $('#batchSize').max = BATCH_MAX;
+
   state.batches = [];
   for (let i = 0; i < ids.length; i += size) state.batches.push(ids.slice(i, i + size));
+
   $('#batches').innerHTML = state.batches.map((b, i) =>
-    `<div class="batch"><div class="batch-top"><div class="t">Batch ${i+1} of ${state.batches.length} &nbsp;·&nbsp; ${b.length} IDs</div>
+    `<div class="batch"><div class="batch-top"><div class="t">Bundle ${i+1} of ${state.batches.length} &nbsp;·&nbsp; ${b.length} IDs</div>
       <button class="copy" data-b="${i}">Copy</button></div><pre>${b.join(', ')}</pre></div>`).join('');
-  /* 70 is the ceiling Salesforce enforces. 7 batches is the goal. If the list
-     is big enough that even 70s cannot get there, that is a conversation, not
-     a setting. */
+
   const n = state.batches.length, tag = $('#batchCount');
   if (tag){
-    const ids = state.rows.filter(r => r.clientId).length;
-    const floorBatches = Math.ceil(ids / BATCH_MAX);   // fewest possible, at 70 each
-    const idealSize = Math.ceil(ids / BATCH_TARGET);
     let msg, colour;
-
-    if (over){
-      msg = 'Salesforce caps a filter at ' + BATCH_MAX + ' IDs, so the size was pulled back to ' + BATCH_MAX + '. ' + n + ' batches.';
+    if (impossible){
+      msg = ids.length + ' members cannot fit into 7 bundles at ' + BATCH_MAX + ' each. ' +
+            'That is ' + n + ' bundles. Stop and reach out to the Director of Virtual Services or the Salesforce Administrator.';
       colour = 'var(--red)';
-    } else if (floorBatches > BATCH_TARGET){
-      msg = ids + ' members needs at least ' + floorBatches + ' batches even at ' + BATCH_MAX +
-            ' each. That is over 7. Reach out to the Director of Virtual Services or the Salesforce Administrator.';
+    } else if (why === 'capped'){
+      msg = 'Salesforce caps a filter at ' + BATCH_MAX + ' IDs, so the size was pulled back to ' + BATCH_MAX + '. ' + n + ' bundles.';
       colour = 'var(--red)';
-    } else if (n === BATCH_TARGET){
-      msg = '7 batches. That is the target.';
-      colour = 'var(--ok)';
-    } else if (n < BATCH_TARGET){
-      msg = n + ' batches, under the target. Fewer runs, nothing to fix.';
-      colour = 'var(--ok)';
+    } else if (why === 'raised'){
+      msg = 'Raised to ' + size + '. Anything smaller makes more than 7 bundles. ' + n + ' bundles.';
+      colour = 'var(--red)';
     } else {
-      msg = n + ' batches. Set the size to ' + Math.min(BATCH_MAX, idealSize) + ' to reach 7.';
-      colour = 'var(--red)';
+      msg = n + ' bundle' + (n === 1 ? '' : 's') + ' of up to ' + size + '. Anywhere from ' + minSize + ' to ' + BATCH_MAX + ' works.';
+      colour = 'var(--ok)';
     }
     tag.textContent = msg;
     tag.style.color = colour;
@@ -556,6 +566,31 @@ const GH = {
   }
 };
 
+/* Anything ending .enc in the data folder that is not the live file is left
+   over from a manual upload. Remove it so nobody opens the wrong month. */
+async function sweepOldFiles(g){
+  const dir = g.path.indexOf('/') > -1 ? g.path.slice(0, g.path.lastIndexOf('/')) : '';
+  if (!dir) return [];
+  const live = g.path.slice(g.path.lastIndexOf('/') + 1);
+  const res = await GH.call('https://api.github.com/repos/' + g.owner + '/' + g.repo +
+    '/contents/' + dir + '?ref=' + encodeURIComponent(g.branch));
+  if (res.status !== 200) return [];
+  const items = await res.json();
+  if (!Array.isArray(items)) return [];
+
+  const strays = items.filter(f => f.type === 'file' && f.name !== live && /\.enc$/i.test(f.name));
+  const gone = [];
+  for (const f of strays){
+    const del = await GH.call('https://api.github.com/repos/' + g.owner + '/' + g.repo +
+      '/contents/' + dir + '/' + encodeURIComponent(f.name), {
+        method:'DELETE',
+        body: JSON.stringify({ message:'Remove stray published file ' + f.name, sha:f.sha, branch:g.branch })
+      });
+    if (del.ok) gone.push(f.name);
+  }
+  return gone;
+}
+
 async function publishLive(){
   const out = $('#pubOut');
   const note = (k, t, b) => { out.innerHTML = '<div class="note' + (k ? ' ' + k : '') + '"><div class="lbl">' + t + '</div><p>' + b + '</p></div>'; };
@@ -636,11 +671,28 @@ async function publishLive(){
     GH.remember(GH.token());
     const res = await put.json();
     const url = res.commit && res.commit.html_url;
+
+    /* The publish overwrites data/latest.enc in place, so there is never a
+       second copy of the current list. This only sweeps up strays, such as a
+       file uploaded by hand under another name during the manual fallback. */
+    let swept = [];
+    try { swept = await sweepOldFiles(g); } catch(e){}
+
     out.innerHTML = '<div class="note"><div class="lbl">Published</div>' +
       '<p>' + label + ' is live, ' + state.rows.length + ' members, ' + Math.round(text.length / 1024) + ' KB encrypted.' +
       (url ? ' <a href="' + url + '" target="_blank" rel="noopener">See the commit</a>.' : '') + '</p>' +
-      '<p>Render is rebuilding now. Give it about a minute, then staff will see this month when they sign in.</p>' +
-      '<p class="hint" style="margin:8px 0 0">Mischief managed.</p></div>';
+      '<p>It replaced last month\'s file at the same path, so there is only ever one list.' +
+      (swept.length ? ' Also cleared ' + swept.length + ' stray file' + (swept.length === 1 ? '' : 's') +
+        ' left in the data folder: ' + swept.join(', ') + '.' : '') + '</p>' +
+      '<p>Render is rebuilding now. Give it about a minute, then the staff site will show this month.</p>' +
+      '<div class="rowline" style="margin-top:14px">' +
+        '<button class="btn gold" id="btnStaffSite">Open the staff site</button>' +
+        '<span class="hint">Give Render a minute first, then sign in as staff would.</span>' +
+      '</div>' +
+      '<p class="hint" style="margin:14px 0 0">Mischief managed.</p></div>';
+
+    const ss = $('#btnStaffSite');
+    if (ss) ss.addEventListener('click', () => window.open('index.html', '_blank'));
   } catch(e){
     note('warn', 'Could not reach GitHub', String(e.message || e) + '. Check your connection, then try the manual download below.');
   }
@@ -727,6 +779,32 @@ $('#btnPublish').addEventListener('click', publish);
 $('#btnPublishLive').addEventListener('click', publishLive);
 $('#btnCheck').addEventListener('click', checkConnection);
 
+/* A dialog we control, rather than the browser's, which cannot be styled and
+   leads with the domain name. */
+function askConfirm(opts){
+  return new Promise(resolve => {
+    const back = el('div', 'modal-back');
+    back.innerHTML =
+      '<div class="modal" role="dialog" aria-modal="true">' +
+        '<h3 class="mt"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">' +
+        '<path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg>' +
+        opts.title + '</h3>' +
+        opts.body +
+        '<div class="mact">' +
+          '<button class="btn" id="mYes">' + opts.yes + '</button>' +
+          '<button class="btn out" id="mNo">' + opts.no + '</button>' +
+        '</div></div>';
+    document.body.appendChild(back);
+    const done = v => { back.remove(); document.removeEventListener('keydown', esc); resolve(v); };
+    const esc = e => { if (e.key === 'Escape') done(false); };
+    back.querySelector('#mYes').addEventListener('click', () => done(true));
+    back.querySelector('#mNo').addEventListener('click', () => done(false));
+    back.addEventListener('click', e => { if (e.target === back) done(false); });
+    document.addEventListener('keydown', esc);
+    back.querySelector('#mNo').focus();
+  });
+}
+
 /* One stage at a time. The next panel does not exist until this one is done,
    so there is no scrolling past a step by accident. */
 function openStage(id, chipDone, chipNext){
@@ -739,10 +817,21 @@ $('#btnToStage3').addEventListener('click', () => {
   $('#p2').classList.add('ready');
   openStage('#p3', '#chip2', '#chip3');
 });
-$('#btnToPublish').addEventListener('click', () => {
+$('#btnToPublish').addEventListener('click', async () => {
   const held = state.rows.filter(r => effStatus(r) === STATUS.SEND && heldBack(r)).length;
-  if (held && !confirm(held + ' member' + (held === 1 ? ' is' : 's are') +
-      ' still held back and will not reach Logistics. Publish anyway?')) return;
+  if (held){
+    const okay = await askConfirm({
+      title: held === 1 ? 'You left a sock on the floor' : 'You left ' + held + ' socks on the floor',
+      body: '<p><strong>' + held + ' member' + (held === 1 ? '' : 's') + '</strong> ' +
+            (held === 1 ? 'is' : 'are') + ' still held back, so ' + (held === 1 ? 'it' : 'they') +
+            ' will not reach Logistics and no box goes out.</p>' +
+            '<p>Fix the address on the Needs review tab, or set a decision on each one. ' +
+            'If you meant to hold ' + (held === 1 ? 'it' : 'them') + ', carry on.</p>',
+      yes: 'Publish anyway',
+      no: 'Go back and finish'
+    });
+    if (!okay) return;
+  }
   openStage('#p5', '#chip4', null);
 });
 GH.restore();
