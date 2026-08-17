@@ -107,6 +107,7 @@
     showSchedule();
     $('btnHistory').style.display = '';
     $('btnUpdate').style.display = '';
+    $('btnSF').style.display = '';
     $('emptyState').style.display = 'none';
     $('dataArea').style.display = '';
     paint();
@@ -216,17 +217,33 @@
   function setAdmin(gen){
     published = gen || null;
     $('btnUpdate').style.display = '';
+    $('btnSF').style.display = '';
   }
 
-  function askAdmin(){
+  /* Both admin doors, one dialog. The password is the same either way, so the
+     only thing that changes is where you land and what it says. */
+  const DOORS = {
+    'build.html': {
+      title: 'Update the report',
+      body: () => stateOfMonth()
+    },
+    'salesforce.html': {
+      title: 'Salesforce import',
+      body: () => 'Builds the three tab import workbook for the members Logistics shipped to. ' +
+                  'Run it once the boxes have actually gone out.'
+    }
+  };
+
+  function askAdmin(dest){
+    const door = DOORS[dest] || DOORS['build.html'];
     const c = cfg();
     const back = document.createElement('div');
     back.className = 'modal-back';
     back.innerHTML =
       '<div class="modal" role="dialog" aria-modal="true">' +
         '<h3 class="mt"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">' +
-        '<path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg>Update the report</h3>' +
-        '<p>' + stateOfMonth() + '</p>' +
+        '<path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg>' + door.title + '</h3>' +
+        '<p>' + door.body() + '</p>' +
         (c.adminHash
           ? '<p><input type="password" id="mPw" placeholder="Admin password" style="width:100%;font-size:16px;padding:11px 13px"></p><div id="mErr"></div>'
           : '<p class="hint">No admin password is set, so anyone signed in can replace the list.</p>') +
@@ -253,7 +270,7 @@
         }
         try { sessionStorage.setItem('nobox-admin', c.adminHash); } catch(e){}
       }
-      location.href = 'build.html';
+      location.href = dest;
     };
     back.querySelector('#mGo').addEventListener('click', go);
     const pwBox = back.querySelector('#mPw');
@@ -363,7 +380,8 @@
   /* ---------- wire up ---------- */
   $('go').addEventListener('click', signIn);
   $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
-  $('btnUpdate').addEventListener('click', askAdmin);
+  $('btnUpdate').addEventListener('click', () => askAdmin('build.html'));
+  $('btnSF').addEventListener('click', () => askAdmin('salesforce.html'));
   $('btnSop').addEventListener('click', () => window.open('sop.html', '_blank'));
   $('btnHistory').addEventListener('click', toggleHistory);
   $('btnCsv').addEventListener('click', exportCsv);
