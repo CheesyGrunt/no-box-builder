@@ -288,7 +288,10 @@ const VIEWS = {
   volunteer: {
     title:'Volunteer Services: reach out',
     desc:'These members have a service delivery this month and are waiting on an Angel to make contact. Soonest Report by Date first, so the top of the list is the most urgent. Pending Engagements is how many assigned deliveries that member is still waiting on. No box yet.',
-    cols: COLS.volunteer, sort:'reportBy',
+    /* Pending Engagements only appears once a run has produced it. A published
+       file from before that existed would otherwise show an empty column. */
+    cols: () => state.rows.some(r => r.pending) ? COLS.volunteer : COLS.volunteer.filter(c => c[0] !== 'pending'),
+    sort:'reportBy',
     rows: () => counted().filter(r => effStatus(r) === STATUS.ANGEL)
   },
   waitlisted: {
@@ -377,8 +380,9 @@ function renderView(){
   } else fbox.innerHTML = '';
 
   const rows = activeRows();
+  const cols = viewCols(v);
   const t = $('#vTable');
-  t.querySelector('thead').innerHTML = '<tr>' + v.cols.map(c => `<th>${c[1]}</th>`).join('') + '</tr>';
+  t.querySelector('thead').innerHTML = '<tr>' + cols.map(c => `<th>${c[1]}</th>`).join('') + '</tr>';
   t.querySelector('tbody').innerHTML = rows.map(r => {
     let cls = '';
     if (excluded(r)) cls = 'excluded';
@@ -387,7 +391,7 @@ function renderView(){
     else if (r.flagRed) cls = 'red';
     else if (effStatus(r) === STATUS.WAIT) cls = 'gold';
     else if (effStatus(r) === STATUS.ANGEL) cls = 'blue';
-    return '<tr class="' + cls + '">' + v.cols.map(c => {
+    return '<tr class="' + cls + '">' + cols.map(c => {
       let val = cellVal(r, c[0]);
       if (c[0] === 'status'){
         const tag = r.status === STATUS.WAIT ? 'gold' : r.status === STATUS.ANGEL ? 'blue' : 'send';
@@ -422,7 +426,7 @@ function renderView(){
       const pc = (r.flagPurple && ['street','addr1','addr2','city','state','zip'].includes(c[0])) ? ' class="flag-purple"' : '';
       return `<td${pc} data-l="${c[1]}">${val || ''}</td>`;
     }).join('') + '</tr>';
-  }).join('') || `<tr><td colspan="${v.cols.length}" style="padding:20px;color:var(--ink-soft)">Nothing in this list.</td></tr>`;
+  }).join('') || `<tr><td colspan="${cols.length}" style="padding:20px;color:var(--ink-soft)">Nothing in this list.</td></tr>`;
   $('#vFoot').textContent = rows.length + ' row' + (rows.length === 1 ? '' : 's') + ' shown.';
 
   if (state.editable){
@@ -459,7 +463,12 @@ function download(blob, name){
   const a = el('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 400);
 }
-function colsFor(v){ return v.exportCols || v.cols; }
+function viewCols(v){ return typeof v.cols === 'function' ? v.cols() : v.cols; }
+function colsFor(v){
+  const e = v.exportCols;
+  if (e) return typeof e === 'function' ? e() : e;
+  return viewCols(v);
+}
 function exportCsv(){
   const v = VIEWS[state.view], rows = activeRows(), cols = colsFor(v);
   const esc = s => '"' + String(s == null ? '' : s).replace(/"/g,'""') + '"';
@@ -544,7 +553,7 @@ async function exportWorkbook(){
   sheetFrom(ws, COLS.full, state.rows, { startRow:5, color:true });
 
   sheetFrom(wb.addWorksheet('Logistics - Send Box'), COLS.shipping, state.rows.filter(r => r.status === STATUS.SEND), {});
-  sheetFrom(wb.addWorksheet('Volunteer Svcs - Outreach'), COLS.volunteer,
+  sheetFrom(wb.addWorksheet('Volunteer Svcs - Outreach'), viewCols(VIEWS.volunteer),
     state.rows.filter(r => r.status === STATUS.ANGEL).sort(byDate('reportBy')), {});
   sheetFrom(wb.addWorksheet('Waitlisted'), COLS.waitlisted, state.rows.filter(r => effStatus(r) === STATUS.WAIT), {});
 
