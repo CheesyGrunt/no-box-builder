@@ -225,7 +225,7 @@ function build(){
       clientId: idBy[n] || '',
       mailStop: stopBy[n] || null,
       first: sp.first, last: sp.last,
-      serviceDelivery:'', reportBy:null,
+      serviceDelivery:'', reportBy:null, pending:0,
       provider:'', providerEmail:'',
       addr1:'', addr2:'', city:'', state:'', zip:'',
       status:'', flagPurple:false, flagRed:false, matched:true
@@ -360,6 +360,9 @@ function finish(){
 
     const assigned = hits.filter(r => String(g(r, 'status') || '').trim().toLowerCase() === 'assigned');
     row.serviceDelivery = assigned.length ? 'Yes' : '';
+    /* How many service deliveries are sitting assigned and not yet completed.
+       One member can be waiting on more than one Angel. */
+    row.pending = assigned.length;
 
     /* Earliest assigned date drives the outreach order, and the provider on
        that same row is the person Volunteer Services needs to reach. */

@@ -266,7 +266,8 @@ const COLS = {
   ],
   volunteer: [
     ['reportBy','Report by Date'],['name','Client'],
-    ['provider','Provider'],['providerEmail','Provider Email']
+    ['provider','Provider'],['providerEmail','Provider Email'],
+    ['pending','Pending Engagements']
   ],
   waitlisted: [
     ['name','Client Name'],['clientId','Client ID'],['mailStop','Mail Stop Date'],['reportBy','Report by Date']
@@ -286,7 +287,7 @@ const VIEWS = {
   },
   volunteer: {
     title:'Volunteer Services: reach out',
-    desc:'These members have a service delivery this month and are waiting on an Angel to make contact. Soonest Report by Date first, so the top of the list is the most urgent. No box yet.',
+    desc:'These members have a service delivery this month and are waiting on an Angel to make contact. Soonest Report by Date first, so the top of the list is the most urgent. Pending Engagements is how many assigned deliveries that member is still waiting on. No box yet.',
     cols: COLS.volunteer, sort:'reportBy',
     rows: () => counted().filter(r => effStatus(r) === STATUS.ANGEL)
   },
@@ -316,6 +317,7 @@ function cellVal(r, k){
     const a = String(r.addr1 || '').trim(), b = String(r.addr2 || '').trim();
     return b ? a + ', ' + b : a;
   }
+  if (k === 'pending') return r.pending ? String(r.pending) : '';
   if (k === 'decision') return r.override ? (DECISION_LABEL[r.override] || r.override) : '';
   if (k === 'review'){
     /* A row taken out of the counts says so and nothing else. The original
