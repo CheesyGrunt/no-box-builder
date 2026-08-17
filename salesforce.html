@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>No Box: Salesforce import</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  #unlock{max-width:420px;margin:70px auto;background:var(--card);border:1px solid var(--rule);
+    border-left:3px solid var(--maroon);padding:30px}
+  #unlock input{width:100%;font-size:16px;padding:12px 14px;margin-bottom:10px}
+  #unlock .btn{width:100%}
+  .pick{display:flex;gap:10px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--rule);font-size:14px}
+  .pick:last-child{border-bottom:none}
+  .pick input{width:17px;height:17px;flex:0 0 17px}
+  .pick .nm{flex:0 0 210px;font-weight:500}
+  .pick .sf{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+  .picks{max-height:420px;overflow:auto;border:1px solid var(--rule);background:var(--card)}
+  .pickhead{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:0 0 10px}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="bar-title">No Box <span>/</span> Salesforce import
+      <svg class="bolt" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg>
+    </div>
+    <div class="bar-actions">
+      <button class="ghost" id="btnBack">Back to the list</button>
+      <button class="ghost" id="btnBuilder">Builder</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section id="unlock">
+    <div class="eyebrow">Director of Virtual Services</div>
+    <h2 style="margin-bottom:6px">Open the published month</h2>
+    <p class="hint" style="margin-bottom:16px">The team password, same as the staff site. This reads the list you already published.</p>
+    <input type="password" id="pw" placeholder="Team password" autocomplete="current-password">
+    <button class="btn" id="go">Open</button>
+    <div id="unlockMsg" style="margin-top:14px"></div>
+  </section>
+
+  <section id="content" style="display:none">
+    <h1>Salesforce import</h1>
+    <p class="sub">Builds the three-tab workbook for the members Logistics shipped to. Tick anyone who did not actually get a box and they drop out.</p>
+
+    <div class="stamps">
+      <div class="pubstamp month" id="monthHero" style="display:none">
+        <span class="lb">Reporting month</span>
+        <span class="dt" id="monthBig"></span>
+        <span class="sm"></span>
+      </div>
+      <div class="pubstamp" id="cntStamp">
+        <span class="lb">Shipped by Logistics</span>
+        <span class="dt" id="cntBig">0</span>
+        <span class="sm" id="cntSm"></span>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="eyebrow">Step one</div>
+      <h2>Check the details</h2><div class="h2rule"></div>
+
+      <div class="rowline">
+        <label class="hint" for="expDate">Date of export</label>
+        <input type="date" id="expDate">
+        <span class="hint">Goes into Start Date on tab 1, and Report By / Date Supported on tab 3.</span>
+      </div>
+
+      <div class="rowline" style="margin-top:6px">
+        <label class="hint" for="notes">Notes text</label>
+        <input type="text" id="notes" style="min-width:340px">
+        <span class="hint">Column L on tab 3.</span>
+      </div>
+
+      <div class="note" style="margin-top:14px">
+        <div class="lbl">What stays fixed</div>
+        <p>Program, Record Type, Stage, Service, Service Provider, and the counts are copied
+        straight from your template and are not touched. Branch of Service is left blank,
+        since the No Box list does not carry it.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="eyebrow">Step two</div>
+      <h2>Who goes in</h2><div class="h2rule"></div>
+      <div class="pickhead">
+        <button class="btn sm out" id="btnAll">Select all</button>
+        <button class="btn sm out" id="btnNone">Clear all</button>
+        <span class="hint" id="pickCount"></span>
+      </div>
+      <div class="picks" id="picks"></div>
+    </section>
+
+    <section class="panel" style="border-left-color:var(--gold)">
+      <div class="eyebrow">Step three</div>
+      <h2>Build the workbook</h2><div class="h2rule"></div>
+      <p>Three tabs, laid out exactly like your template. Tab 1 is ready to import. Tab 2 is
+      empty with just its header row, for pasting the import results back in. Tab 3 is filled
+      in apart from column A, which comes from those pasted results.</p>
+      <div class="rowline">
+        <button class="btn gold" id="btnBuild">Download the import workbook</button>
+      </div>
+      <div id="buildOut"></div>
+    </section>
+
+    <footer>
+      <p>Run after Logistics confirms the boxes went out. Questions go to the Director of Virtual Services.
+      <a href="sop.html">Run this manually</a></p>
+    </footer>
+  </section>
+</div>
+
+<script src="config.js"></script>
+<script>window.NOBOX_GATE = 'admin';</script>
+<script src="gate.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="vendor/exceljs.min.js"></script>
+<script src="core.js"></script>
+<script src="sfexport.js"></script>
+</body>
+</html>

@@ -818,12 +818,15 @@ async function publishLive(){
       '<p>Render is rebuilding now. Give it about a minute, then the staff site will show this month.</p>' +
       '<div class="rowline" style="margin-top:14px">' +
         '<button class="btn gold" id="btnStaffSite">Open the staff site</button>' +
-        '<span class="hint">Give Render a minute first, then sign in as staff would.</span>' +
+        '<button class="btn out" id="btnSfSite">Salesforce import</button>' +
+        '<span class="hint">Come back to the Salesforce import once Logistics confirms the boxes went out.</span>' +
       '</div>' +
       '<p class="hint" style="margin:14px 0 0">Mischief managed.</p></div>';
 
     const ss = $('#btnStaffSite');
     if (ss) ss.addEventListener('click', () => window.open('index.html', '_blank'));
+    const sf = $('#btnSfSite');
+    if (sf) sf.addEventListener('click', () => window.open('salesforce.html', '_blank'));
   } catch(e){
     note('warn', 'Could not reach GitHub', String(e.message || e) + '. Check your connection, then try the manual download below.');
   }
