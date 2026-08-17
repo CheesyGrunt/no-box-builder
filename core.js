@@ -266,8 +266,8 @@ const COLS = {
   ],
   volunteer: [
     ['reportBy','Report by Date'],['name','Client'],
-    ['provider','Provider'],['providerEmail','Provider Email'],
-    ['pending','Pending Engagements']
+    ['engagement','Pending Engagement'],
+    ['provider','Provider'],['providerEmail','Provider Email']
   ],
   waitlisted: [
     ['name','Client Name'],['clientId','Client ID'],['mailStop','Mail Stop Date'],['reportBy','Report by Date']
@@ -287,10 +287,10 @@ const VIEWS = {
   },
   volunteer: {
     title:'Volunteer Services: reach out',
-    desc:'These members have a service delivery this month and are waiting on an Angel to make contact. Soonest Report by Date first, so the top of the list is the most urgent. Pending Engagements is how many assigned deliveries that member is still waiting on. No box yet.',
+    desc:'These members have a service delivery this month and are waiting on an Angel to make contact. Soonest Report by Date first, so the top of the list is the most urgent. Pending Engagement is the open engagement that the Report by Date belongs to. No box yet.',
     /* Pending Engagements only appears once a run has produced it. A published
        file from before that existed would otherwise show an empty column. */
-    cols: () => state.rows.some(r => r.pending) ? COLS.volunteer : COLS.volunteer.filter(c => c[0] !== 'pending'),
+    cols: () => state.rows.some(r => r.engagement) ? COLS.volunteer : COLS.volunteer.filter(c => c[0] !== 'engagement'),
     sort:'reportBy',
     rows: () => counted().filter(r => effStatus(r) === STATUS.ANGEL)
   },
@@ -321,6 +321,7 @@ function cellVal(r, k){
     return b ? a + ', ' + b : a;
   }
   if (k === 'pending') return r.pending ? String(r.pending) : '';
+  if (k === 'engagement') return r.engagement || '';
   if (k === 'decision') return r.override ? (DECISION_LABEL[r.override] || r.override) : '';
   if (k === 'review'){
     /* A row taken out of the counts says so and nothing else. The original

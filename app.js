@@ -35,6 +35,7 @@ const SPECS = {
       { key:'clientId', label:'Client ID (if present)', col:'', hints:['client: contact id','contact id','client id'] },
       { key:'status',   label:'Status', col:'F', hints:['status'] },
       { key:'reportBy', label:'Report by date', col:'G', hints:['report by date','report by','assigned report'] },
+      { key:'engagement', label:'Engagement name', col:'', hints:['program engagement name','program engagement','engagement name','engagement','service delivery name'] },
       { key:'provider',  label:'Provider', col:'', hints:['provider name','provider','angel','assigned to','volunteer name','service provider','owner'] },
       { key:'providerEmail', label:'Provider email', col:'', hints:['provider email','provider: email','angel email','volunteer email','assigned to email','email'] },
       { key:'addrFull', label:'Client Address (one column)', col:'', hints:['client address','mailing address','address'] },
@@ -226,7 +227,7 @@ function build(){
       mailStop: stopBy[n] || null,
       first: sp.first, last: sp.last,
       serviceDelivery:'', reportBy:null, pending:0,
-      provider:'', providerEmail:'',
+      engagement:'', provider:'', providerEmail:'',
       addr1:'', addr2:'', city:'', state:'', zip:'',
       status:'', flagPurple:false, flagRed:false, matched:true
     });
@@ -373,10 +374,17 @@ function finish(){
     });
     row.reportBy = earliest;
 
+    /* The engagement and the provider both come off the row that set the
+       Report by Date, so the name shown is the one that deadline belongs to. */
     const provRow = earliestRow || assigned.find(r => String(g(r, 'provider') || '').trim() !== '') || hits[0];
     if (provRow){
       row.provider = String(g(provRow, 'provider') || '').trim();
       row.providerEmail = String(g(provRow, 'providerEmail') || '').trim();
+      row.engagement = String(g(provRow, 'engagement') || '').trim();
+    }
+    if (!row.engagement){
+      const any = assigned.find(r => String(g(r, 'engagement') || '').trim() !== '');
+      if (any) row.engagement = String(g(any, 'engagement') || '').trim();
     }
     if (!row.provider){
       const any = hits.find(r => String(g(r, 'provider') || '').trim() !== '');
@@ -423,11 +431,13 @@ function finish(){
   const unmatched = state.rows.filter(r => !r.matched).length;
   const angels = state.rows.filter(r => effStatus(r) === STATUS.ANGEL);
   const noProv = angels.filter(r => !r.provider).length;
+  const noEng = angels.filter(r => !r.engagement).length;
   const bits = [];
   if (!state.hadWaitlist) bits.push('No waitlist file was loaded, so nobody is marked Waitlisted this month.');
   if (unmatched) bits.push(unmatched + ' member(s) had no matching row in Part 2, so their dates and addresses are blank.');
   if (angels.length && noProv === angels.length) bits.push('No provider names came through. Check the Provider and Provider email dropdowns on the Part 2 file above.');
   else if (noProv) bits.push(noProv + ' of ' + angels.length + ' outreach rows have no provider listed.');
+  if (angels.length && noEng === angels.length) bits.push('No engagement names came through. Check the Engagement name dropdown on the Part 2 file above.');
   $('#hint3').textContent = bits.join(' ');
   $('#hint3').style.color = 'var(--red)';
 
