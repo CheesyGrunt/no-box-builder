@@ -49,13 +49,22 @@ function counted(){ return state.rows.filter(r => !excluded(r)); }
 
 /* Editing an address in the review queue. The flags recompute immediately, so
    a fixed address stops being held the moment it is valid. */
-const EDITABLE_FIELDS = ['street','city','state','zip'];
+const EDITABLE_FIELDS = ['street','city','state','zip','reportBy','serviceDelivery'];
+const isoDate = d => d instanceof Date && !isNaN(d)
+  ? d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') : '';
 function applyEdit(row, field, raw){
   const v = String(raw == null ? '' : raw).trim();
   if (field === 'street'){ row.addr1 = v; row.addr2 = ''; }
   else if (field === 'city'){ row.city = v; }
   else if (field === 'state'){ row.state = v.toUpperCase(); }
   else if (field === 'zip'){ row.zip = cleanZip(v); row.zipFixed = false; }
+  else if (field === 'reportBy'){
+    /* The date box hands back yyyy-mm-dd. Build it locally so a date typed as
+       the 23rd does not land on the 22nd in a western timezone. */
+    const p = String(v).split('-');
+    row.reportBy = p.length === 3 ? new Date(+p[0], +p[1] - 1, +p[2]) : null;
+  }
+  else if (field === 'serviceDelivery'){ row.serviceDelivery = v; }
   row.flagPurple = !!row.city && !isMilCity(row.city);
   row.edited = true;
   return row;
@@ -307,7 +316,7 @@ const VIEWS = {
   },
   review: {
     title:'Needs review before anything ships',
-    desc:'What is wrong is in the Review column, and the Client ID is right there to look the record up. Red means the Mail Stop Date lands in the reporting month, so confirm eligibility. Purple means the mailing city is not APO, FPO, or DPO. Incomplete means the address would not parse into city, state, and zip.',
+    desc:'What is wrong is in the Review column, and the Client ID is right there to look the record up. Scroll the table sideways to reach the address, the report by date, and the service delivery flag, all of which you can edit in place. Red means the Mail Stop Date lands in the reporting month, so confirm eligibility. Purple means the mailing city is not APO, FPO, or DPO. Incomplete means the address would not parse into city, state, and zip.',
     cols: COLS.review, hideWhenEmpty:true,
     rows: () => state.rows.filter(needsDecision)
   }
@@ -372,6 +381,9 @@ function renderView(){
   $('#vDesc').textContent = v.desc;
   for (const k in VIEWS) { const n = document.getElementById('n-' + k); if (n) n.textContent = VIEWS[k].rows().length; }
 
+  const help = $('#decisionHelp');
+  if (help) help.style.display = (state.view === 'review' || state.view === 'decisions') ? '' : 'none';
+
   const fbox = $('#vFilters');
   if (state.view === 'logistics'){
     const held = state.rows.filter(r => effStatus(r) === STATUS.SEND && heldBack(r)).length;
@@ -408,11 +420,22 @@ function renderView(){
           return `<span class="tag ${cls}">${x}</span>`;
         }).join(' ');
       }
-      if (state.editable && state.view === 'review' && EDITABLE_FIELDS.includes(c[0])){
-        const raw = String(cellVal(r, c[0])).replace(/"/g, '&quot;');
-        val = `<input class="cellfix" data-row="${state.rows.indexOf(r)}" data-f="${c[0]}" value="${raw}"` +
-              (c[0] === 'state' ? ' maxlength="2" style="width:52px"' : '') +
-              (c[0] === 'zip' ? ' style="width:92px"' : '') + `>`;
+      if (state.editable && (state.view === 'review' || state.view === 'decisions') && EDITABLE_FIELDS.includes(c[0])){
+        const idx = state.rows.indexOf(r);
+        if (c[0] === 'serviceDelivery'){
+          const cur = String(r.serviceDelivery || '');
+          val = `<select class="cellfix" data-row="${idx}" data-f="serviceDelivery">` +
+                ['', 'Yes', 'No'].map(o =>
+                  `<option value="${o}"${cur === o ? ' selected' : ''}>${o || 'not set'}</option>`).join('') +
+                `</select>`;
+        } else if (c[0] === 'reportBy'){
+          val = `<input class="cellfix" type="date" data-row="${idx}" data-f="reportBy" value="${isoDate(r.reportBy)}" style="width:150px">`;
+        } else {
+          const raw = String(cellVal(r, c[0])).replace(/"/g, '&quot;');
+          val = `<input class="cellfix" data-row="${idx}" data-f="${c[0]}" value="${raw}"` +
+                (c[0] === 'state' ? ' maxlength="2" style="width:52px"' : '') +
+                (c[0] === 'zip' ? ' style="width:92px"' : '') + `>`;
+        }
         return `<td data-l="${c[1]}">${val}</td>`;
       }
       if (c[0] === 'decision'){
@@ -431,7 +454,7 @@ function renderView(){
   $('#vFoot').textContent = rows.length + ' row' + (rows.length === 1 ? '' : 's') + ' shown.';
 
   if (state.editable){
-    t.querySelectorAll('input.cellfix').forEach(inp => {
+    t.querySelectorAll('.cellfix').forEach(inp => {
       // change fires on blur, so the table is not rebuilt under the cursor
       inp.addEventListener('change', () => {
         const row = state.rows[+inp.dataset.row];

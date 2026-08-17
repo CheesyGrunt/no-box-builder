@@ -44,6 +44,19 @@ p{margin:0 0 12px;max-width:80ch}
 .map{margin-top:10px;border-top:1px dashed var(--rule);padding-top:12px;display:none}
 .map.show{display:block}
 .map-row{display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:12.5px}
+.helpbox{border:1px solid var(--gold);border-left:4px solid var(--gold);background:#FFFCF2;
+  margin:0 0 16px}
+.helpbox summary{font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;
+  font-size:16px;color:var(--maroon);cursor:pointer;padding:12px 16px;list-style:none;
+  display:flex;align-items:center;gap:10px}
+.helpbox summary::-webkit-details-marker{display:none}
+.helpbox summary::after{content:'\25BE';margin-left:auto;font-size:13px;color:var(--ink-soft)}
+.helpbox[open] summary::after{content:'\25B4'}
+.helpbox summary:hover{background:#FDF7E6}
+.hb-tag{font-family:var(--mono);font-size:10px;letter-spacing:.16em;background:var(--gold);
+  color:var(--maroon-deep);padding:3px 8px}
+.hb-body{padding:0 16px 16px}
+.hb-body p{font-size:14.5px;margin-bottom:10px}
 .mapmore{margin-top:8px;border-top:1px dashed var(--rule);padding-top:8px}
 .mapmore summary{font-family:var(--display);text-transform:uppercase;letter-spacing:.1em;
   font-size:12px;color:var(--ink-soft);cursor:pointer;padding:4px 0;list-style:none;

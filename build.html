@@ -145,9 +145,30 @@
 
     <p class="hint" style="margin:-6px 0 10px">On the <strong>Needs review</strong> tab the address fields are editable. Fix one and the flags recompute as you leave the box, so a good address moves itself onto the Logistics list.</p>
 
-    <details class="mapmore" style="margin:0 0 18px;max-width:900px">
-      <summary>What each decision means</summary>
-      <div class="mapbody">
+    <div class="views" id="views">
+      <button class="view-tab on" data-view="all">Full No Box list <span class="n" id="n-all">0</span></button>
+      <button class="view-tab" data-view="logistics">Logistics: send a box <span class="n" id="n-logistics">0</span></button>
+      <button class="view-tab" data-view="volunteer">Volunteer Services: reach out <span class="n" id="n-volunteer">0</span></button>
+      <button class="view-tab" data-view="waitlisted">Waitlisted <span class="n" id="n-waitlisted">0</span></button>
+      <button class="view-tab" data-view="review">Needs review <span class="n" id="n-review">0</span></button>
+        <button class="view-tab" data-view="decisions" style="display:none">Decisions <span class="n" id="n-decisions">0</span></button>
+    </div>
+    <div class="viewbox">
+      <div class="viewhead">
+        <div class="txt"><h3 id="vTitle"></h3><p id="vDesc"></p></div>
+        <div class="tools">
+          <button class="btn sm out" id="btnCsv">Export .csv</button>
+          <button class="btn sm gold" id="btnXlsx">Export .xlsx</button>
+        </div>
+      </div>
+      <details class="helpbox" id="decisionHelp" style="display:none">
+        <summary><span class="hb-tag">Read me</span> What each decision means, and how to edit a row</summary>
+        <div class="hb-body">
+          <p>Every flagged row needs one of the decisions below. Anything left on <strong>No change</strong>
+          stays off the Logistics list.</p>
+          <p><strong>You can also fix the row itself.</strong> Scroll this table sideways to reach the
+          address, the report by date, and the service delivery flag. All of them are editable in place,
+          and the flags recompute the moment you leave the box.</p>
         <div class="tw" style="margin-bottom:0">
           <table>
             <thead><tr><th style="width:230px">Decision</th><th>What it means</th></tr></thead>
@@ -169,25 +190,8 @@
             </tbody>
           </table>
         </div>
-      </div>
-    </details>
+      </details>
 
-    <div class="views" id="views">
-      <button class="view-tab on" data-view="all">Full No Box list <span class="n" id="n-all">0</span></button>
-      <button class="view-tab" data-view="logistics">Logistics: send a box <span class="n" id="n-logistics">0</span></button>
-      <button class="view-tab" data-view="volunteer">Volunteer Services: reach out <span class="n" id="n-volunteer">0</span></button>
-      <button class="view-tab" data-view="waitlisted">Waitlisted <span class="n" id="n-waitlisted">0</span></button>
-      <button class="view-tab" data-view="review">Needs review <span class="n" id="n-review">0</span></button>
-        <button class="view-tab" data-view="decisions" style="display:none">Decisions <span class="n" id="n-decisions">0</span></button>
-    </div>
-    <div class="viewbox">
-      <div class="viewhead">
-        <div class="txt"><h3 id="vTitle"></h3><p id="vDesc"></p></div>
-        <div class="tools">
-          <button class="btn sm out" id="btnCsv">Export .csv</button>
-          <button class="btn sm gold" id="btnXlsx">Export .xlsx</button>
-        </div>
-      </div>
       <div class="filters" id="vFilters"></div>
       <div class="tw"><table id="vTable"><thead></thead><tbody></tbody></table></div>
       <p class="hint" id="vFoot" style="margin-top:10px"></p>
