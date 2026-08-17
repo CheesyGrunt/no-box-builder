@@ -258,6 +258,13 @@ const COLS = {
     ['street','Mailing Address Line 1'],['city','Mailing City'],['state','State/Province'],['zip','Zip/Postal Code'],
     ['mailStop','Mail Stop Date'],['review','Review']
   ],
+  /* Working set: fits the width without scrolling. The four address fields are
+     grouped into one cell so the row stays on screen. */
+  reviewCompact: [
+    ['name','Client'],['review','Review'],['decision','Decision'],['clientId','Client ID'],
+    ['mailStop','Mail Stop'],['reportBy','Report by'],['serviceDelivery','Svc Del'],
+    ['addressEdit','Mailing address']
+  ],
   /* Review queue: what is wrong, who it is, and the ID to jump to the record. */
   review: [
     ['name','Client Name'],['review','Review'],['decision','Decision'],['clientId','Client ID'],
@@ -311,13 +318,15 @@ const VIEWS = {
   decisions: {
     title:'Decisions you made',
     desc:'Rows you cleared, held, moved, or whose address you corrected. Change any of them here and everything downstream updates.',
-    cols: COLS.review, hideWhenEmpty:true,
+    cols: () => state.editable ? COLS.reviewCompact : COLS.review,
+    exportCols: COLS.review, hideWhenEmpty:true,
     rows: () => state.rows.filter(isSettled)
   },
   review: {
     title:'Needs review before anything ships',
     desc:'What is wrong is in the Review column, and the Client ID is right there to look the record up. Scroll the table sideways to reach the address, the report by date, and the service delivery flag, all of which you can edit in place. Red means the Mail Stop Date lands in the reporting month, so confirm eligibility. Purple means the mailing city is not APO, FPO, or DPO. Incomplete means the address would not parse into city, state, and zip.',
-    cols: COLS.review, hideWhenEmpty:true,
+    cols: () => state.editable ? COLS.reviewCompact : COLS.review,
+    exportCols: COLS.review, hideWhenEmpty:true,
     rows: () => state.rows.filter(needsDecision)
   }
 };
@@ -328,6 +337,11 @@ function cellVal(r, k){
   if (k === 'street'){
     const a = String(r.addr1 || '').trim(), b = String(r.addr2 || '').trim();
     return b ? a + ', ' + b : a;
+  }
+  if (k === 'addressEdit'){
+    const street = cellVal(r, 'street');
+    const tail = [r.city, r.state, r.zip].filter(Boolean).join(', ');
+    return [street, tail].filter(Boolean).join(' · ');
   }
   if (k === 'pending') return r.pending ? String(r.pending) : '';
   if (k === 'engagement') return r.engagement || '';
@@ -395,6 +409,7 @@ function renderView(){
   const rows = activeRows();
   const cols = viewCols(v);
   const t = $('#vTable');
+  t.className = (state.editable && (state.view === 'review' || state.view === 'decisions')) ? 'compact' : '';
   t.querySelector('thead').innerHTML = '<tr>' + cols.map(c => `<th>${c[1]}</th>`).join('') + '</tr>';
   t.querySelector('tbody').innerHTML = rows.map(r => {
     let cls = '';
@@ -420,8 +435,19 @@ function renderView(){
           return `<span class="tag ${cls}">${x}</span>`;
         }).join(' ');
       }
-      if (state.editable && (state.view === 'review' || state.view === 'decisions') && EDITABLE_FIELDS.includes(c[0])){
+      if (state.editable && (state.view === 'review' || state.view === 'decisions')
+          && (EDITABLE_FIELDS.includes(c[0]) || c[0] === 'addressEdit')){
         const idx = state.rows.indexOf(r);
+        if (c[0] === 'addressEdit'){
+          const esc = s => String(s == null ? '' : s).replace(/"/g, '&quot;');
+          val = `<div class="addrgrid">` +
+            `<input class="cellfix" data-row="${idx}" data-f="street" value="${esc(cellVal(r,'street'))}" placeholder="street" style="grid-column:1 / -1">` +
+            `<input class="cellfix" data-row="${idx}" data-f="city" value="${esc(r.city)}" placeholder="city">` +
+            `<input class="cellfix" data-row="${idx}" data-f="state" value="${esc(r.state)}" placeholder="ST" maxlength="2">` +
+            `<input class="cellfix" data-row="${idx}" data-f="zip" value="${esc(r.zip)}" placeholder="zip">` +
+          `</div>`;
+          return `<td data-l="${c[1]}">${val}</td>`;
+        }
         if (c[0] === 'serviceDelivery'){
           const cur = String(r.serviceDelivery || '');
           val = `<select class="cellfix" data-row="${idx}" data-f="serviceDelivery">` +
