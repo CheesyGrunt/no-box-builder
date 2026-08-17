@@ -295,6 +295,7 @@
     <a href="#s11" data-rail="11"><b>11</b> Prompt 6, hard-code</a>
     <a href="#s12" data-rail="12"><b>12</b> Check the work</a>
     <div class="rail-h" style="margin-top:22px">Reference</div>
+    <a href="#decisions"><b>&nbsp;</b> The decisions</a>
     <a href="#colors"><b>&nbsp;</b> Color key</a>
     <a href="#trouble"><b>&nbsp;</b> If something looks off</a>
   </nav>
@@ -591,6 +592,25 @@ Keep all formatting, highlights, and number formats exactly as they are, just re
           </div>
         </div>
       </article>
+    </section>
+
+    <section id="decisions">
+      <h2>The decisions</h2><div class="h2rule"></div>
+      <p>When the tool flags a row, one of these is chosen. The wording here matches the dropdown in the builder.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Decision</th><th>What it means</th></tr></thead>
+          <tbody>
+            <tr><td><strong>No change</strong></td><td>Unresolved. Stays on Needs review, stays off the Logistics list, and a warning appears before publishing.</td></tr>
+            <tr><td><strong>Cleared, send box</strong></td><td>The address was verified. Ship it.</td></tr>
+            <tr><td><strong>Hold, do not ship</strong></td><td>The address is incorrect. Contact has been initiated with the client and logged in Salesforce.</td></tr>
+            <tr><td><strong>Move to Volunteer Services</strong></td><td>An active service delivery exists and needs a follow up rather than a box.</td></tr>
+            <tr><td><strong>Move to Waitlisted</strong></td><td>The client or their zip code is waitlisted and cannot receive mail. Also removes them from the coverage percentage.</td></tr>
+            <tr><td><strong>Passed MSD, do not count</strong></td><td>The Mail Stop Date has passed. Out of every count, list, and percentage.</td></tr>
+            <tr><td><strong>Do not count, not a real member</strong></td><td>A test account or a record that should not have populated. Out of every count, list, and percentage.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <section id="colors">

@@ -143,7 +143,34 @@
     <dl class="stats" id="stats2"></dl>
     <div id="alerts"></div>
 
-    <p class="hint" style="margin:-6px 0 14px">On the <strong>Needs review</strong> tab the address fields are editable. Fix one and the flags recompute as you leave the box, so a good address moves itself onto the Logistics list.</p>
+    <p class="hint" style="margin:-6px 0 10px">On the <strong>Needs review</strong> tab the address fields are editable. Fix one and the flags recompute as you leave the box, so a good address moves itself onto the Logistics list.</p>
+
+    <details class="mapmore" style="margin:0 0 18px;max-width:900px">
+      <summary>What each decision means</summary>
+      <div class="mapbody">
+        <div class="tw" style="margin-bottom:0">
+          <table>
+            <thead><tr><th style="width:230px">Decision</th><th>What it means</th></tr></thead>
+            <tbody>
+              <tr><td><strong>No change</strong></td>
+                  <td>Unresolved. The row stays on Needs review, stays off the Logistics list, and you will be warned before publishing.</td></tr>
+              <tr><td><strong>Cleared, send box</strong></td>
+                  <td>You verified the address is good. Ship it.</td></tr>
+              <tr><td><strong>Hold, do not ship</strong></td>
+                  <td>The address is incorrect. Contact has been initiated with the client and logged in Salesforce.</td></tr>
+              <tr><td><strong>Move to Volunteer Services</strong></td>
+                  <td>They have an active service delivery and need a follow up rather than a box. If no delivery was found in Part 2, the date, provider, and engagement will be blank and Volunteer Services will need to look them up.</td></tr>
+              <tr><td><strong>Move to Waitlisted</strong></td>
+                  <td>The client or their zip code is currently waitlisted and cannot receive mail. Waitlisted members also come out of the coverage percentage, so this will move the number.</td></tr>
+              <tr><td><strong>Passed MSD, do not count</strong></td>
+                  <td>The client's Mail Stop Date has passed. Removed from every count, list, and percentage, and kept on the Decisions tab.</td></tr>
+              <tr><td><strong>Do not count, not a real member</strong></td>
+                  <td>A test account or a record that should not have populated. Removed from every count, list, and percentage, and kept on the Decisions tab.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
 
     <div class="views" id="views">
       <button class="view-tab on" data-view="all">Full No Box list <span class="n" id="n-all">0</span></button>
