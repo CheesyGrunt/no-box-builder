@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Virtual Services Dashboard | Soldiers' Angels</title>
+<meta name="description" content="Volunteer hours, in-kind value, and program reach across Soldiers' Angels Virtual Services.">
+<meta property="og:title" content="Virtual Services Dashboard | Soldiers' Angels">
+<meta property="og:description" content="Program impact across every Virtual Services program, year by year.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;900&family=EB+Garamond:ital,wght@0,400..700;1,400..600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E8E9EA; --card:#FFFFFF; --panel2:#F2F3F4; --sunk:#E1E3E6;
+  --ink:#1C2434; --ink2:#4A5568; --ink3:#7A8494;
+  --rule:#D4D7DB; --rule2:#BEC3C9;
+  --gold:#9C7016; --gold2:#C9A227; --navy:#22355C; --steel:#4E7C9B; --moss:#4F7D5B; --ember:#B23A2B;
+  --scarlet:#BB0000; --red:#C8102E;
+  --maxw:1220px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:"EB Garamond","Palatino Linotype","Book Antiqua",Georgia,serif;
+  font-size:17.5px;line-height:1.66;-webkit-font-smoothing:antialiased;position:relative;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 1100px 620px at 82% -10%,rgba(156,112,22,.07),transparent 62%),
+    radial-gradient(ellipse 900px 540px at 0% 12%,rgba(34,53,92,.06),transparent 60%);
+}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;position:relative;z-index:1}
+h1,h2,h3{font-family:"Cinzel",Georgia,serif;font-weight:700;letter-spacing:.005em;margin:0}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.label{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3)}
+
+/* ---- masthead ---- */
+.masthead{background:var(--card);border-bottom:1px solid var(--rule);position:relative;z-index:1}
+.masthead::before{content:"";display:block;height:3px;background:var(--red)}
+.masthead .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:15px;padding-bottom:15px}
+.brand{font-family:"Cinzel",Georgia,serif;font-weight:700;font-size:13.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--ink)}
+.brand i{font-style:normal;color:var(--gold);margin:0 9px}
+.brand em{font-style:normal;font-weight:500;color:var(--ink2)}
+
+/* ---- hero ---- */
+.hero{padding:58px 0 34px}
+.eyebrow{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--rule2),transparent)}
+.eyebrow .label{color:var(--gold)}
+h1{font-size:clamp(30px,4.4vw,50px);line-height:1.08;margin-bottom:20px;font-weight:900;color:var(--ink)}
+.lede{font-size:20px;line-height:1.62;color:var(--ink2);max-width:60ch;margin:0}
+.lede b{color:var(--ink);font-weight:600}
+
+.headline{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:42px;border-radius:4px;overflow:hidden}
+.headline>div{background:var(--card);padding:21px 22px}
+.headline .n{font-family:"Cinzel",Georgia,serif;font-size:clamp(23px,2.9vw,32px);font-weight:700;line-height:1.12;color:var(--navy)}
+.headline .l{margin-top:8px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+
+/* ---- year rail ---- */
+.rail{position:sticky;top:0;z-index:30;background:rgba(232,233,234,.94);backdrop-filter:blur(9px);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-top:44px}
+.rail .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:11px;padding-bottom:11px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:var(--card);color:var(--ink2);border:1px solid var(--rule2);padding:7px 16px;border-radius:3px;cursor:pointer;transition:.15s}
+.pill:hover{border-color:var(--gold);color:var(--ink)}
+.pill[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600}
+.pill:focus-visible,.tg:focus-visible,.btn:focus-visible,th.sortable:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.btn{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:var(--card);color:var(--ink2);border:1px solid var(--rule2);padding:8px 15px;border-radius:3px;cursor:pointer}
+.btn:hover{border-color:var(--gold);color:var(--ink)}
+
+/* ---- sections ---- */
+section{padding:56px 0;border-bottom:1px solid var(--rule)}
+section:last-of-type{border-bottom:0}
+.sec-head{margin-bottom:28px}
+.sec-head .label{display:block;margin-bottom:11px;color:var(--gold)}
+h2{font-size:clamp(20px,2.4vw,28px);margin-bottom:10px;font-weight:600}
+.sec-head p{margin:0;color:var(--ink2);max-width:66ch;font-size:16.5px}
+
+/* ---- kpis ---- */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.kpi{background:var(--card);padding:22px 22px 20px}
+.kpi .n{font-family:"Cinzel",Georgia,serif;font-size:30px;font-weight:700;line-height:1.18;margin-top:10px}
+.kpi .s{font-size:15px;color:var(--ink3);margin-top:4px;font-style:italic}
+
+/* ---- card ---- */
+.card{background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:25px}
+.card h3{font-size:14.5px;font-weight:600;letter-spacing:.04em}
+.card .note{margin:6px 0 20px;font-size:14.5px;color:var(--ink3);font-style:italic}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+
+/* ---- tables ---- */
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;min-width:940px;border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:13px;
+  font-variant-numeric:tabular-nums}
+th,td{padding:11px 12px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal;min-width:190px}
+thead th{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3);font-weight:500;
+  border-bottom:1px solid var(--rule2);vertical-align:bottom;line-height:1.4}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--gold)}
+th[aria-sort]{color:var(--gold)}
+th[aria-sort] .car::after{content:"\25B2";font-size:8px;margin-left:5px}
+th[aria-sort="descending"] .car::after{content:"\25BC"}
+tbody td{border-bottom:1px solid var(--rule);color:var(--ink)}
+tbody tr:hover td{background:var(--panel2)}
+tbody td:first-child{font-family:"EB Garamond",Georgia,serif;font-size:16.5px;font-weight:600}
+.share{position:relative;min-width:112px}
+.share .track{position:absolute;left:12px;right:12px;bottom:7px;height:3px;background:var(--sunk);border-radius:2px}
+.share .fill{position:absolute;left:0;top:0;bottom:0;background:var(--gold);border-radius:2px}
+tfoot td{border-top:1.5px solid var(--ink);border-bottom:0;font-weight:600;padding-top:14px;background:var(--card)}
+tfoot td:first-child{font-family:"Cinzel",Georgia,serif;font-size:14px;letter-spacing:.08em}
+.fn{margin:17px 0 0;font-size:14.5px;color:var(--ink3);max-width:80ch;font-style:italic}
+.fn b{color:var(--ink2);font-weight:600;font-style:normal}
+
+/* ---- charts ---- */
+svg.chart{width:100%;height:auto;display:block;overflow:visible}
+.gridline{stroke:#E4E6E9;stroke-width:1}
+.axis{stroke:var(--rule2);stroke-width:1}
+.tick{font-family:"IBM Plex Mono",monospace;font-size:10px;fill:var(--ink3)}
+.blab{font-family:"EB Garamond",Georgia,serif;font-size:14px;fill:var(--ink2)}
+.bval{font-family:"IBM Plex Mono",monospace;font-size:11px;fill:var(--ink)}
+.bar{transition:opacity .15s}
+.bar:hover{opacity:.78}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink3);margin-top:15px}
+.legend i{width:11px;height:11px;display:inline-block;margin-right:6px;vertical-align:-1px;border-radius:2px}
+.toggle{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.tg{font-family:"IBM Plex Mono",monospace;font-size:11.5px;background:var(--panel2);color:var(--ink2);border:1px solid var(--rule2);padding:6px 13px;border-radius:3px;cursor:pointer}
+.tg[aria-pressed="true"]{background:var(--steel);border-color:var(--steel);color:#fff;font-weight:600}
+.up{color:var(--moss)} .down{color:var(--ember)}
+
+/* ---- callout ---- */
+.callout{background:#FBF6E8;border:1px solid #E4D6AC;border-left:3px solid var(--gold);
+  border-radius:4px;padding:16px 19px;margin-bottom:22px;font-size:16px;color:#5C4A22;max-width:88ch}
+.callout b{color:#7A5F1E;font-weight:600}
+
+/* ---- footer ---- */
+footer{background:var(--card);border-top:1px solid var(--rule);padding:48px 0 62px;color:var(--ink2);font-size:16px;position:relative;z-index:1}
+footer h4{font-family:"Cinzel",Georgia,serif;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 13px;font-weight:600}
+footer p{margin:0 0 13px;max-width:74ch}
+.meth{display:grid;grid-template-columns:1fr 1fr;gap:44px}
+.colophon{margin-top:38px;padding-top:22px;border-top:1px solid var(--rule);font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px;letter-spacing:.14em;color:var(--ink3);text-transform:uppercase;
+  display:flex;align-items:center;justify-content:space-between;gap:20px}
+.staff{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink3);
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  border:1px solid transparent;border-radius:3px;padding:6px 10px;transition:.3s ease;opacity:.55}
+.staff:hover,.staff:focus-visible{opacity:1;color:var(--gold);border-color:var(--rule2);background:var(--panel2)}
+.staff:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.mark{width:11px;height:auto;flex:none;fill:var(--gold);opacity:.6;transition:opacity .3s ease}
+.staff:hover .mark,.staff:focus-visible .mark{opacity:1}
+
+@media(max-width:900px){
+  .headline{grid-template-columns:1fr 1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .two,.meth{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .wrap{padding:0 18px}
+  body{font-size:16.5px}
+  .kpis{grid-template-columns:1fr}
+  .hero{padding-top:38px}
+  section{padding:42px 0}
+  .btn{margin-left:0}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+
+@media print{
+  body{background:#fff;font-size:11pt}
+  body::before{display:none}
+  .rail,.btn,.legend,#chartSections,.toggle,.mark,.staff{display:none!important}
+  .masthead{border-bottom:2px solid #000}
+  section{padding:16px 0;border-bottom:0;break-inside:avoid}
+  .card{border:1px solid #999;padding:0;background:none}
+  .kpis,.headline{border-color:#999}
+  table{min-width:0;font-size:8.5pt}
+  th,td{padding:5px 6px}
+  .callout{background:#fff;border:1px solid #999}
+  .share .track,.share .fill{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="brand">Soldiers' Angels <i>/</i> <em>Virtual Services</em></div>
+    <div class="label" id="asOf"></div>
+  </div>
+</header>
+
+<div class="wrap hero">
+  <div class="eyebrow"><span class="label">Program Impact &nbsp;&middot;&nbsp; 2023 to 2026</span></div>
+  <h1>Virtual Services Dashboard</h1>
+  <p class="lede">Virtual Services volunteers write the letters, bake the cookies, pack the boxes, and sit with the families. This is the full record of that work: <b>every hour logged, every package sent, every service member reached.</b></p>
+  <div class="headline" id="headline"></div>
+</div>
+
+<div class="rail">
+  <div class="wrap">
+    <span class="label">Reporting year</span>
+    <div class="pills" id="yearPills" role="group" aria-label="Select reporting year"></div>
+    <button class="btn" id="printBtn">Print or save as PDF</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section>
+    <div class="sec-head">
+      <span class="label">01 &nbsp;/&nbsp; The year at a glance</span>
+      <h2 id="glanceTitle">Totals</h2>
+      <p>Volunteer time is valued at the Independent Sector rate for the year the hours were served. In-kind value is the reported cost of goods volunteers purchased and sent themselves.</p>
+    </div>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="label">02 &nbsp;/&nbsp; Annual Impact Report</span>
+      <h2 id="reportTitle">Program by program</h2>
+      <p>Every Virtual Services program, side by side. Click any column heading to sort.</p>
+    </div>
+    <div class="card">
+      <div class="tscroll">
+        <table id="report">
+          <thead><tr id="reportHead"></tr></thead>
+          <tbody id="reportBody"></tbody>
+          <tfoot><tr id="reportFoot"></tr></tfoot>
+        </table>
+      </div>
+      <p class="fn"><b>On the volunteer count:</b> the program rows add up to more than the total, because one volunteer often serves several programs and is counted in each. The total row is the distinct headcount, so it comes in lower than the sum above it. Hours and dollars do add up cleanly.</p>
+    </div>
+  </section>
+
+  <div id="chartSections">
+  <section>
+    <div class="sec-head">
+      <span class="label">03 &nbsp;/&nbsp; Rhythm</span>
+      <h2>Hours by month</h2>
+      <p>Support is not evenly spread. Holiday drives, deployment cycles, and card campaigns each leave a shape.</p>
+    </div>
+    <div class="card">
+      <h3>Volunteer hours logged per month</h3>
+      <p class="note">Selected year in navy, other years shown faintly behind it.</p>
+      <div id="monthChart"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="label">04 &nbsp;/&nbsp; Programs</span>
+      <h2>Where the effort went</h2>
+      <p>Switch the metric to see which programs carry the hours and which carry the dollars.</p>
+    </div>
+    <div class="card">
+      <div class="toggle" id="metricToggle" role="group" aria-label="Select metric"></div>
+      <div id="progChart"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="label">05 &nbsp;/&nbsp; Reach</span>
+      <h2>Who was served, and how</h2>
+      <p>Every logged engagement records a service type and the status of the person receiving it.</p>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>Top service types</h3>
+        <p class="note">By number of engagements.</p>
+        <div id="svcChart"></div>
+      </div>
+      <div class="card">
+        <h3>Recipient status</h3>
+        <p class="note">Share of engagements. Unrecorded status excluded.</p>
+        <div id="statusChart"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="label">06 &nbsp;/&nbsp; The volunteers</span>
+      <h2>How much people give</h2>
+      <p>Most volunteers contribute a handful of hours. A smaller group carries an outsized share, and both matter.</p>
+    </div>
+    <div class="card">
+      <h3>Volunteers by hours contributed</h3>
+      <p class="note">Each volunteer counted once per year, grouped by total hours logged that year.</p>
+      <div id="volChart"></div>
+    </div>
+  </section>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <span class="label">07 &nbsp;/&nbsp; Year over year</span>
+      <h2 id="ytdTitle">Year over year</h2>
+      <p id="ytdPeriod">A like-for-like window, so the comparison is not flattered by a partial year.</p>
+    </div>
+    <div class="callout" id="ytdDisclaimer" hidden></div>
+    <div class="card">
+      <h3>Summary totals</h3>
+      <div class="tscroll">
+        <table id="ytdTable" style="min-width:660px">
+          <thead><tr id="ytdHead"></tr></thead>
+          <tbody id="ytdBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" id="ytdProgCard" style="margin-top:22px" hidden>
+      <h3>By program</h3>
+      <p class="note">Same window, program by program. Switch the metric to compare a different measure.</p>
+      <div class="toggle" id="ytdToggle" role="group" aria-label="Select comparison metric"></div>
+      <div class="tscroll">
+        <table id="ytdProgTable" style="min-width:640px">
+          <thead><tr id="ytdProgHead"></tr></thead>
+          <tbody id="ytdProgBody"></tbody>
+          <tfoot><tr id="ytdProgFoot"></tr></tfoot>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="meth">
+      <div>
+        <h4>How these numbers are built</h4>
+        <p>Figures come directly from the Virtual Services engagement log. Volunteer time value uses the Independent Sector value of volunteer time for the year the hours were served. In-kind value is self-reported by volunteers at the point of logging.</p>
+        <p>Recipient names, volunteer names, and individual record detail are deliberately excluded. Everything shown here is aggregated.</p>
+      </div>
+      <div>
+        <h4>Reading the current year</h4>
+        <p>The current year is partial and will keep moving. Use the year-over-year comparison, which covers <span id="periodEcho">a matched window in both years</span>, for any year-over-year claim.</p>
+        <p>A small number of logged engagements are flagged during review as potential duplicates or entry errors and are held out of supported counts.</p>
+      </div>
+    </div>
+    <div class="colophon">
+      <span>Soldiers' Angels &nbsp;&middot;&nbsp; Virtual Services &nbsp;&middot;&nbsp; <span id="genDate"></span></span>
+      <a class="staff" href="refresh.html" title="Staff only. Refresh the data.">
+        <span>Update the data</span>
+        <svg class="mark" viewBox="0 0 20 36" aria-hidden="true" focusable="false">
+          <polygon points="13,0 3,19.5 8.6,19.5 6.6,36 17,14.5 11.2,14.5"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script id="vs-data" type="application/json">/*__VS_DATA__*/</script>
+<script>
+const C={gold:'#9C7016',gold2:'#B8891F',steel:'#4E7C9B',moss:'#4F7D5B',ember:'#B23A2B',
+         dim:'#7A8494',rule:'#C7CBD1',sunk:'#E1E3E6',night:'#FFFFFF'};
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let D=null,YEAR='all',METRIC='hours',YFAM='Hours',SORT={k:'hours',dir:-1};
+
+const nf=n=>n>=1e6?(n/1e6).toFixed(2)+'M':Math.round(n).toLocaleString();
+const money=n=>'$'+nf(n);
+const money0=n=>'$'+Math.round(n).toLocaleString();
+const dec=(n,d)=>n.toFixed(d);
+const pc=n=>(n*100).toFixed(1)+'%';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const yearLabel=()=>YEAR==='all'?'all years':String(YEAR);
+
+/* ---------- data ---------- */
+function years(){return [...new Set(D.summary.map(r=>r.year))].sort()}
+function totals(y){
+  const rows=D.summary.filter(r=>r.program==='All Programs'&&(y==='all'||r.year===y));
+  const s=k=>rows.reduce((a,r)=>a+(r[k]||0),0);
+  return{volunteers:s('volunteers'),hours:s('hours'),inKind:s('inKind'),timeValue:s('timeValue'),
+         staffLabor:s('staffLabor'),packages:s('packages'),letters:s('letters'),items:s('items'),
+         quantity:s('quantity'),engagements:s('engagements'),falseReports:s('falseReports')};
+}
+function progRows(y){
+  const m={};
+  D.summary.filter(r=>r.program!=='All Programs'&&(y==='all'||r.year===y)).forEach(r=>{
+    const p=m[r.program]||(m[r.program]={program:r.program,volunteers:0,hours:0,inKind:0,timeValue:0,
+      packages:0,letters:0,items:0,quantity:0,engagements:0});
+    ['volunteers','hours','inKind','timeValue','packages','letters','items','quantity','engagements']
+      .forEach(k=>p[k]+=r[k]||0);
+  });
+  const list=Object.values(m),t=totals(y);
+  list.forEach(p=>{
+    p.avgHrs=p.volunteers?p.hours/p.volunteers:0;
+    p.shareHrs=t.hours?p.hours/t.hours:0;
+  });
+  return list;
+}
+
+/* ---------- chart primitive ---------- */
+function hbars(rows,opt){
+  opt=opt||{};
+  const fmt=opt.fmt||nf,color=opt.color||C.gold,w=opt.w||880,rowH=opt.rowH||34,labelW=opt.labelW||210;
+  if(!rows.length)return '<p class="note">No data for this selection.</p>';
+  const max=Math.max.apply(null,rows.map(r=>r.v))||1,barW=w-labelW-108,h=rows.length*rowH+12;
+  let s=`<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Bar chart">`;
+  rows.forEach((r,i)=>{
+    const y=i*rowH+8,bw=Math.max(2,(r.v/max)*barW);
+    s+=`<text class="blab" x="0" y="${y+15}">${esc(r.k)}</text>`;
+    s+=`<rect x="${labelW}" y="${y+3}" width="${barW}" height="16" rx="2" fill="${C.sunk}"/>`;
+    s+=`<rect class="bar" x="${labelW}" y="${y+3}" width="${bw}" height="16" rx="2" fill="${color}"><title>${esc(r.k)}: ${fmt(r.v)}</title></rect>`;
+    s+=`<text class="bval" x="${labelW+barW+10}" y="${y+16}">${fmt(r.v)}</text>`;
+  });
+  return s+'</svg>';
+}
+
+function monthChart(){
+  const w=880,h=300,pl=56,pr=42,pt=14,pb=32,ys=years();
+  const series=ys.map(y=>({y:y,pts:MON.map(function(_,i){
+    const m=D.monthly.find(r=>r.year===y&&r.month===i+1);return Math.max(0,m?m.hours:0);})}));
+  let mx=0;series.forEach(s=>s.pts.forEach(v=>{if(v>mx)mx=v;}));
+  const max=(mx||1)*1.08;
+  const X=i=>pl+(i/11)*(w-pl-pr),Y=v=>h-pb-(v/max)*(h-pt-pb);
+  let s=`<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Volunteer hours by month">`;
+  for(let g=0;g<=4;g++){const v=max*g/4,y=Y(v);
+    s+=`<line class="gridline" x1="${pl}" y1="${y}" x2="${w-pr}" y2="${y}"/>`;
+    s+=`<text class="tick" x="${pl-10}" y="${y+3.5}" text-anchor="end">${nf(v)}</text>`;}
+  MON.forEach((m,i)=>{s+=`<text class="tick" x="${X(i)}" y="${h-pb+17}" text-anchor="middle">${m}</text>`;});
+  const act=YEAR==='all'?ys[ys.length-1]:YEAR;
+  series.filter(sr=>sr.y!==act).forEach(sr=>{
+    s+=`<polyline fill="none" stroke="${C.rule}" stroke-width="1.6" points="${sr.pts.map((v,i)=>X(i)+','+Y(v)).join(' ')}"/>`;
+    s+=`<text class="tick" x="${X(11)+6}" y="${Y(sr.pts[11])+3.5}">${sr.y}</text>`;});
+  const a=series.find(sr=>sr.y===act);
+  if(a){
+    s+=`<polygon fill="${C.gold}" opacity=".10" points="${pl},${h-pb} ${a.pts.map((v,i)=>X(i)+','+Y(v)).join(' ')} ${X(11)},${h-pb}"/>`;
+    s+=`<polyline fill="none" stroke="${C.gold}" stroke-width="2.4" stroke-linejoin="round" points="${a.pts.map((v,i)=>X(i)+','+Y(v)).join(' ')}"/>`;
+    a.pts.forEach((v,i)=>{s+=`<circle cx="${X(i)}" cy="${Y(v)}" r="3.8" fill="${C.night}" stroke="${C.gold}" stroke-width="2"><title>${MON[i]} ${act}: ${nf(v)} hrs</title></circle>`;});
+  }
+  s+=`<line class="axis" x1="${pl}" y1="${h-pb}" x2="${w-pr}" y2="${h-pb}"/></svg>`;
+  return s+`<div class="legend"><span><i style="background:${C.gold}"></i>${act}</span><span><i style="background:${C.rule}"></i>Other years</span></div>`;
+}
+
+/* ---------- Annual Impact Report ---------- */
+const COLS=[
+  {k:'program',t:'Program',f:esc},
+  {k:'volunteers',t:'Volunteers',f:nf},
+  {k:'hours',t:'Hours volunteered',f:n=>Math.round(n).toLocaleString()},
+  {k:'avgHrs',t:'Avg hrs / volunteer',f:n=>dec(n,1)},
+  {k:'packages',t:'Packages supported',f:nf},
+  {k:'letters',t:'Letters supported',f:nf},
+  {k:'items',t:'Items supported',f:nf},
+  {k:'engagements',t:'Engagements',f:nf},
+  {k:'inKind',t:'In-kind value',f:money0},
+  {k:'timeValue',t:'Volunteer time value',f:money0},
+  {k:'shareHrs',t:'% of hours',f:pc,share:true}
+];
+function renderReport(){
+  document.getElementById('reportTitle').textContent='Program by program, '+yearLabel();
+  document.getElementById('reportHead').innerHTML=COLS.map(function(c){
+    const on=SORT.k===c.k;
+    return '<th class="sortable" data-k="'+c.k+'" tabindex="0" role="button"'+
+      (on?' aria-sort="'+(SORT.dir<0?'descending':'ascending')+'"':'')+'>'+c.t+'<span class="car"></span></th>';
+  }).join('');
+
+  const rows=progRows(YEAR).slice().sort(function(a,b){
+    const x=a[SORT.k],y=b[SORT.k];
+    return typeof x==='string'?SORT.dir*x.localeCompare(y):SORT.dir*(x-y);
+  });
+  let maxShare=0.0001;rows.forEach(r=>{if(r.shareHrs>maxShare)maxShare=r.shareHrs;});
+
+  document.getElementById('reportBody').innerHTML=rows.map(function(r){
+    return '<tr>'+COLS.map(function(c){
+      if(c.share)return '<td class="share">'+pc(r.shareHrs)+
+        '<span class="track"><span class="fill" style="width:'+(r.shareHrs/maxShare*100).toFixed(1)+'%"></span></span></td>';
+      return '<td>'+c.f(r[c.k])+'</td>';
+    }).join('')+'</tr>';
+  }).join('');
+
+  const t=totals(YEAR);
+  const tv=Object.assign({},t,{program:'Total',avgHrs:t.volunteers?t.hours/t.volunteers:0,shareHrs:1});
+  document.getElementById('reportFoot').innerHTML=COLS.map(function(c){
+    return c.share?'<td>100.0%</td>':'<td>'+c.f(tv[c.k])+'</td>';
+  }).join('');
+}
+
+/* ---------- renderers ---------- */
+function renderHeadline(){
+  const t=totals('all');
+  const items=[[nf(t.hours),'Volunteer hours, all years'],[nf(t.engagements),'Engagements completed'],
+    [money(t.timeValue+t.inKind),'Total value delivered'],[nf(t.quantity),'Items, letters &amp; packages']];
+  document.getElementById('headline').innerHTML=items.map(function(p){
+    return '<div><div class="n">'+p[0]+'</div><div class="l">'+p[1]+'</div></div>';}).join('');
+}
+function renderKpis(){
+  const t=totals(YEAR),allY=YEAR==='all';
+  document.getElementById('glanceTitle').textContent=allY?'Totals across all years':String(YEAR)+' totals';
+  const k=[['Volunteer hours',Math.round(t.hours).toLocaleString(),'logged and verified',C.gold],
+    ['Volunteers',nf(t.volunteers),allY?'counted once per year served':'distinct people serving',C.steel],
+    ['Volunteer time value',money0(t.timeValue),'at Independent Sector rate',C.moss],
+    ['In-kind value',money0(t.inKind),'goods bought and sent',C.gold2],
+    ['Engagements',nf(t.engagements),'individual acts of support',C.gold],
+    ['Packages &amp; letters',nf(t.packages+t.letters),'sent to those we serve',C.steel]];
+  document.getElementById('kpis').innerHTML=k.map(function(r){
+    return '<div class="kpi"><div class="label">'+r[0]+'</div><div class="n" style="color:'+r[3]+'">'+r[1]+
+           '</div><div class="s">'+r[2]+'</div></div>';}).join('');
+}
+const METRICS=[['hours','Hours',n=>Math.round(n).toLocaleString(),C.gold],
+  ['inKind','In-kind value',money0,C.gold2],['timeValue','Time value',money0,C.moss],
+  ['volunteers','Volunteers',nf,C.steel],['engagements','Engagements',nf,C.steel],
+  ['quantity','Items supported',nf,C.moss]];
+function renderProg(){
+  const m=METRICS.find(x=>x[0]===METRIC);
+  const rows=progRows(YEAR).map(p=>({k:p.program,v:p[m[0]]||0})).filter(r=>r.v>0).sort((a,b)=>b.v-a.v);
+  document.getElementById('progChart').innerHTML=hbars(rows,{fmt:m[2],color:m[3],labelW:220});
+}
+function renderSvc(){
+  const m={};D.services.filter(r=>YEAR==='all'||r.year===YEAR).forEach(r=>{m[r.service]=(m[r.service]||0)+r.count;});
+  const top=Object.keys(m).map(k=>({k:k,v:m[k]})).sort((a,b)=>b.v-a.v).slice(0,9);
+  document.getElementById('svcChart').innerHTML=hbars(top,{color:C.steel,w:520,labelW:180,rowH:32});
+}
+function renderStatus(){
+  const m={};D.status.filter(r=>(YEAR==='all'||r.year===YEAR)&&r.status!=='nan')
+    .forEach(r=>{m[r.status]=(m[r.status]||0)+r.count;});
+  let tot=0;Object.keys(m).forEach(k=>tot+=m[k]);tot=tot||1;
+  const top=Object.keys(m).map(k=>({k:k,v:m[k]})).sort((a,b)=>b.v-a.v).slice(0,9);
+  document.getElementById('statusChart').innerHTML=hbars(top,{fmt:v=>nf(v)+'  ('+pc(v/tot)+')',color:C.moss,w:520,labelW:180,rowH:32});
+}
+function renderVol(){
+  const order=['<10 hrs','10-49 hrs','50-99 hrs','100-249 hrs','250+ hrs'],m={};
+  D.volDist.filter(r=>YEAR==='all'||r.year===YEAR).forEach(r=>{m[r.bucket]=(m[r.bucket]||0)+r.count;});
+  const data=order.filter(b=>m[b]).map(b=>({k:b,v:m[b]}));
+  let tot=0;data.forEach(r=>tot+=r.v);tot=tot||1;
+  document.getElementById('volChart').innerHTML=hbars(data,{fmt:v=>nf(v)+'  ('+pc(v/tot)+')',color:C.gold,labelW:150,rowH:38});
+}
+/* Shown above the year-over-year tables. Edit this one line to change it. */
+const YTD_NOTE='During the first and second quarters of 2026, a ZIP code suspension hindered mailing, so some activity is not fully reflected in these figures.';
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function daysIn(m,y){return [31,(y%4===0&&y%100!==0)||y%400===0?29:28,31,30,31,30,31,31,30,31,30,31][m];}
+
+/* The reporting window is never hardcoded. It comes from the workbook:
+   first from the month names the YTD sheet labels its own columns with,
+   and failing that from the last month the engagement log has real activity in. */
+function windowFromLabels(y){
+  const hay=[y.currentLabel,y.priorLabel,y.period,y.banner].filter(Boolean).join('  ');
+  let last=-1;
+  MONTHS.forEach(function(full,i){
+    if(new RegExp('\\b('+full+'|'+full.slice(0,3)+')\\b','i').test(hay))last=Math.max(last,i);
+  });
+  return last;
+}
+function windowFromData(yr){
+  const rows=D.monthly.filter(r=>r.year===yr);
+  if(!rows.length)return -1;
+  let mx=0;rows.forEach(r=>{if(r.engagements>mx)mx=r.engagements;});
+  let last=-1;rows.forEach(r=>{if(r.engagements>=mx*0.05&&r.month-1>last)last=r.month-1;});
+  return last;
+}
+function cleanLabel(raw,yr){
+  let t=String(raw||'').trim();
+  MONTHS.forEach(function(full){
+    t=t.replace(new RegExp('\\b('+full+'|'+full.slice(0,3)+')\\b\\.?','gi'),'');
+  });
+  t=t.replace(/[\u2010-\u2015-]/g,' ').replace(/\(\s*\)/g,'').replace(/\s{2,}/g,' ').trim();
+  t=t.replace(/[\s,(-]+$/,'').trim();
+  return t||(yr+' YTD');
+}
+function ytdYears(y){
+  const found=[];
+  [y.priorLabel,y.currentLabel,y.banner].filter(Boolean).forEach(function(s){
+    (String(s).match(/\b(20\d{2})\b/g)||[]).forEach(v=>{if(found.indexOf(+v)<0)found.push(+v);});
+  });
+  found.sort((a,b)=>a-b);
+  if(found.length>=2)return[found[0],found[found.length-1]];
+  const ys=years();
+  return[ys[ys.length-2],ys[ys.length-1]];
+}
+
+function renderYtd(){
+  const y=D.ytd&&!Array.isArray(D.ytd)?D.ytd:{metrics:Array.isArray(D.ytd)?D.ytd:[],
+    priorLabel:'Prior',currentLabel:'Current',families:[],programs:[],total:null};
+
+  const yy=ytdYears(y),priorYr=yy[0],curYr=yy[1];
+  document.getElementById('ytdTitle').textContent='Year to date: '+priorYr+' vs '+curYr;
+
+  const endM=windowFromData(curYr)>=0?windowFromData(curYr):windowFromLabels(y);
+  let periodLine;
+  if(endM>=0){
+    periodLine='January 1 through '+MONTHS[endM]+' '+daysIn(endM,curYr)+', compared against the same window in '+priorYr+'.';
+  }else{
+    periodLine='A matched window in both years, so the comparison is not flattered by a partial year.';
+  }
+  // carry over any non-date wording the sheet added to its own period line
+  if(y.period){
+    String(y.period).split(/(?<=\.)\s+/).forEach(function(sent){
+      const t=sent.trim();
+      if(t&&!/\d/.test(t)&&MONTHS.every(m=>!new RegExp(m.slice(0,3),'i').test(t)))periodLine+=' '+t;
+    });
+  }
+  document.getElementById('ytdPeriod').textContent=periodLine;
+  window.__ytdWindow=endM>=0?('January 1 through '+MONTHS[endM]+' '+daysIn(endM,curYr)):null;
+
+  const dis=document.getElementById('ytdDisclaimer');
+  dis.innerHTML='<b>Note on this period:</b> '+YTD_NOTE;
+  dis.hidden=!YTD_NOTE;
+
+  const priorHead=cleanLabel(y.priorLabel,priorYr),currentHead=cleanLabel(y.currentLabel,curYr);
+  document.getElementById('ytdHead').innerHTML=
+    '<th>Metric</th><th>'+esc(priorHead)+'</th><th>'+esc(currentHead)+
+    '</th><th>Change</th><th>Percent</th>';
+  if(window.__ytdWindow)document.getElementById('periodEcho').textContent=window.__ytdWindow;
+
+  document.getElementById('ytdBody').innerHTML=(y.metrics||[]).map(function(r){
+    const isM=/value/i.test(r.metric),isA=/^avg/i.test(r.metric);
+    const f=v=>v==null?'&mdash;':isA?dec(v,1):(isM?money0(v):nf(v));
+    const up=(r.delta||0)>=0,cls=up?'up':'down';
+    return '<tr><td>'+esc(r.metric)+'</td><td>'+f(r.prior)+'</td><td>'+f(r.current)+'</td><td class="'+cls+'">'+
+      (up?'+':'&minus;')+f(Math.abs(r.delta||0))+'</td><td class="'+cls+'">'+
+      (r.pct==null?'&mdash;':(up?'+':'')+pc(r.pct))+'</td></tr>';
+  }).join('');
+
+  const card=document.getElementById('ytdProgCard');
+  const fams=y.families||[];
+  if(!fams.length||!(y.programs||[]).length){card.hidden=true;return;}
+  card.hidden=false;
+  if(fams.indexOf(YFAM)<0)YFAM=fams.indexOf('Hours')>=0?'Hours':fams[0];
+
+  const tg=document.getElementById('ytdToggle');
+  tg.innerHTML=fams.map(function(f){
+    return '<button class="tg" data-f="'+esc(f)+'" aria-pressed="'+(f===YFAM)+'">'+esc(f)+'</button>';}).join('');
+
+  const yy2=ytdYears(y),priorYr2=yy2[0],curYr2=yy2[1];
+  const isMoney=/kind|value|cost/i.test(YFAM);
+  const fmt=v=>isMoney?money0(v):(Math.round(v)===v?Math.round(v).toLocaleString()
+    :v.toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1}));
+  document.getElementById('ytdProgHead').innerHTML='<th>Program</th><th>'+esc(cleanLabel(y.priorLabel,priorYr2))+
+    '</th><th>'+esc(cleanLabel(y.currentLabel,curYr2))+'</th><th>Change</th><th>Percent</th>';
+
+  const line=function(r,foot){
+    const c=r[YFAM]||{prior:0,current:0},d=(c.current||0)-(c.prior||0);
+    const up=d>=0,cls=d===0?'':(up?'up':'down');
+    const p=c.prior?d/c.prior:null;
+    return '<tr><td>'+esc(r.program)+'</td><td>'+fmt(c.prior||0)+'</td><td>'+fmt(c.current||0)+
+      '</td><td class="'+cls+'">'+(d===0?'&mdash;':(up?'+':'&minus;')+fmt(Math.abs(d)))+
+      '</td><td class="'+cls+'">'+(p==null?'&mdash;':(p>=0?'+':'')+pc(p))+'</td></tr>';
+  };
+  document.getElementById('ytdProgBody').innerHTML=y.programs.map(function(r){return line(r);}).join('');
+  document.getElementById('ytdProgFoot').innerHTML=y.total?line(y.total):'';
+}
+function renderAll(){
+  renderKpis();renderReport();
+  document.getElementById('monthChart').innerHTML=monthChart();
+  renderProg();renderSvc();renderStatus();renderVol();
+}
+
+/* ---------- boot ---------- */
+try{
+  D=JSON.parse(document.getElementById('vs-data').textContent);
+  document.getElementById('genDate').textContent='Data current as of '+D.generated;
+  document.getElementById('asOf').textContent='As of '+D.generated;
+
+  const yp=document.getElementById('yearPills');
+  yp.innerHTML=[['all','All years']].concat(years().map(y=>[y,y])).map(function(p){
+    return '<button class="pill" data-y="'+p[0]+'" aria-pressed="'+(p[0]==='all')+'">'+p[1]+'</button>';}).join('');
+  yp.addEventListener('click',function(e){
+    const b=e.target.closest('.pill');if(!b)return;
+    YEAR=b.dataset.y==='all'?'all':+b.dataset.y;
+    Array.prototype.forEach.call(yp.children,c=>c.setAttribute('aria-pressed',c===b));
+    renderAll();
+  });
+
+  const mt=document.getElementById('metricToggle');
+  mt.innerHTML=METRICS.map(function(m){
+    return '<button class="tg" data-m="'+m[0]+'" aria-pressed="'+(m[0]==='hours')+'">'+m[1]+'</button>';}).join('');
+  mt.addEventListener('click',function(e){
+    const b=e.target.closest('.tg');if(!b)return;
+    METRIC=b.dataset.m;
+    Array.prototype.forEach.call(mt.children,c=>c.setAttribute('aria-pressed',c===b));
+    renderProg();
+  });
+
+  const sortHandler=function(e){
+    const th=e.target.closest('th.sortable');if(!th)return;
+    if(e.type==='keydown'){if(e.key!=='Enter'&&e.key!==' ')return;e.preventDefault();}
+    const k=th.dataset.k;
+    SORT=SORT.k===k?{k:k,dir:-SORT.dir}:{k:k,dir:k==='program'?1:-1};
+    renderReport();
+  };
+  const rh=document.getElementById('reportHead');
+  rh.addEventListener('click',sortHandler);
+  rh.addEventListener('keydown',sortHandler);
+  document.getElementById('ytdToggle').addEventListener('click',function(e){
+    const b=e.target.closest('.tg');if(!b)return;
+    YFAM=b.dataset.f;renderYtd();
+  });
+  document.getElementById('printBtn').addEventListener('click',function(){window.print();});
+
+  renderHeadline();renderYtd();renderAll();
+}catch(err){
+  document.querySelector('main').innerHTML=
+    '<section><h2>The data did not load</h2><p class="lede">Open refresh.html, drop the workbook in again, and upload the index.html it produces.</p></section>';
+  console.error(err);
+}
+</script>
+</body>
+</html>

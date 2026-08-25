@@ -1,9 +1,10 @@
-# Never commit report data
+# never commit the source workbook - it contains recipient and volunteer names
 *.xlsx
-*.xls
 *.xlsm
+*.xls
 *.csv
-*.tsv
-samples/
-exports/
+
+__pycache__/
+*.pyc
+.venv/
 .DS_Store

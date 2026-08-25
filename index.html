@@ -3,184 +3,698 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Members Without a Box</title>
+<title>Virtual Services Dashboard | Soldiers' Angels</title>
+<meta name="description" content="Volunteer hours, in-kind value, and program reach across Soldiers' Angels Virtual Services.">
+<meta property="og:title" content="Virtual Services Dashboard | Soldiers' Angels">
+<meta property="og:description" content="Program impact across every Virtual Services program, year by year.">
+<meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;900&family=EB+Garamond:ital,wght@0,400..700;1,400..600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  #unlock{max-width:420px;margin:70px auto;background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--maroon);padding:30px}
-  #unlock input{width:100%;font-size:16px;padding:12px 14px;margin-bottom:10px}
-  #unlock .btn{width:100%}
-  .roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:0 0 26px}
-  .role{background:var(--card);border:1px solid var(--rule);border-top:4px solid var(--maroon);padding:18px 20px;text-align:left;cursor:pointer;font-family:var(--body)}
-  .role:hover{background:#FFFCF4;border-color:var(--maroon)}
-  .role .rn{font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;font-size:19px;color:var(--maroon);margin-bottom:2px}
-  .role .rc{font-family:var(--display);font-size:34px;font-weight:700;line-height:1}
-  .role .rd{font-size:13px;color:var(--ink-soft);margin-top:4px}
-  .role.log{border-top-color:var(--ok)}
-  .role.vol{border-top-color:var(--blue)}
-  .role.rev{border-top-color:var(--red)}
-  .pubstamp{display:flex;align-items:baseline;gap:10px;background:var(--card);
-    border:1px solid var(--rule);border-left:4px solid var(--gold);padding:10px 16px;margin:0 0 24px}
-  .pubstamp .lb{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
-  .pubstamp .dt{font-family:var(--display);font-size:21px;font-weight:700;letter-spacing:.02em;color:var(--maroon);text-transform:uppercase}
-  .pubstamp .ago{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft)}
-  .stamps .pubstamp .sm{white-space:pre-line}
-  .pubstamp.old{border-left-color:var(--red)}
-  .pubstamp.old .ago{color:var(--red)}
-  .stamps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:0 0 26px;align-items:stretch}
-  .stamps .pubstamp{margin:0;flex-direction:column;align-items:flex-start;gap:3px;
-    padding:16px 20px 18px;justify-content:flex-start}
-  .stamps .pubstamp .dt{font-size:27px;line-height:1.05}
-  .stamps .pubstamp .sm{font-family:var(--mono);font-size:11.5px;line-height:1.55;color:var(--ink-soft);margin-top:auto;padding-top:8px}
-  .pubstamp.cov{border-left-color:var(--ok)}
-  .pubstamp.cov .dt{color:var(--ok);font-size:34px}
-  @media(max-width:900px){ .stamps{grid-template-columns:1fr} }
-  @media(max-width:820px){ .stamps #pubStamp{margin-left:0} }
-  .hist{background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--maroon);
-    padding:20px 24px;margin:0 0 24px}
-  .hist h3{margin-bottom:14px}
-  .hrow{display:grid;grid-template-columns:210px 1fr 62px;gap:14px;align-items:center;
-    padding:7px 0;border-bottom:1px solid var(--rule);font-size:14px}
-  .hrow:last-child{border-bottom:none}
-  .hrow .hm{font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;font-size:16px}
-  .hbar{height:16px;background:#E4DED0;position:relative;display:flex;overflow:hidden}
-  .hbar i{display:block;height:100%;background:var(--ok)}
-  .hbar u{display:block;height:100%;background:var(--gold)}
-  .hbar.mini{height:10px;width:100%;margin:7px 0 2px}
-  .hrow .hm{display:flex;flex-direction:column;gap:2px}
-  .hrow .hsub{font-family:var(--mono);font-size:10.5px;letter-spacing:.02em;
-    text-transform:none;color:var(--ink-soft);font-weight:400}
-  .hlegend{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;margin:14px 0 6px;
-    font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-soft)}
-  .hlegend .k{width:13px;height:13px;display:inline-block;margin-right:-12px}
-  .hlegend .k.green{background:var(--ok)}
-  .hlegend .k.gold{background:var(--gold)}
-  .hlegend .k.grey{background:#E4DED0}
-  .hrow .hp{font-family:var(--display);font-size:19px;font-weight:700;text-align:right;color:var(--maroon)}
-  .hrow.now{background:#FFFBEF}
-  .hnote{font-size:13px;color:var(--ink-soft);margin-top:12px}
-  .sched{border-left:3px solid var(--rule);padding:2px 0 2px 16px;margin:-10px 0 26px;
-    max-width:74ch;font-size:14px;color:var(--ink-soft)}
-  .sched .nx{font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;
-    font-size:15px;color:var(--maroon);display:block;margin-bottom:5px}
-  .sched .nx b{font-weight:700}
-  .empty{background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--gold);padding:44px 32px;text-align:center;margin-bottom:24px}
-  .empty h3{font-size:27px;margin-bottom:10px}
-  .empty p{max-width:46ch;margin:0 auto 6px;color:var(--ink-soft)}
+:root{
+  --paper:#E8E9EA; --card:#FFFFFF; --panel2:#F2F3F4; --sunk:#E1E3E6;
+  --ink:#1C2434; --ink2:#4A5568; --ink3:#7A8494;
+  --rule:#D4D7DB; --rule2:#BEC3C9;
+  --gold:#9C7016; --gold2:#C9A227; --navy:#22355C; --steel:#4E7C9B; --moss:#4F7D5B; --ember:#B23A2B;
+  --scarlet:#BB0000; --red:#C8102E;
+  --maxw:1220px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:"EB Garamond","Palatino Linotype","Book Antiqua",Georgia,serif;
+  font-size:17.5px;line-height:1.66;-webkit-font-smoothing:antialiased;position:relative;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 1100px 620px at 82% -10%,rgba(156,112,22,.07),transparent 62%),
+    radial-gradient(ellipse 900px 540px at 0% 12%,rgba(34,53,92,.06),transparent 60%);
+}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;position:relative;z-index:1}
+h1,h2,h3{font-family:"Cinzel",Georgia,serif;font-weight:700;letter-spacing:.005em;margin:0}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.label{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3)}
+
+/* ---- masthead ---- */
+.masthead{background:var(--card);border-bottom:1px solid var(--rule);position:relative;z-index:1}
+.masthead::before{content:"";display:block;height:3px;background:var(--red)}
+.masthead .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:15px;padding-bottom:15px}
+.brand{font-family:"Cinzel",Georgia,serif;font-weight:700;font-size:13.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--ink)}
+.brand i{font-style:normal;color:var(--gold);margin:0 9px}
+.brand em{font-style:normal;font-weight:500;color:var(--ink2)}
+
+/* ---- hero ---- */
+.hero{padding:58px 0 34px}
+.eyebrow{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.eyebrow::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--rule2),transparent)}
+.eyebrow .label{color:var(--gold)}
+h1{font-size:clamp(30px,4.4vw,50px);line-height:1.08;margin-bottom:20px;font-weight:900;color:var(--ink)}
+.lede{font-size:20px;line-height:1.62;color:var(--ink2);max-width:60ch;margin:0}
+.lede b{color:var(--ink);font-weight:600}
+
+.headline{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:42px;border-radius:4px;overflow:hidden}
+.headline>div{background:var(--card);padding:21px 22px}
+.headline .n{font-family:"Cinzel",Georgia,serif;font-size:clamp(23px,2.9vw,32px);font-weight:700;line-height:1.12;color:var(--navy)}
+.headline .l{margin-top:8px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+
+/* ---- year rail ---- */
+.rail{position:sticky;top:0;z-index:30;background:rgba(232,233,234,.94);backdrop-filter:blur(9px);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-top:44px}
+.rail .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:11px;padding-bottom:11px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:var(--card);color:var(--ink2);border:1px solid var(--rule2);padding:7px 16px;border-radius:3px;cursor:pointer;transition:.15s}
+.pill:hover{border-color:var(--gold);color:var(--ink)}
+.pill[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600}
+.pill:focus-visible,.tg:focus-visible,.btn:focus-visible,th.sortable:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.btn{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:var(--card);color:var(--ink2);border:1px solid var(--rule2);padding:8px 15px;border-radius:3px;cursor:pointer}
+.btn:hover{border-color:var(--gold);color:var(--ink)}
+
+/* ---- sections ---- */
+section{padding:56px 0;border-bottom:1px solid var(--rule)}
+section:last-of-type{border-bottom:0}
+.sec-head{margin-bottom:28px}
+.sec-head .label{display:block;margin-bottom:11px;color:var(--gold)}
+h2{font-size:clamp(20px,2.4vw,28px);margin-bottom:10px;font-weight:600}
+.sec-head p{margin:0;color:var(--ink2);max-width:66ch;font-size:16.5px}
+
+/* ---- kpis ---- */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.kpi{background:var(--card);padding:22px 22px 20px}
+.kpi .n{font-family:"Cinzel",Georgia,serif;font-size:30px;font-weight:700;line-height:1.18;margin-top:10px}
+.kpi .s{font-size:15px;color:var(--ink3);margin-top:4px;font-style:italic}
+
+/* ---- card ---- */
+.card{background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:25px}
+.card h3{font-size:14.5px;font-weight:600;letter-spacing:.04em}
+.card .note{margin:6px 0 20px;font-size:14.5px;color:var(--ink3);font-style:italic}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+
+/* ---- tables ---- */
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;min-width:940px;border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:13px;
+  font-variant-numeric:tabular-nums}
+th,td{padding:11px 12px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal;min-width:190px}
+thead th{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3);font-weight:500;
+  border-bottom:1px solid var(--rule2);vertical-align:bottom;line-height:1.4}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--gold)}
+th[aria-sort]{color:var(--gold)}
+th[aria-sort] .car::after{content:"\25B2";font-size:8px;margin-left:5px}
+th[aria-sort="descending"] .car::after{content:"\25BC"}
+tbody td{border-bottom:1px solid var(--rule);color:var(--ink)}
+tbody tr:hover td{background:var(--panel2)}
+tbody td:first-child{font-family:"EB Garamond",Georgia,serif;font-size:16.5px;font-weight:600}
+.share{position:relative;min-width:112px}
+.share .track{position:absolute;left:12px;right:12px;bottom:7px;height:3px;background:var(--sunk);border-radius:2px}
+.share .fill{position:absolute;left:0;top:0;bottom:0;background:var(--gold);border-radius:2px}
+tfoot td{border-top:1.5px solid var(--ink);border-bottom:0;font-weight:600;padding-top:14px;background:var(--card)}
+tfoot td:first-child{font-family:"Cinzel",Georgia,serif;font-size:14px;letter-spacing:.08em}
+.fn{margin:17px 0 0;font-size:14.5px;color:var(--ink3);max-width:80ch;font-style:italic}
+.fn b{color:var(--ink2);font-weight:600;font-style:normal}
+
+/* ---- charts ---- */
+svg.chart{width:100%;height:auto;display:block;overflow:visible}
+.gridline{stroke:#E4E6E9;stroke-width:1}
+.axis{stroke:var(--rule2);stroke-width:1}
+.tick{font-family:"IBM Plex Mono",monospace;font-size:10px;fill:var(--ink3)}
+.blab{font-family:"EB Garamond",Georgia,serif;font-size:14px;fill:var(--ink2)}
+.bval{font-family:"IBM Plex Mono",monospace;font-size:11px;fill:var(--ink)}
+.bar{transition:opacity .15s}
+.bar:hover{opacity:.78}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink3);margin-top:15px}
+.legend i{width:11px;height:11px;display:inline-block;margin-right:6px;vertical-align:-1px;border-radius:2px}
+.toggle{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.tg{font-family:"IBM Plex Mono",monospace;font-size:11.5px;background:var(--panel2);color:var(--ink2);border:1px solid var(--rule2);padding:6px 13px;border-radius:3px;cursor:pointer}
+.tg[aria-pressed="true"]{background:var(--steel);border-color:var(--steel);color:#fff;font-weight:600}
+.up{color:var(--moss)} .down{color:var(--ember)}
+
+/* ---- callout ---- */
+.callout{background:#FBF6E8;border:1px solid #E4D6AC;border-left:3px solid var(--gold);
+  border-radius:4px;padding:16px 19px;margin-bottom:22px;font-size:16px;color:#5C4A22;max-width:88ch}
+.callout b{color:#7A5F1E;font-weight:600}
+
+/* ---- footer ---- */
+footer{background:var(--card);border-top:1px solid var(--rule);padding:48px 0 62px;color:var(--ink2);font-size:16px;position:relative;z-index:1}
+footer h4{font-family:"Cinzel",Georgia,serif;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 13px;font-weight:600}
+footer p{margin:0 0 13px;max-width:74ch}
+.meth{display:grid;grid-template-columns:1fr 1fr;gap:44px}
+.colophon{margin-top:38px;padding-top:22px;border-top:1px solid var(--rule);font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px;letter-spacing:.14em;color:var(--ink3);text-transform:uppercase;
+  display:flex;align-items:center;justify-content:space-between;gap:20px}
+.staff{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink3);
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  border:1px solid transparent;border-radius:3px;padding:6px 10px;transition:.3s ease;opacity:.55}
+.staff:hover,.staff:focus-visible{opacity:1;color:var(--gold);border-color:var(--rule2);background:var(--panel2)}
+.staff:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.mark{width:11px;height:auto;flex:none;fill:var(--gold);opacity:.6;transition:opacity .3s ease}
+.staff:hover .mark,.staff:focus-visible .mark{opacity:1}
+
+@media(max-width:900px){
+  .headline{grid-template-columns:1fr 1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .two,.meth{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .wrap{padding:0 18px}
+  body{font-size:16.5px}
+  .kpis{grid-template-columns:1fr}
+  .hero{padding-top:38px}
+  section{padding:42px 0}
+  .btn{margin-left:0}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+
+@media print{
+  body{background:#fff;font-size:11pt}
+  body::before{display:none}
+  .rail,.btn,.legend,#chartSections,.toggle,.mark,.staff{display:none!important}
+  .masthead{border-bottom:2px solid #000}
+  section{padding:16px 0;border-bottom:0;break-inside:avoid}
+  .card{border:1px solid #999;padding:0;background:none}
+  .kpis,.headline{border-color:#999}
+  table{min-width:0;font-size:8.5pt}
+  th,td{padding:5px 6px}
+  .callout{background:#fff;border:1px solid #999}
+  .share .track,.share .fill{display:none}
+}
 </style>
 </head>
 <body>
 
-<div class="bar">
-  <div class="bar-in">
-    <div class="bar-title">Members Without a Box<svg class="bolt" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg></div>
-    <div class="stages"><div class="stage-chip" id="monthChip">Not signed in</div></div>
-    <div class="bar-actions">
-      <button class="ghost" id="btnHistory" style="display:none">Past months</button>
-      <button class="ghost" id="btnUpdate" style="display:none">Update report</button>
-      <button class="ghost" id="btnSF" style="display:none">Salesforce import</button>
-      <button class="ghost" id="btnSop">SOP</button>
-    </div>
+<header class="masthead">
+  <div class="wrap">
+    <div class="brand">Soldiers' Angels <i>/</i> <em>Virtual Services</em></div>
+    <div class="label" id="asOf"></div>
+  </div>
+</header>
+
+<div class="wrap hero">
+  <div class="eyebrow"><span class="label">Program Impact &nbsp;&middot;&nbsp; 2023 to 2026</span></div>
+  <h1>Virtual Services Dashboard</h1>
+  <p class="lede">Virtual Services volunteers write the letters, bake the cookies, pack the boxes, and sit with the families. This is the full record of that work: <b>every hour logged, every package sent, every service member reached.</b></p>
+  <div class="headline" id="headline"></div>
+</div>
+
+<div class="rail">
+  <div class="wrap">
+    <span class="label">Reporting year</span>
+    <div class="pills" id="yearPills" role="group" aria-label="Select reporting year"></div>
+    <button class="btn" id="printBtn">Print or save as PDF</button>
   </div>
 </div>
 
-<div class="wrap">
+<main class="wrap">
 
-  <!-- ============ sign in ============ -->
-  <section id="unlock">
-    <div class="eyebrow">Soldiers' Angels &nbsp;·&nbsp; Virtual Services</div>
-    <h2 style="margin-bottom:6px">Sign in</h2>
-    <p class="hint" id="signinHint" style="margin-bottom:16px">Enter the team password.</p>
-    <input type="password" id="pw" placeholder="Team password" autocomplete="current-password">
-    <button class="btn" id="go">Sign in</button>
-    <div id="unlockMsg" style="margin-top:14px"></div>
+  <section>
+    <div class="sec-head">
+      <span class="label">01 &nbsp;/&nbsp; The year at a glance</span>
+      <h2 id="glanceTitle">Totals</h2>
+      <p>Volunteer time is valued at the Independent Sector rate for the year the hours were served. In-kind value is the reported cost of goods volunteers purchased and sent themselves.</p>
+    </div>
+    <div class="kpis" id="kpis"></div>
   </section>
 
-  <!-- ============ signed in ============ -->
-  <section id="content" style="display:none">
-
-    <div class="hist" id="history" style="display:none"></div>
-
-    <h1>Members Without a Box</h1>
-    <p class="sub" id="subLine"></p>
-    <div class="stamps">
-      <div class="pubstamp month" id="monthHero" style="display:none">
-        <span class="lb">Reporting month</span>
-        <span class="dt" id="monthBig"></span>
-        <span class="sm"></span>
-      </div>
-      <div class="pubstamp cov" id="covStamp" style="display:none"></div>
-      <div class="pubstamp" id="pubStamp" style="display:none"></div>
+  <section>
+    <div class="sec-head">
+      <span class="label">02 &nbsp;/&nbsp; Annual Impact Report</span>
+      <h2 id="reportTitle">Program by program</h2>
+      <p>Every Virtual Services program, side by side. Click any column heading to sort.</p>
     </div>
-    <div class="sched" id="schedule"></div>
-
-    <div class="empty" id="emptyState" style="display:none">
-      <h3>No current data <svg class="bolt-ink" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg></h3>
-      <p>Nothing has been published yet, so there is no list to show.</p>
-      <p>The Director of Virtual Services posts it once the monthly run is finished.</p>
+    <div class="card">
+      <div class="tscroll">
+        <table id="report">
+          <thead><tr id="reportHead"></tr></thead>
+          <tbody id="reportBody"></tbody>
+          <tfoot><tr id="reportFoot"></tr></tfoot>
+        </table>
+      </div>
+      <p class="fn"><b>On the volunteer count:</b> the program rows add up to more than the total, because one volunteer often serves several programs and is counted in each. The total row is the distinct headcount, so it comes in lower than the sum above it. Hours and dollars do add up cleanly.</p>
     </div>
-
-    <div id="dataArea" style="display:none">
-      <div class="roles">
-        <button class="role log" data-goto="logistics">
-          <div class="rn">Logistics</div>
-          <div class="rc" id="r-log">0</div>
-          <div class="rd">members cleared to receive a box</div>
-        </button>
-        <button class="role vol" data-goto="volunteer">
-          <div class="rn">Volunteer Services</div>
-          <div class="rc" id="r-vol">0</div>
-          <div class="rd">members waiting on Angel contact</div>
-        </button>
-        <button class="role rev" data-goto="review">
-          <div class="rn">Held for review</div>
-          <div class="rc" id="r-rev">0</div>
-          <div class="rd">address or eligibility to confirm</div>
-        </button>
-      </div>
-
-      <dl class="stats" id="stats2"></dl>
-      <div id="alerts"></div>
-
-      <div class="views" id="views">
-        <button class="view-tab on" data-view="all">Full list <span class="n" id="n-all">0</span></button>
-        <button class="view-tab" data-view="logistics">Logistics: send a box <span class="n" id="n-logistics">0</span></button>
-        <button class="view-tab" data-view="volunteer">Volunteer Services: reach out <span class="n" id="n-volunteer">0</span></button>
-        <button class="view-tab" data-view="waitlisted">Waitlisted <span class="n" id="n-waitlisted">0</span></button>
-        <button class="view-tab" data-view="review">Needs review <span class="n" id="n-review">0</span></button>
-        <button class="view-tab" data-view="decisions" style="display:none">Decisions <span class="n" id="n-decisions">0</span></button>
-      </div>
-      <div class="viewbox">
-        <div class="viewhead">
-          <div class="txt"><h3 id="vTitle"></h3><p id="vDesc"></p></div>
-          <div class="tools">
-            <button class="btn sm out" id="btnCsv">Export .csv</button>
-            <button class="btn sm gold" id="btnXlsx">Export .xlsx</button>
-          </div>
-        </div>
-        <div class="filters" id="vFilters"></div>
-        <div class="tw"><table id="vTable"><thead></thead><tbody></tbody></table></div>
-        <p class="hint" id="vFoot" style="margin-top:10px"></p>
-      </div>
-    </div>
-
-    <footer>
-      <p>Read only. Published each month by the Director of Virtual Services.
-      Questions on a specific member go to them, not to the report.</p>
-      <p style="margin-top:8px"><a href="sop.html">Run this manually</a>
-      <span class="hint"> &nbsp;the step by step, for when the tool is not an option</span></p>
-    </footer>
   </section>
-</div>
 
-<script src="config.js"></script>
-<script>window.NOBOX_GATE = 'none';</script>
-<script src="gate.js"></script>
-<script src="vendor/xlsx.full.min.js"></script>
-<script src="vendor/exceljs.min.js"></script>
-<script src="core.js"></script>
-<script src="viewer.js"></script>
+  <div id="chartSections">
+  <section>
+    <div class="sec-head">
+      <span class="label">03 &nbsp;/&nbsp; Rhythm</span>
+      <h2>Hours by month</h2>
+      <p>Support is not evenly spread. Holiday drives, deployment cycles, and card campaigns each leave a shape.</p>
+    </div>
+    <div class="card">
+      <h3>Volunteer hours logged per month</h3>
+      <p class="note">Selected year in navy, other years shown faintly behind it.</p>
+      <div id="monthChart"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="label">04 &nbsp;/&nbsp; Programs</span>
+      <h2>Where the effort went</h2>
+      <p>Switch the metric to see which programs carry the hours and which carry the dollars.</p>
+    </div>
+    <div class="card">
+      <div class="toggle" id="metricToggle" role="group" aria-label="Select metric"></div>
+      <div id="progChart"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="label">05 &nbsp;/&nbsp; Reach</span>
+      <h2>Who was served, and how</h2>
+      <p>Every logged engagement records a service type and the status of the person receiving it.</p>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>Top service types</h3>
+        <p class="note">By number of engagements.</p>
+        <div id="svcChart"></div>
+      </div>
+      <div class="card">
+        <h3>Recipient status</h3>
+        <p class="note">Share of engagements. Unrecorded status excluded.</p>
+        <div id="statusChart"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="label">06 &nbsp;/&nbsp; The volunteers</span>
+      <h2>How much people give</h2>
+      <p>Most volunteers contribute a handful of hours. A smaller group carries an outsized share, and both matter.</p>
+    </div>
+    <div class="card">
+      <h3>Volunteers by hours contributed</h3>
+      <p class="note">Each volunteer counted once per year, grouped by total hours logged that year.</p>
+      <div id="volChart"></div>
+    </div>
+  </section>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <span class="label">07 &nbsp;/&nbsp; Year over year</span>
+      <h2 id="ytdTitle">Year over year</h2>
+      <p id="ytdPeriod">A like-for-like window, so the comparison is not flattered by a partial year.</p>
+    </div>
+    <div class="callout" id="ytdDisclaimer" hidden></div>
+    <div class="card">
+      <h3>Summary totals</h3>
+      <div class="tscroll">
+        <table id="ytdTable" style="min-width:660px">
+          <thead><tr id="ytdHead"></tr></thead>
+          <tbody id="ytdBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" id="ytdProgCard" style="margin-top:22px" hidden>
+      <h3>By program</h3>
+      <p class="note">Same window, program by program. Switch the metric to compare a different measure.</p>
+      <div class="toggle" id="ytdToggle" role="group" aria-label="Select comparison metric"></div>
+      <div class="tscroll">
+        <table id="ytdProgTable" style="min-width:640px">
+          <thead><tr id="ytdProgHead"></tr></thead>
+          <tbody id="ytdProgBody"></tbody>
+          <tfoot><tr id="ytdProgFoot"></tr></tfoot>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="meth">
+      <div>
+        <h4>How these numbers are built</h4>
+        <p>Figures come directly from the Virtual Services engagement log. Volunteer time value uses the Independent Sector value of volunteer time for the year the hours were served. In-kind value is self-reported by volunteers at the point of logging.</p>
+        <p>Recipient names, volunteer names, and individual record detail are deliberately excluded. Everything shown here is aggregated.</p>
+      </div>
+      <div>
+        <h4>Reading the current year</h4>
+        <p>The current year is partial and will keep moving. Use the year-over-year comparison, which covers <span id="periodEcho">a matched window in both years</span>, for any year-over-year claim.</p>
+        <p>A small number of logged engagements are flagged during review as potential duplicates or entry errors and are held out of supported counts.</p>
+      </div>
+    </div>
+    <div class="colophon">
+      <span>Soldiers' Angels &nbsp;&middot;&nbsp; Virtual Services &nbsp;&middot;&nbsp; <span id="genDate"></span></span>
+      <a class="staff" href="refresh.html" title="Staff only. Refresh the data.">
+        <span>Update the data</span>
+        <svg class="mark" viewBox="0 0 20 36" aria-hidden="true" focusable="false">
+          <polygon points="13,0 3,19.5 8.6,19.5 6.6,36 17,14.5 11.2,14.5"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script id="vs-data" type="application/json">{"generated":"2026-08-25","summary":[{"year":2023,"program":"Adopt-A-Family","volunteers":764,"hours":8381.0,"inKind":730922.27,"timeValue":280679.69,"staffLabor":31428.75,"packages":7505.0,"letters":0.0,"items":0,"quantity":7549.0,"engagements":1547,"falseReports":0},{"year":2023,"program":"Baby Showers","volunteers":46,"hours":723.0,"inKind":8870.38,"timeValue":24213.27,"staffLabor":542.25,"packages":0.0,"letters":3.0,"items":968,"quantity":979.0,"engagements":374,"falseReports":1},{"year":2023,"program":"Baking","volunteers":178,"hours":2594.0,"inKind":24329.72,"timeValue":86873.06,"staffLabor":648.5,"packages":60.0,"letters":20.0,"items":0,"quantity":511.0,"engagements":491,"falseReports":6},{"year":2023,"program":"Cards","volunteers":484,"hours":8282.0,"inKind":26154.03,"timeValue":277364.18,"staffLabor":2070.5,"packages":0.0,"letters":14554.0,"items":0,"quantity":14670.0,"engagements":7815,"falseReports":174},{"year":2023,"program":"Chaplain Support","volunteers":79,"hours":1586.0,"inKind":25310.26,"timeValue":53115.14,"staffLabor":396.5,"packages":29.0,"letters":918.0,"items":0,"quantity":1117.0,"engagements":199,"falseReports":3},{"year":2023,"program":"Deployed Adoption","volunteers":376,"hours":4510.5,"inKind":79808.82,"timeValue":151056.65,"staffLabor":5638.12,"packages":1384.0,"letters":2235.0,"items":0,"quantity":3623.0,"engagements":1255,"falseReports":19},{"year":2023,"program":"Letter Writing","volunteers":453,"hours":7002.95,"inKind":12390.16,"timeValue":234528.8,"staffLabor":1750.74,"packages":0.0,"letters":6203.0,"items":0,"quantity":6245.0,"engagements":5836,"falseReports":144},{"year":2023,"program":"One Time Care Package Support","volunteers":1,"hours":2.0,"inKind":45.0,"timeValue":66.98,"staffLabor":2.5,"packages":1.0,"letters":0.0,"items":0,"quantity":1.0,"engagements":1,"falseReports":0},{"year":2023,"program":"Sewing and Crafting","volunteers":24,"hours":1332.0,"inKind":6452.06,"timeValue":44608.68,"staffLabor":333.0,"packages":0.0,"letters":0.0,"items":371,"quantity":383.0,"engagements":50,"falseReports":0},{"year":2023,"program":"Special Operations Forces","volunteers":72,"hours":904.0,"inKind":21957.92,"timeValue":30274.96,"staffLabor":226.0,"packages":108.0,"letters":147.0,"items":1,"quantity":442.0,"engagements":249,"falseReports":4},{"year":2023,"program":"Women of Valor","volunteers":41,"hours":177.0,"inKind":5477.67,"timeValue":5927.73,"staffLabor":44.25,"packages":11.0,"letters":5.0,"items":0,"quantity":92.0,"engagements":87,"falseReports":0},{"year":2024,"program":"Adopt-A-Family","volunteers":521,"hours":7472.65,"inKind":537484.92,"timeValue":259973.49,"staffLabor":28022.44,"packages":6214.0,"letters":0.0,"items":0,"quantity":6236.0,"engagements":1183,"falseReports":3},{"year":2024,"program":"Baby Showers","volunteers":120,"hours":6785.07,"inKind":76037.15,"timeValue":236052.59,"staffLabor":5088.8,"packages":3.0,"letters":2.0,"items":6426,"quantity":6504.0,"engagements":2506,"falseReports":28},{"year":2024,"program":"Baking","volunteers":202,"hours":9793.07,"inKind":89067.51,"timeValue":340700.91,"staffLabor":2448.27,"packages":1481.0,"letters":992.0,"items":0,"quantity":2484.0,"engagements":1474,"falseReports":4},{"year":2024,"program":"Cards","volunteers":671,"hours":45046.84,"inKind":188682.19,"timeValue":1567179.56,"staffLabor":11261.71,"packages":0.0,"letters":96067.0,"items":0,"quantity":96474.0,"engagements":42718,"falseReports":222},{"year":2024,"program":"Chaplain Support","volunteers":160,"hours":7227.85,"inKind":136112.79,"timeValue":251456.9,"staffLabor":1806.96,"packages":1238.0,"letters":6743.0,"items":2,"quantity":7989.0,"engagements":819,"falseReports":8},{"year":2024,"program":"Deployed Adoption","volunteers":485,"hours":16786.05,"inKind":273081.41,"timeValue":583986.68,"staffLabor":20982.56,"packages":4936.0,"letters":8698.0,"items":0,"quantity":13676.0,"engagements":6010,"falseReports":62},{"year":2024,"program":"Letter Writing","volunteers":578,"hours":20892.96,"inKind":65904.07,"timeValue":726866.08,"staffLabor":5223.24,"packages":0.0,"letters":23365.73,"items":0,"quantity":23488.73,"engagements":21303,"falseReports":81},{"year":2024,"program":"One Time Care Package Support","volunteers":113,"hours":1147.96,"inKind":30132.7,"timeValue":39937.53,"staffLabor":1434.95,"packages":557.0,"letters":885.0,"items":0,"quantity":1442.0,"engagements":536,"falseReports":5},{"year":2024,"program":"Sewing and Crafting","volunteers":48,"hours":9611.25,"inKind":42805.51,"timeValue":334375.39,"staffLabor":2402.81,"packages":0.0,"letters":0.0,"items":2623,"quantity":2633.0,"engagements":284,"falseReports":1},{"year":2024,"program":"Special Operations Forces","volunteers":89,"hours":5466.35,"inKind":133890.15,"timeValue":190174.32,"staffLabor":1366.59,"packages":1749.0,"letters":2155.0,"items":21,"quantity":3942.0,"engagements":1407,"falseReports":49},{"year":2024,"program":"Women of Valor","volunteers":177,"hours":1203.73,"inKind":51917.1,"timeValue":41877.77,"staffLabor":300.93,"packages":812.0,"letters":527.0,"items":0,"quantity":1342.0,"engagements":798,"falseReports":1},{"year":2025,"program":"Adopt-A-Family","volunteers":948,"hours":14159.8,"inKind":978635.39,"timeValue":145137.95,"staffLabor":53099.25,"packages":11464.0,"letters":0.0,"items":0,"quantity":11522.0,"engagements":1913,"falseReports":1},{"year":2025,"program":"Baby Showers","volunteers":183,"hours":7939.91,"inKind":75411.38,"timeValue":81384.08,"staffLabor":5954.93,"packages":0.0,"letters":0.0,"items":7942,"quantity":8003.0,"engagements":2285,"falseReports":9},{"year":2025,"program":"Baking","volunteers":286,"hours":9703.4,"inKind":83339.19,"timeValue":99459.85,"staffLabor":2425.85,"packages":1534.0,"letters":966.0,"items":0,"quantity":2508.0,"engagements":1509,"falseReports":3},{"year":2025,"program":"Cards","volunteers":1316,"hours":54545.64,"inKind":193456.18,"timeValue":559092.81,"staffLabor":13636.41,"packages":0.0,"letters":108648.0,"items":0,"quantity":111064.0,"engagements":55408,"falseReports":40},{"year":2025,"program":"Chaplain Support","volunteers":180,"hours":5154.35,"inKind":103427.25,"timeValue":52832.09,"staffLabor":1288.59,"packages":1156.0,"letters":19791.0,"items":1,"quantity":20953.0,"engagements":927,"falseReports":3},{"year":2025,"program":"Deployed Adoption","volunteers":619,"hours":23324.38,"inKind":280936.69,"timeValue":239074.9,"staffLabor":29155.48,"packages":5284.0,"letters":10161.0,"items":0,"quantity":15481.0,"engagements":6526,"falseReports":13},{"year":2025,"program":"Letter Writing","volunteers":943,"hours":21042.57,"inKind":55697.3,"timeValue":215686.34,"staffLabor":5260.64,"packages":0.0,"letters":26178.0,"items":0,"quantity":26300.0,"engagements":23281,"falseReports":7},{"year":2025,"program":"One Time Care Package Support","volunteers":163,"hours":2296.3,"inKind":53000.97,"timeValue":23537.08,"staffLabor":2870.38,"packages":1481.0,"letters":1664.0,"items":0,"quantity":3146.0,"engagements":1529,"falseReports":2},{"year":2025,"program":"Sewing and Crafting","volunteers":63,"hours":6129.75,"inKind":32310.2,"timeValue":62829.94,"staffLabor":1532.44,"packages":0.0,"letters":0.0,"items":3271,"quantity":3278.0,"engagements":235,"falseReports":2},{"year":2025,"program":"Special Operations Forces","volunteers":76,"hours":4567.35,"inKind":119721.14,"timeValue":46815.34,"staffLabor":1141.84,"packages":1771.0,"letters":2026.0,"items":0,"quantity":3801.0,"engagements":1281,"falseReports":1},{"year":2025,"program":"Women of Valor","volunteers":217,"hours":1358.73,"inKind":59913.79,"timeValue":13926.98,"staffLabor":339.68,"packages":847.0,"letters":523.0,"items":0,"quantity":1375.0,"engagements":890,"falseReports":24},{"year":2026,"program":"Adopt-A-Family","volunteers":1,"hours":12.3,"inKind":0.0,"timeValue":126.08,"staffLabor":46.12,"packages":0.0,"letters":0.0,"items":0,"quantity":25.0,"engagements":25,"falseReports":0},{"year":2026,"program":"Baby Showers","volunteers":121,"hours":7400.54,"inKind":64210.79,"timeValue":75855.54,"staffLabor":5550.4,"packages":0.0,"letters":0.0,"items":4280,"quantity":4302.0,"engagements":1627,"falseReports":8},{"year":2026,"program":"Baking","volunteers":141,"hours":4135.9,"inKind":43522.8,"timeValue":42392.97,"staffLabor":1033.97,"packages":583.0,"letters":410.0,"items":0,"quantity":996.0,"engagements":579,"falseReports":5},{"year":2026,"program":"Cards","volunteers":774,"hours":25090.0,"inKind":79911.36,"timeValue":257172.5,"staffLabor":6272.5,"packages":0.0,"letters":46760.06,"items":0,"quantity":47728.06,"engagements":24684,"falseReports":42},{"year":2026,"program":"Chaplain Support","volunteers":110,"hours":2226.91,"inKind":63001.01,"timeValue":22825.83,"staffLabor":556.73,"packages":662.0,"letters":2550.0,"items":0,"quantity":3213.0,"engagements":441,"falseReports":4},{"year":2026,"program":"Deployed Adoption","volunteers":354,"hours":4119.65,"inKind":83440.51,"timeValue":42226.41,"staffLabor":5149.56,"packages":1421.72,"letters":2630.0,"items":0,"quantity":4073.72,"engagements":2237,"falseReports":23},{"year":2026,"program":"Letter Writing","volunteers":572,"hours":62212.86,"inKind":150510.07,"timeValue":637681.82,"staffLabor":15553.22,"packages":0.0,"letters":9882.32,"items":0,"quantity":9958.32,"engagements":9282,"falseReports":15},{"year":2026,"program":"One Time Care Package Support","volunteers":149,"hours":1742.45,"inKind":48775.41,"timeValue":17860.11,"staffLabor":2178.06,"packages":1452.0,"letters":1923.0,"items":0,"quantity":3376.0,"engagements":1429,"falseReports":1},{"year":2026,"program":"Sewing and Crafting","volunteers":46,"hours":4224.9,"inKind":20866.49,"timeValue":43305.22,"staffLabor":1056.22,"packages":0.0,"letters":0.0,"items":2128,"quantity":2134.0,"engagements":118,"falseReports":1},{"year":2026,"program":"Special Operations Forces","volunteers":57,"hours":1295.35,"inKind":32914.52,"timeValue":13277.34,"staffLabor":323.84,"packages":415.0,"letters":573.0,"items":0,"quantity":990.0,"engagements":344,"falseReports":5},{"year":2026,"program":"Women of Valor","volunteers":104,"hours":887.25,"inKind":39203.4,"timeValue":9094.31,"staffLabor":221.81,"packages":486.0,"letters":352.0,"items":0,"quantity":838.0,"engagements":489,"falseReports":0},{"year":2023,"program":"All Programs","volunteers":1761,"hours":35494.45,"inKind":941718.29,"timeValue":1188709.13,"staffLabor":43081.11,"packages":9098.0,"letters":24085.0,"items":1340,"quantity":35612.0,"engagements":17904,"falseReports":351},{"year":2024,"program":"All Programs","volunteers":1771,"hours":131433.78,"inKind":1625115.5,"timeValue":4572581.21,"staffLabor":80339.27,"packages":16990.0,"letters":139434.73,"items":9072,"quantity":166210.73,"engagements":79038,"falseReports":464},{"year":2025,"program":"All Programs","volunteers":3139,"hours":150222.18,"inKind":2035849.48,"timeValue":1539777.35,"staffLabor":116705.48,"packages":23537.0,"letters":169957.0,"items":11214,"quantity":207431.0,"engagements":95784,"falseReports":105},{"year":2026,"program":"All Programs","volunteers":1446,"hours":113348.11,"inKind":626356.36,"timeValue":1161818.13,"staffLabor":37942.45,"packages":5019.72,"letters":65080.38,"items":6408,"quantity":77634.1,"engagements":41255,"falseReports":104}],"ytd":{"sheet":"YTD May Comparison","banner":"Soldiers' Angels \u2014 YTD Through May: 2025 vs 2026","period":"Jan 1 \u2013 May 31. Volunteer counts are distinct people.","disclaimer":"During the January 1 \u2013 May 31, 2026 reporting period, a temporary ZIP code suspension limited our ability to process and record a portion of volunteer activity. We estimate that approximately 500 engagements were affected and are not fully reflected in the figures presented above. Accordingly, certain 2026 metrics \u2014 particularly engagement and support counts \u2014 may understate actual program activity for the period. This matter is being actively addressed, and we anticipate that subsequent reporting periods will capture the affected activity more completely. These figures should therefore be interpreted as a conservative representation of year-to-date performance.","priorLabel":"2025 YTD (Jan\u2013May)","currentLabel":"2026 YTD (Jan\u2013May)","metrics":[{"metric":"# Volunteers (distinct)","prior":1413,"current":1381,"delta":-32,"pct":-0.02265},{"metric":"Hours Volunteered","prior":51862.43,"current":93425.35,"delta":41562.92,"pct":0.80141},{"metric":"In-Kind Value","prior":440990.31,"current":502105.85,"delta":61115.54,"pct":0.13859},{"metric":"Avg Hrs / Volunteer","prior":36.7,"current":67.65,"delta":30.95,"pct":0.84315},{"metric":"Volunteer Time Value","prior":531589.91,"current":957609.82,"delta":426019.91,"pct":0.80141},{"metric":"# Engagements","prior":35566,"current":33265,"delta":-2301,"pct":-0.0647},{"metric":"Packages Supported","prior":5262,"current":3825.72,"delta":-1436.28,"pct":-0.27295},{"metric":"Letters Supported","prior":70727,"current":55695.86,"delta":-15031.14,"pct":-0.21252},{"metric":"Items Supported","prior":4670,"current":5604,"delta":934,"pct":0.2}],"families":["Vols","Hours","In-Kind","Packages","Letters","Items"],"programs":[{"program":"Adopt-A-Family","Vols":{"prior":0,"current":1},"Hours":{"prior":0,"current":12.3},"In-Kind":{"prior":0,"current":0},"Packages":{"prior":0,"current":0},"Letters":{"prior":0,"current":0},"Items":{"prior":0,"current":0}},{"program":"Baby Showers","Vols":{"prior":91,"current":111},"Hours":{"prior":2947.71,"current":6730.3},"In-Kind":{"prior":31209.3,"current":44451.25},"Packages":{"prior":0,"current":0},"Letters":{"prior":0,"current":0},"Items":{"prior":3545,"current":3823}},{"program":"Baking","Vols":{"prior":181,"current":131},"Hours":{"prior":4560.6,"current":3560.15},"In-Kind":{"prior":37264.8,"current":38334.7},"Packages":{"prior":671,"current":494},"Letters":{"prior":415,"current":339},"Items":{"prior":0,"current":0}},{"program":"Cards","Vols":{"prior":710,"current":713},"Hours":{"prior":21873.98,"current":20786.03},"In-Kind":{"prior":80199.0,"current":66979.06},"Packages":{"prior":0,"current":0},"Letters":{"prior":48294,"current":41193.91},"Items":{"prior":0,"current":0}},{"program":"Chaplain Support","Vols":{"prior":92,"current":100},"Hours":{"prior":1751.85,"current":1735.61},"In-Kind":{"prior":41492.06,"current":50591.13},"Packages":{"prior":471,"current":531},"Letters":{"prior":5689,"current":2186},"Items":{"prior":1,"current":0}},{"program":"Deployed Adoption","Vols":{"prior":353,"current":314},"Hours":{"prior":6139.52,"current":2855.84},"In-Kind":{"prior":110079.54,"current":59107.4},"Packages":{"prior":2320,"current":1050.72},"Letters":{"prior":4527,"current":1932},"Items":{"prior":0,"current":0}},{"program":"Letter Writing","Vols":{"prior":511,"current":506},"Hours":{"prior":8121.27,"current":51487.71},"In-Kind":{"prior":22355.68,"current":137285.43},"Packages":{"prior":0,"current":0},"Letters":{"prior":9901,"current":7664.95},"Items":{"prior":0,"current":0}},{"program":"One Time Care Package Support","Vols":{"prior":93,"current":137},"Hours":{"prior":1066.65,"current":1471.1},"In-Kind":{"prior":26341.78,"current":39509.57},"Packages":{"prior":724,"current":1031},"Letters":{"prior":858,"current":1617},"Items":{"prior":0,"current":0}},{"program":"Sewing and Crafting","Vols":{"prior":37,"current":39},"Hours":{"prior":2803.25,"current":3151.65},"In-Kind":{"prior":18879.3,"current":17037.91},"Packages":{"prior":0,"current":0},"Letters":{"prior":0,"current":0},"Items":{"prior":1124,"current":1781}},{"program":"Special Operations Forces","Vols":{"prior":73,"current":54},"Hours":{"prior":2081.15,"current":867.65},"In-Kind":{"prior":50161.95,"current":24698.16},"Packages":{"prior":734,"current":306},"Letters":{"prior":861,"current":470},"Items":{"prior":0,"current":0}},{"program":"Women of Valor","Vols":{"prior":102,"current":100},"Hours":{"prior":516.45,"current":767},"In-Kind":{"prior":23006.9,"current":24111.24},"Packages":{"prior":342,"current":413},"Letters":{"prior":182,"current":293},"Items":{"prior":0,"current":0}}],"total":{"program":"Total","Vols":{"prior":1413,"current":1381},"Hours":{"prior":51862.43,"current":93425.35},"In-Kind":{"prior":440990.31,"current":502105.85},"Packages":{"prior":5262,"current":3825.72},"Letters":{"prior":70727,"current":55695.86},"Items":{"prior":4670,"current":5604}}},"monthly":[{"year":2023,"month":1,"hours":1.0,"inKind":3.0,"engagements":2,"supported":2.0},{"year":2023,"month":2,"hours":25.0,"inKind":70.0,"engagements":2,"supported":2.0},{"year":2023,"month":5,"hours":3.0,"inKind":48.0,"engagements":2,"supported":2.0},{"year":2023,"month":8,"hours":1.0,"inKind":0.66,"engagements":1,"supported":1.0},{"year":2023,"month":9,"hours":10.0,"inKind":128.71,"engagements":5,"supported":5.0},{"year":2023,"month":10,"hours":3519.0,"inKind":29301.83,"engagements":1982,"supported":2745.0},{"year":2023,"month":11,"hours":16280.6,"inKind":463620.46,"engagements":7516,"supported":22922.0},{"year":2023,"month":12,"hours":26490.3,"inKind":1344348.37,"engagements":9459,"supported":37292.0},{"year":2024,"month":1,"hours":11744.8,"inKind":112652.17,"engagements":6552,"supported":11956.0},{"year":2024,"month":2,"hours":11737.6,"inKind":111448.5,"engagements":6464,"supported":14625.0},{"year":2024,"month":3,"hours":10235.6,"inKind":91116.63,"engagements":6404,"supported":13956.0},{"year":2024,"month":4,"hours":9971.3,"inKind":86801.35,"engagements":5770,"supported":14569.0},{"year":2024,"month":5,"hours":8542.1,"inKind":84575.09,"engagements":6640,"supported":12590.0},{"year":2024,"month":6,"hours":8927.2,"inKind":74953.29,"engagements":6184,"supported":8826.0},{"year":2024,"month":7,"hours":10221.8,"inKind":85913.62,"engagements":7094,"supported":12345.7},{"year":2024,"month":8,"hours":11486.0,"inKind":92463.72,"engagements":7414,"supported":15572.0},{"year":2024,"month":9,"hours":9647.2,"inKind":87682.41,"engagements":6121,"supported":15793.0},{"year":2024,"month":10,"hours":10991.4,"inKind":124019.79,"engagements":5813,"supported":15325.0},{"year":2024,"month":11,"hours":13981.1,"inKind":248315.46,"engagements":7342,"supported":19286.0},{"year":2024,"month":12,"hours":19566.8,"inKind":837148.89,"engagements":7601,"supported":30217.0},{"year":2025,"month":1,"hours":10779.3,"inKind":77709.54,"engagements":6915,"supported":11504.0},{"year":2025,"month":2,"hours":9349.7,"inKind":81500.0,"engagements":6376,"supported":13893.0},{"year":2025,"month":3,"hours":11121.9,"inKind":101470.2,"engagements":6984,"supported":20257.0},{"year":2025,"month":4,"hours":10914.2,"inKind":99161.17,"engagements":7328,"supported":22183.0},{"year":2025,"month":5,"hours":9565.0,"inKind":79601.38,"engagements":7912,"supported":13604.0},{"year":2025,"month":6,"hours":10675.9,"inKind":84822.95,"engagements":8453,"supported":14411.0},{"year":2025,"month":7,"hours":10596.2,"inKind":86402.46,"engagements":8884,"supported":15893.0},{"year":2025,"month":8,"hours":9927.1,"inKind":81051.82,"engagements":7433,"supported":14860.0},{"year":2025,"month":9,"hours":9617.7,"inKind":81184.7,"engagements":6801,"supported":12671.0},{"year":2025,"month":10,"hours":10881.8,"inKind":112485.4,"engagements":7744,"supported":13813.0},{"year":2025,"month":11,"hours":13197.0,"inKind":249588.86,"engagements":9400,"supported":19141.0},{"year":2025,"month":12,"hours":35979.1,"inKind":1015186.86,"engagements":11766,"supported":42611.0},{"year":2026,"month":1,"hours":9784.6,"inKind":83449.85,"engagements":7572,"supported":10673.3},{"year":2026,"month":2,"hours":19189.5,"inKind":93806.84,"engagements":6291,"supported":13989.7},{"year":2026,"month":3,"hours":13404.2,"inKind":85210.75,"engagements":6862,"supported":17325.0},{"year":2026,"month":4,"hours":19997.8,"inKind":174668.71,"engagements":6521,"supported":13133.1},{"year":2026,"month":5,"hours":32504.8,"inKind":98506.57,"engagements":6708,"supported":11592.5},{"year":2026,"month":6,"hours":10174.5,"inKind":98678.63,"engagements":7578,"supported":11927.5},{"year":2026,"month":7,"hours":11333.3,"inKind":42058.51,"engagements":1196,"supported":1965.0},{"year":2026,"month":8,"hours":2.0,"inKind":87.6,"engagements":1,"supported":1.0},{"year":2026,"month":12,"hours":-1.0,"inKind":0.0,"engagements":1,"supported":1.0}],"progMonthly":[{"year":2023,"month":1,"program":"Cards","hours":1.0},{"year":2023,"month":2,"program":"Baby Showers","hours":15.0},{"year":2023,"month":2,"program":"Baking","hours":10.0},{"year":2023,"month":5,"program":"Letter Writing","hours":1.0},{"year":2023,"month":5,"program":"One Time Care Package Support","hours":2.0},{"year":2023,"month":8,"program":"Letter Writing","hours":1.0},{"year":2023,"month":9,"program":"Deployed Adoption","hours":1.0},{"year":2023,"month":9,"program":"Letter Writing","hours":2.0},{"year":2023,"month":9,"program":"Special Operations Forces","hours":7.0},{"year":2023,"month":10,"program":"Adopt-A-Family","hours":50.0},{"year":2023,"month":10,"program":"Baby Showers","hours":37.0},{"year":2023,"month":10,"program":"Baking","hours":311.0},{"year":2023,"month":10,"program":"Cards","hours":1140.5},{"year":2023,"month":10,"program":"Chaplain Support","hours":45.0},{"year":2023,"month":10,"program":"Deployed Adoption","hours":609.0},{"year":2023,"month":10,"program":"Letter Writing","hours":1065.5},{"year":2023,"month":10,"program":"Sewing and Crafting","hours":109.0},{"year":2023,"month":10,"program":"Special Operations Forces","hours":135.0},{"year":2023,"month":10,"program":"Women of Valor","hours":17.0},{"year":2023,"month":11,"program":"Adopt-A-Family","hours":985.0},{"year":2023,"month":11,"program":"Baby Showers","hours":417.0},{"year":2023,"month":11,"program":"Baking","hours":996.0},{"year":2023,"month":11,"program":"Cards","hours":3475.5},{"year":2023,"month":11,"program":"Chaplain Support","hours":833.0},{"year":2023,"month":11,"program":"Deployed Adoption","hours":2016.0},{"year":2023,"month":11,"program":"Holiday Stockings","hours":4036.0},{"year":2023,"month":11,"program":"Letter Writing","hours":3030.2},{"year":2023,"month":11,"program":"Sewing and Crafting","hours":82.0},{"year":2023,"month":11,"program":"Special Operations Forces","hours":335.0},{"year":2023,"month":11,"program":"Women of Valor","hours":75.0},{"year":2023,"month":12,"program":"Adopt-A-Family","hours":7346.0},{"year":2023,"month":12,"program":"Baby Showers","hours":254.0},{"year":2023,"month":12,"program":"Baking","hours":1277.0},{"year":2023,"month":12,"program":"Cards","hours":3665.0},{"year":2023,"month":12,"program":"Chaplain Support","hours":708.0},{"year":2023,"month":12,"program":"Deployed Adoption","hours":1884.5},{"year":2023,"month":12,"program":"Holiday Stockings","hours":6799.5},{"year":2023,"month":12,"program":"Letter Writing","hours":2903.3},{"year":2023,"month":12,"program":"Sewing and Crafting","hours":1141.0},{"year":2023,"month":12,"program":"Special Operations Forces","hours":427.0},{"year":2023,"month":12,"program":"Women of Valor","hours":85.0},{"year":2024,"month":1,"program":"Adopt-A-Family","hours":3.0},{"year":2024,"month":1,"program":"Baby Showers","hours":425.0},{"year":2024,"month":1,"program":"Baking","hours":1101.0},{"year":2024,"month":1,"program":"Cards","hours":3315.2},{"year":2024,"month":1,"program":"Chaplain Support","hours":893.0},{"year":2024,"month":1,"program":"Deployed Adoption","hours":2270.1},{"year":2024,"month":1,"program":"Letter Writing","hours":2555.5},{"year":2024,"month":1,"program":"Sewing and Crafting","hours":438.0},{"year":2024,"month":1,"program":"Special Operations Forces","hours":635.0},{"year":2024,"month":1,"program":"Women of Valor","hours":109.0},{"year":2024,"month":2,"program":"Baby Showers","hours":508.4},{"year":2024,"month":2,"program":"Baking","hours":832.5},{"year":2024,"month":2,"program":"Cards","hours":4280.0},{"year":2024,"month":2,"program":"Chaplain Support","hours":771.5},{"year":2024,"month":2,"program":"Deployed Adoption","hours":1888.8},{"year":2024,"month":2,"program":"Letter Writing","hours":1964.8},{"year":2024,"month":2,"program":"One Time Care Package Support","hours":6.2},{"year":2024,"month":2,"program":"Sewing and Crafting","hours":733.0},{"year":2024,"month":2,"program":"Special Operations Forces","hours":605.0},{"year":2024,"month":2,"program":"Women of Valor","hours":147.5},{"year":2024,"month":3,"program":"Baby Showers","hours":340.4},{"year":2024,"month":3,"program":"Baking","hours":1075.0},{"year":2024,"month":3,"program":"Cards","hours":3310.8},{"year":2024,"month":3,"program":"Chaplain Support","hours":286.0},{"year":2024,"month":3,"program":"Deployed Adoption","hours":1773.8},{"year":2024,"month":3,"program":"Letter Writing","hours":1702.7},{"year":2024,"month":3,"program":"One Time Care Package Support","hours":30.8},{"year":2024,"month":3,"program":"Sewing and Crafting","hours":1058.2},{"year":2024,"month":3,"program":"Special Operations Forces","hours":520.0},{"year":2024,"month":3,"program":"Women of Valor","hours":137.9},{"year":2024,"month":4,"program":"Baby Showers","hours":1253.4},{"year":2024,"month":4,"program":"Baking","hours":886.0},{"year":2024,"month":4,"program":"Cards","hours":3439.9},{"year":2024,"month":4,"program":"Chaplain Support","hours":461.0},{"year":2024,"month":4,"program":"Deployed Adoption","hours":1041.3},{"year":2024,"month":4,"program":"Letter Writing","hours":1596.9},{"year":2024,"month":4,"program":"One Time Care Package Support","hours":46.8},{"year":2024,"month":4,"program":"Sewing and Crafting","hours":516.0},{"year":2024,"month":4,"program":"Special Operations Forces","hours":648.4},{"year":2024,"month":4,"program":"Women of Valor","hours":81.5},{"year":2024,"month":5,"program":"Baby Showers","hours":259.0},{"year":2024,"month":5,"program":"Baking","hours":831.7},{"year":2024,"month":5,"program":"Cards","hours":3334.6},{"year":2024,"month":5,"program":"Chaplain Support","hours":375.4},{"year":2024,"month":5,"program":"Deployed Adoption","hours":988.0},{"year":2024,"month":5,"program":"Letter Writing","hours":1385.7},{"year":2024,"month":5,"program":"One Time Care Package Support","hours":151.6},{"year":2024,"month":5,"program":"Sewing and Crafting","hours":658.0},{"year":2024,"month":5,"program":"Special Operations Forces","hours":441.1},{"year":2024,"month":5,"program":"Women of Valor","hours":117.0},{"year":2024,"month":6,"program":"Baby Showers","hours":657.5},{"year":2024,"month":6,"program":"Baking","hours":637.8},{"year":2024,"month":6,"program":"Cards","hours":2988.8},{"year":2024,"month":6,"program":"Chaplain Support","hours":529.4},{"year":2024,"month":6,"program":"Deployed Adoption","hours":1219.3},{"year":2024,"month":6,"program":"Letter Writing","hours":1374.8},{"year":2024,"month":6,"program":"One Time Care Package Support","hours":264.1},{"year":2024,"month":6,"program":"Sewing and Crafting","hours":894.0},{"year":2024,"month":6,"program":"Special Operations Forces","hours":313.0},{"year":2024,"month":6,"program":"Women of Valor","hours":48.5},{"year":2024,"month":7,"program":"Baby Showers","hours":452.4},{"year":2024,"month":7,"program":"Baking","hours":891.5},{"year":2024,"month":7,"program":"Cards","hours":4054.3},{"year":2024,"month":7,"program":"Chaplain Support","hours":529.6},{"year":2024,"month":7,"program":"Deployed Adoption","hours":1032.4},{"year":2024,"month":7,"program":"Letter Writing","hours":1921.8},{"year":2024,"month":7,"program":"One Time Care Package Support","hours":65.3},{"year":2024,"month":7,"program":"Sewing and Crafting","hours":881.0},{"year":2024,"month":7,"program":"Special Operations Forces","hours":271.9},{"year":2024,"month":7,"program":"Women of Valor","hours":121.5},{"year":2024,"month":8,"program":"Baby Showers","hours":739.4},{"year":2024,"month":8,"program":"Baking","hours":734.5},{"year":2024,"month":8,"program":"Cards","hours":4394.8},{"year":2024,"month":8,"program":"Chaplain Support","hours":886.8},{"year":2024,"month":8,"program":"Deployed Adoption","hours":1635.4},{"year":2024,"month":8,"program":"Letter Writing","hours":1901.2},{"year":2024,"month":8,"program":"One Time Care Package Support","hours":94.8},{"year":2024,"month":8,"program":"Sewing and Crafting","hours":608.8},{"year":2024,"month":8,"program":"Special Operations Forces","hours":385.4},{"year":2024,"month":8,"program":"Women of Valor","hours":105.0},{"year":2024,"month":9,"program":"Adopt-A-Family","hours":0.0},{"year":2024,"month":9,"program":"Baby Showers","hours":401.0},{"year":2024,"month":9,"program":"Baking","hours":595.0},{"year":2024,"month":9,"program":"Cards","hours":3906.1},{"year":2024,"month":9,"program":"Chaplain Support","hours":800.7},{"year":2024,"month":9,"program":"Deployed Adoption","hours":1080.0},{"year":2024,"month":9,"program":"Letter Writing","hours":1362.2},{"year":2024,"month":9,"program":"One Time Care Package Support","hours":93.5},{"year":2024,"month":9,"program":"Sewing and Crafting","hours":905.2},{"year":2024,"month":9,"program":"Special Operations Forces","hours":396.6},{"year":2024,"month":9,"program":"Women of Valor","hours":106.8},{"year":2024,"month":10,"program":"Adopt-A-Family","hours":286.2},{"year":2024,"month":10,"program":"Baby Showers","hours":1094.9},{"year":2024,"month":10,"program":"Baking","hours":752.5},{"year":2024,"month":10,"program":"Cards","hours":4062.4},{"year":2024,"month":10,"program":"Chaplain Support","hours":498.6},{"year":2024,"month":10,"program":"Deployed Adoption","hours":1104.8},{"year":2024,"month":10,"program":"Holiday Stockings","hours":106.0},{"year":2024,"month":10,"program":"Letter Writing","hours":1454.2},{"year":2024,"month":10,"program":"One Time Care Package Support","hours":118.8},{"year":2024,"month":10,"program":"Sewing and Crafting","hours":1102.5},{"year":2024,"month":10,"program":"Special Operations Forces","hours":316.7},{"year":2024,"month":10,"program":"Women of Valor","hours":93.8},{"year":2024,"month":11,"program":"Adopt-A-Family","hours":1112.2},{"year":2024,"month":11,"program":"Baby Showers","hours":416.6},{"year":2024,"month":11,"program":"Baking","hours":704.0},{"year":2024,"month":11,"program":"Cards","hours":3971.4},{"year":2024,"month":11,"program":"Chaplain Support","hours":487.3},{"year":2024,"month":11,"program":"Deployed Adoption","hours":1655.4},{"year":2024,"month":11,"program":"Holiday Stockings","hours":1787.0},{"year":2024,"month":11,"program":"Letter Writing","hours":2061.9},{"year":2024,"month":11,"program":"One Time Care Package Support","hours":133.1},{"year":2024,"month":11,"program":"Sewing and Crafting","hours":1107.8},{"year":2024,"month":11,"program":"Special Operations Forces","hours":475.6},{"year":2024,"month":11,"program":"Women of Valor","hours":68.8},{"year":2024,"month":12,"program":"Adopt-A-Family","hours":6071.2},{"year":2024,"month":12,"program":"Baby Showers","hours":237.1},{"year":2024,"month":12,"program":"Baking","hours":751.5},{"year":2024,"month":12,"program":"Cards","hours":3989.7},{"year":2024,"month":12,"program":"Chaplain Support","hours":708.5},{"year":2024,"month":12,"program":"Deployed Adoption","hours":1097.7},{"year":2024,"month":12,"program":"Holiday Stockings","hours":3724.2},{"year":2024,"month":12,"program":"Letter Writing","hours":1611.4},{"year":2024,"month":12,"program":"One Time Care Package Support","hours":143.0},{"year":2024,"month":12,"program":"Sewing and Crafting","hours":708.8},{"year":2024,"month":12,"program":"Special Operations Forces","hours":457.4},{"year":2024,"month":12,"program":"Women of Valor","hours":66.4},{"year":2025,"month":1,"program":"Baby Showers","hours":722.8},{"year":2025,"month":1,"program":"Baking","hours":970.8},{"year":2025,"month":1,"program":"Cards","hours":4833.5},{"year":2025,"month":1,"program":"Chaplain Support","hours":177.3},{"year":2025,"month":1,"program":"Deployed Adoption","hours":951.0},{"year":2025,"month":1,"program":"Letter Writing","hours":1652.5},{"year":2025,"month":1,"program":"One Time Care Package Support","hours":251.4},{"year":2025,"month":1,"program":"Sewing and Crafting","hours":796.5},{"year":2025,"month":1,"program":"Special Operations Forces","hours":354.4},{"year":2025,"month":1,"program":"Women of Valor","hours":69.0},{"year":2025,"month":2,"program":"Baby Showers","hours":570.9},{"year":2025,"month":2,"program":"Baking","hours":828.9},{"year":2025,"month":2,"program":"Cards","hours":3453.4},{"year":2025,"month":2,"program":"Chaplain Support","hours":270.8},{"year":2025,"month":2,"program":"Deployed Adoption","hours":1257.1},{"year":2025,"month":2,"program":"Letter Writing","hours":1531.8},{"year":2025,"month":2,"program":"One Time Care Package Support","hours":215.3},{"year":2025,"month":2,"program":"Sewing and Crafting","hours":652.2},{"year":2025,"month":2,"program":"Special Operations Forces","hours":419.6},{"year":2025,"month":2,"program":"Women of Valor","hours":149.6},{"year":2025,"month":3,"program":"Baby Showers","hours":438.9},{"year":2025,"month":3,"program":"Baking","hours":883.9},{"year":2025,"month":3,"program":"Cards","hours":4635.7},{"year":2025,"month":3,"program":"Chaplain Support","hours":622.9},{"year":2025,"month":3,"program":"Deployed Adoption","hours":1416.7},{"year":2025,"month":3,"program":"Letter Writing","hours":1608.0},{"year":2025,"month":3,"program":"One Time Care Package Support","hours":198.8},{"year":2025,"month":3,"program":"Sewing and Crafting","hours":800.2},{"year":2025,"month":3,"program":"Special Operations Forces","hours":390.6},{"year":2025,"month":3,"program":"Women of Valor","hours":126.2},{"year":2025,"month":4,"program":"Baby Showers","hours":666.3},{"year":2025,"month":4,"program":"Baking","hours":1010.5},{"year":2025,"month":4,"program":"Cards","hours":4772.9},{"year":2025,"month":4,"program":"Chaplain Support","hours":414.2},{"year":2025,"month":4,"program":"Deployed Adoption","hours":1268.2},{"year":2025,"month":4,"program":"Letter Writing","hours":1571.0},{"year":2025,"month":4,"program":"One Time Care Package Support","hours":221.7},{"year":2025,"month":4,"program":"Sewing and Crafting","hours":359.2},{"year":2025,"month":4,"program":"Special Operations Forces","hours":545.2},{"year":2025,"month":4,"program":"Women of Valor","hours":84.9},{"year":2025,"month":5,"program":"Baby Showers","hours":548.9},{"year":2025,"month":5,"program":"Baking","hours":866.5},{"year":2025,"month":5,"program":"Cards","hours":4179.3},{"year":2025,"month":5,"program":"Chaplain Support","hours":269.8},{"year":2025,"month":5,"program":"Deployed Adoption","hours":1114.5},{"year":2025,"month":5,"program":"Letter Writing","hours":1760.0},{"year":2025,"month":5,"program":"One Time Care Package Support","hours":179.3},{"year":2025,"month":5,"program":"Sewing and Crafting","hours":195.0},{"year":2025,"month":5,"program":"Special Operations Forces","hours":365.1},{"year":2025,"month":5,"program":"Women of Valor","hours":86.8},{"year":2025,"month":6,"program":"Baby Showers","hours":524.0},{"year":2025,"month":6,"program":"Baking","hours":991.0},{"year":2025,"month":6,"program":"Cards","hours":4394.6},{"year":2025,"month":6,"program":"Chaplain Support","hours":413.2},{"year":2025,"month":6,"program":"Deployed Adoption","hours":1087.6},{"year":2025,"month":6,"program":"Letter Writing","hours":2081.0},{"year":2025,"month":6,"program":"One Time Care Package Support","hours":262.0},{"year":2025,"month":6,"program":"Sewing and Crafting","hours":407.0},{"year":2025,"month":6,"program":"Special Operations Forces","hours":415.4},{"year":2025,"month":6,"program":"Women of Valor","hours":100.0},{"year":2025,"month":7,"program":"Baby Showers","hours":477.1},{"year":2025,"month":7,"program":"Baking","hours":682.5},{"year":2025,"month":7,"program":"Cards","hours":5028.9},{"year":2025,"month":7,"program":"Chaplain Support","hours":361.1},{"year":2025,"month":7,"program":"Deployed Adoption","hours":1369.8},{"year":2025,"month":7,"program":"Letter Writing","hours":1844.3},{"year":2025,"month":7,"program":"One Time Care Package Support","hours":111.1},{"year":2025,"month":7,"program":"Sewing and Crafting","hours":317.0},{"year":2025,"month":7,"program":"Special Operations Forces","hours":293.1},{"year":2025,"month":7,"program":"Women of Valor","hours":111.2},{"year":2025,"month":8,"program":"Baby Showers","hours":451.7},{"year":2025,"month":8,"program":"Baking","hours":651.8},{"year":2025,"month":8,"program":"Cards","hours":4952.8},{"year":2025,"month":8,"program":"Chaplain Support","hours":317.2},{"year":2025,"month":8,"program":"Deployed Adoption","hours":1256.7},{"year":2025,"month":8,"program":"Letter Writing","hours":1498.8},{"year":2025,"month":8,"program":"One Time Care Package Support","hours":95.8},{"year":2025,"month":8,"program":"Sewing and Crafting","hours":228.5},{"year":2025,"month":8,"program":"Special Operations Forces","hours":306.1},{"year":2025,"month":8,"program":"Women of Valor","hours":167.7},{"year":2025,"month":9,"program":"Adopt-A-Family","hours":14.8},{"year":2025,"month":9,"program":"Baby Showers","hours":478.1},{"year":2025,"month":9,"program":"Baking","hours":501.1},{"year":2025,"month":9,"program":"Cards","hours":3741.2},{"year":2025,"month":9,"program":"Chaplain Support","hours":731.6},{"year":2025,"month":9,"program":"Deployed Adoption","hours":1200.3},{"year":2025,"month":9,"program":"Letter Writing","hours":1404.2},{"year":2025,"month":9,"program":"One Time Care Package Support","hours":141.3},{"year":2025,"month":9,"program":"Sewing and Crafting","hours":976.8},{"year":2025,"month":9,"program":"Special Operations Forces","hours":292.4},{"year":2025,"month":9,"program":"Women of Valor","hours":135.9},{"year":2025,"month":10,"program":"Adopt-A-Family","hours":225.5},{"year":2025,"month":10,"program":"Baby Showers","hours":942.7},{"year":2025,"month":10,"program":"Baking","hours":690.8},{"year":2025,"month":10,"program":"Cards","hours":3804.6},{"year":2025,"month":10,"program":"Chaplain Support","hours":344.2},{"year":2025,"month":10,"program":"Deployed Adoption","hours":1429.4},{"year":2025,"month":10,"program":"Holiday Stockings","hours":56.0},{"year":2025,"month":10,"program":"Letter Writing","hours":2073.5},{"year":2025,"month":10,"program":"One Time Care Package Support","hours":224.9},{"year":2025,"month":10,"program":"Sewing and Crafting","hours":608.0},{"year":2025,"month":10,"program":"Special Operations Forces","hours":375.2},{"year":2025,"month":10,"program":"Women of Valor","hours":106.8},{"year":2025,"month":11,"program":"Adopt-A-Family","hours":1382.8},{"year":2025,"month":11,"program":"Baby Showers","hours":592.0},{"year":2025,"month":11,"program":"Baking","hours":601.0},{"year":2025,"month":11,"program":"Cards","hours":4886.6},{"year":2025,"month":11,"program":"Chaplain Support","hours":578.2},{"year":2025,"month":11,"program":"Deployed Adoption","hours":1300.0},{"year":2025,"month":11,"program":"Holiday Stockings","hours":622.8},{"year":2025,"month":11,"program":"Letter Writing","hours":2091.7},{"year":2025,"month":11,"program":"One Time Care Package Support","hours":246.0},{"year":2025,"month":11,"program":"Sewing and Crafting","hours":367.0},{"year":2025,"month":11,"program":"Special Operations Forces","hours":424.1},{"year":2025,"month":11,"program":"Women of Valor","hours":104.7},{"year":2025,"month":12,"program":"Adopt-A-Family","hours":12537.8},{"year":2025,"month":12,"program":"Baby Showers","hours":1526.5},{"year":2025,"month":12,"program":"Baking","hours":1024.7},{"year":2025,"month":12,"program":"Cards","hours":5865.3},{"year":2025,"month":12,"program":"Chaplain Support","hours":656.8},{"year":2025,"month":12,"program":"Deployed Adoption","hours":9676.1},{"year":2025,"month":12,"program":"Holiday Stockings","hours":1687.8},{"year":2025,"month":12,"program":"Letter Writing","hours":1930.8},{"year":2025,"month":12,"program":"One Time Care Package Support","hours":148.5},{"year":2025,"month":12,"program":"Sewing and Crafting","hours":422.2},{"year":2025,"month":12,"program":"Special Operations Forces","hours":385.7},{"year":2025,"month":12,"program":"Women of Valor","hours":117.0},{"year":2026,"month":1,"program":"Adopt-A-Family","hours":12.3},{"year":2026,"month":1,"program":"Baby Showers","hours":1279.3},{"year":2026,"month":1,"program":"Baking","hours":721.0},{"year":2026,"month":1,"program":"Cards","hours":3998.4},{"year":2026,"month":1,"program":"Chaplain Support","hours":302.8},{"year":2026,"month":1,"program":"Deployed Adoption","hours":1161.0},{"year":2026,"month":1,"program":"Holiday Stockings","hours":3.0},{"year":2026,"month":1,"program":"Letter Writing","hours":1504.0},{"year":2026,"month":1,"program":"One Time Care Package Support","hours":145.4},{"year":2026,"month":1,"program":"Sewing and Crafting","hours":286.0},{"year":2026,"month":1,"program":"Special Operations Forces","hours":271.2},{"year":2026,"month":1,"program":"Women of Valor","hours":100.2},{"year":2026,"month":2,"program":"Baby Showers","hours":1848.0},{"year":2026,"month":2,"program":"Baking","hours":771.5},{"year":2026,"month":2,"program":"Cards","hours":4089.1},{"year":2026,"month":2,"program":"Chaplain Support","hours":293.5},{"year":2026,"month":2,"program":"Deployed Adoption","hours":1025.2},{"year":2026,"month":2,"program":"Letter Writing","hours":9912.2},{"year":2026,"month":2,"program":"One Time Care Package Support","hours":329.8},{"year":2026,"month":2,"program":"Sewing and Crafting","hours":383.0},{"year":2026,"month":2,"program":"Special Operations Forces","hours":380.9},{"year":2026,"month":2,"program":"Women of Valor","hours":156.2},{"year":2026,"month":3,"program":"Baby Showers","hours":2147.1},{"year":2026,"month":3,"program":"Baking","hours":721.5},{"year":2026,"month":3,"program":"Cards","hours":5847.2},{"year":2026,"month":3,"program":"Chaplain Support","hours":351.9},{"year":2026,"month":3,"program":"Deployed Adoption","hours":448.5},{"year":2026,"month":3,"program":"Letter Writing","hours":2493.8},{"year":2026,"month":3,"program":"One Time Care Package Support","hours":464.8},{"year":2026,"month":3,"program":"Sewing and Crafting","hours":657.1},{"year":2026,"month":3,"program":"Special Operations Forces","hours":86.1},{"year":2026,"month":3,"program":"Women of Valor","hours":186.2},{"year":2026,"month":4,"program":"Baby Showers","hours":713.9},{"year":2026,"month":4,"program":"Baking","hours":761.0},{"year":2026,"month":4,"program":"Cards","hours":3724.8},{"year":2026,"month":4,"program":"Chaplain Support","hours":512.5},{"year":2026,"month":4,"program":"Deployed Adoption","hours":608.9},{"year":2026,"month":4,"program":"Letter Writing","hours":11844.5},{"year":2026,"month":4,"program":"One Time Care Package Support","hours":198.4},{"year":2026,"month":4,"program":"Sewing and Crafting","hours":1324.5},{"year":2026,"month":4,"program":"Special Operations Forces","hours":158.8},{"year":2026,"month":4,"program":"Women of Valor","hours":150.5},{"year":2026,"month":5,"program":"Baby Showers","hours":710.2},{"year":2026,"month":5,"program":"Baking","hours":569.4},{"year":2026,"month":5,"program":"Cards","hours":3186.8},{"year":2026,"month":5,"program":"Chaplain Support","hours":289.2},{"year":2026,"month":5,"program":"Deployed Adoption","hours":988.3},{"year":2026,"month":5,"program":"Letter Writing","hours":25655.2},{"year":2026,"month":5,"program":"One Time Care Package Support","hours":309.8},{"year":2026,"month":5,"program":"Sewing and Crafting","hours":360.0},{"year":2026,"month":5,"program":"Special Operations Forces","hours":310.2},{"year":2026,"month":5,"program":"Women of Valor","hours":125.8},{"year":2026,"month":6,"program":"Baby Showers","hours":783.6},{"year":2026,"month":6,"program":"Baking","hours":643.0},{"year":2026,"month":6,"program":"Cards","hours":3458.7},{"year":2026,"month":6,"program":"Chaplain Support","hours":470.1},{"year":2026,"month":6,"program":"Deployed Adoption","hours":1262.2},{"year":2026,"month":6,"program":"Letter Writing","hours":1904.8},{"year":2026,"month":6,"program":"One Time Care Package Support","hours":279.3},{"year":2026,"month":6,"program":"Sewing and Crafting","hours":741.0},{"year":2026,"month":6,"program":"Special Operations Forces","hours":484.8},{"year":2026,"month":6,"program":"Women of Valor","hours":147.0},{"year":2026,"month":7,"program":"Baby Showers","hours":115.6},{"year":2026,"month":7,"program":"Baking","hours":45.2},{"year":2026,"month":7,"program":"Cards","hours":1129.0},{"year":2026,"month":7,"program":"Chaplain Support","hours":72.0},{"year":2026,"month":7,"program":"Deployed Adoption","hours":292.0},{"year":2026,"month":7,"program":"Letter Writing","hours":9053.6},{"year":2026,"month":7,"program":"One Time Care Package Support","hours":34.0},{"year":2026,"month":7,"program":"Sewing and Crafting","hours":489.2},{"year":2026,"month":7,"program":"Special Operations Forces","hours":74.1},{"year":2026,"month":7,"program":"Women of Valor","hours":28.5},{"year":2026,"month":8,"program":"Deployed Adoption","hours":2.0},{"year":2026,"month":12,"program":"Letter Writing","hours":-1.0}],"services":[{"year":2023,"service":"Adopt-A-Family Holiday Gifts and Gift Card","count":1547,"hours":8381.0},{"year":2023,"service":"Adoption","count":1255,"hours":4510.5},{"year":2023,"service":"Anniversary Card","count":134,"hours":177.0},{"year":2023,"service":"Baby Bibs","count":3,"hours":44.0},{"year":2023,"service":"Baby Blankets","count":7,"hours":225.0},{"year":2023,"service":"Baby Body Wash","count":11,"hours":15.0},{"year":2023,"service":"Baby Bottles","count":1,"hours":1.0},{"year":2023,"service":"Baby Burp Cloths","count":1,"hours":1.0},{"year":2023,"service":"Baby Caps/Hats/Bonnets","count":9,"hours":324.0},{"year":2023,"service":"Baby Lotion","count":3,"hours":3.0},{"year":2023,"service":"Baby Pacifier Clips","count":3,"hours":44.0},{"year":2023,"service":"Baby Shampoo","count":8,"hours":8.0},{"year":2023,"service":"Baby Shower Card","count":308,"hours":320.0},{"year":2023,"service":"Baby Wipes (Packages)","count":20,"hours":24.0},{"year":2023,"service":"Baked Goods Care Package","count":491,"hours":2594.0},{"year":2023,"service":"Bibs","count":16,"hours":15.0},{"year":2023,"service":"Birthday Card","count":4558,"hours":4565.5},{"year":2023,"service":"Blankets","count":46,"hours":172.0},{"year":2023,"service":"Blessings Box","count":87,"hours":177.0},{"year":2023,"service":"Burp Cloths","count":27,"hours":41.0},{"year":2023,"service":"Care Package","count":448,"hours":2490.0},{"year":2023,"service":"Changing Pad and Cover","count":3,"hours":6.0},{"year":2023,"service":"Cloth Diapers (Packages)","count":4,"hours":3.0},{"year":2023,"service":"Clothing Set","count":47,"hours":95.0},{"year":2023,"service":"Condolences Card","count":32,"hours":55.0},{"year":2023,"service":"Congratulations Card","count":38,"hours":32.0},{"year":2023,"service":"Crib Sheets","count":15,"hours":15.0},{"year":2023,"service":"Diaper Cream","count":9,"hours":8.0},{"year":2023,"service":"Disposable Diapers (Packages)","count":19,"hours":27.0},{"year":2023,"service":"Drawstring Pillowcases/Laundry Bags","count":3,"hours":16.0},{"year":2023,"service":"Encouragement Card","count":587,"hours":546.0},{"year":2023,"service":"Fidget Blankets","count":1,"hours":18.0},{"year":2023,"service":"Formula Bags","count":1,"hours":1.0},{"year":2023,"service":"Get Well Card","count":174,"hours":172.0},{"year":2023,"service":"Hats","count":9,"hours":14.0},{"year":2023,"service":"Holiday Cards","count":1529,"hours":1848.0},{"year":2023,"service":"Knit Caps","count":5,"hours":109.0},{"year":2023,"service":"Lap Blankets & Quilts","count":9,"hours":409.0},{"year":2023,"service":"Letter","count":5836,"hours":7002.9},{"year":2023,"service":"Mittens","count":7,"hours":20.0},{"year":2023,"service":"One Time Support","count":1,"hours":2.0},{"year":2023,"service":"Onesies","count":46,"hours":75.0},{"year":2023,"service":"Pacifier Clip/Leash","count":1,"hours":1.0},{"year":2023,"service":"Pacifiers","count":2,"hours":2.0},{"year":2023,"service":"Pajama Pants","count":1,"hours":16.0},{"year":2023,"service":"Paracord Bracelets","count":1,"hours":3.0},{"year":2023,"service":"Pillowcases for Deployed","count":3,"hours":27.0},{"year":2023,"service":"Postcard","count":55,"hours":46.0},{"year":2023,"service":"Sleepers","count":47,"hours":149.0},{"year":2023,"service":"Socks","count":8,"hours":5.0},{"year":2023,"service":"Stocking","count":1065,"hours":10835.5},{"year":2023,"service":"Thanksgiving Card","count":62,"hours":80.0},{"year":2023,"service":"Towels","count":19,"hours":19.0},{"year":2023,"service":"Troop Birthday Card","count":101,"hours":104.0},{"year":2023,"service":"Twin Blankets & Quilts","count":2,"hours":40.0},{"year":2023,"service":"Veteran's Day","count":193,"hours":285.5},{"year":2023,"service":"Wash cloths","count":2,"hours":3.0},{"year":2023,"service":"Welcome Home Card","count":47,"hours":52.0},{"year":2023,"service":"Wheelchair & Walker Totes","count":2,"hours":56.0},{"year":2024,"service":"Adopt-A-Family Holiday Gifts and Gift Card","count":1183,"hours":7472.6},{"year":2024,"service":"Adoption","count":6010,"hours":16786.0},{"year":2024,"service":"Anniversary Card","count":1911,"hours":1675.3},{"year":2024,"service":"Baby Bibs","count":8,"hours":50.0},{"year":2024,"service":"Baby Blankets","count":67,"hours":3501.0},{"year":2024,"service":"Baby Body Wash","count":116,"hours":169.6},{"year":2024,"service":"Baby Bottles","count":97,"hours":143.8},{"year":2024,"service":"Baby Burp Cloths","count":4,"hours":13.0},{"year":2024,"service":"Baby Caps/Hats/Bonnets","count":32,"hours":923.5},{"year":2024,"service":"Baby Lotion","count":73,"hours":105.7},{"year":2024,"service":"Baby Pacifier Clips","count":11,"hours":63.5},{"year":2024,"service":"Baby Powder","count":11,"hours":10.6},{"year":2024,"service":"Baby Shampoo","count":63,"hours":50.8},{"year":2024,"service":"Baby Shower Card","count":984,"hours":1043.2},{"year":2024,"service":"Baby Wipes (Packages)","count":245,"hours":271.4},{"year":2024,"service":"Baked Goods Care Package","count":1474,"hours":9793.1},{"year":2024,"service":"Bibs","count":96,"hours":119.3},{"year":2024,"service":"Birthday Card","count":28544,"hours":25021.3},{"year":2024,"service":"Blankets","count":203,"hours":895.3},{"year":2024,"service":"Blessings Box","count":798,"hours":1203.7},{"year":2024,"service":"Burp Cloths","count":112,"hours":526.8},{"year":2024,"service":"Care Package","count":2226,"hours":12694.2},{"year":2024,"service":"Care Package for Deployed Adoption","count":1,"hours":1.0},{"year":2024,"service":"Changing Pad and Cover","count":31,"hours":79.9},{"year":2024,"service":"Cloth Diapers (Packages)","count":13,"hours":13.2},{"year":2024,"service":"Clothing Set","count":241,"hours":965.8},{"year":2024,"service":"Condolences Card","count":486,"hours":488.1},{"year":2024,"service":"Congratulations Card","count":227,"hours":181.5},{"year":2024,"service":"Crib Sheet Protector","count":31,"hours":46.8},{"year":2024,"service":"Crib Sheets","count":92,"hours":137.8},{"year":2024,"service":"Diaper Cream","count":66,"hours":73.2},{"year":2024,"service":"Disposable Diapers (Packages)","count":201,"hours":361.4},{"year":2024,"service":"Drawstring Pillowcases/Laundry Bags","count":4,"hours":56.0},{"year":2024,"service":"Encouragement Card","count":3429,"hours":3393.1},{"year":2024,"service":"Fidget Blankets","count":7,"hours":102.0},{"year":2024,"service":"Formula Bags","count":4,"hours":7.2},{"year":2024,"service":"Get Well Card","count":495,"hours":404.4},{"year":2024,"service":"Hats","count":25,"hours":26.4},{"year":2024,"service":"Holiday Cards","count":1965,"hours":1980.0},{"year":2024,"service":"Honor Flight Card","count":1099,"hours":6664.6},{"year":2024,"service":"Knit Caps","count":21,"hours":345.0},{"year":2024,"service":"Lap Blankets & Quilts","count":75,"hours":2042.2},{"year":2024,"service":"Letter","count":21303,"hours":20893.0},{"year":2024,"service":"Mittens","count":27,"hours":52.0},{"year":2024,"service":"One Time Support","count":536,"hours":1148.0},{"year":2024,"service":"Onesies","count":185,"hours":1265.5},{"year":2024,"service":"Pacifier Clip/Leash","count":38,"hours":102.5},{"year":2024,"service":"Pacifiers","count":53,"hours":76.3},{"year":2024,"service":"Pajama Pants","count":3,"hours":6.0},{"year":2024,"service":"Paracord Bracelets","count":2,"hours":14.0},{"year":2024,"service":"Pillowcases for Deployed","count":21,"hours":1114.2},{"year":2024,"service":"Sleepers","count":226,"hours":885.1},{"year":2024,"service":"Socks","count":89,"hours":114.5},{"year":2024,"service":"Stocking","count":359,"hours":5617.1},{"year":2024,"service":"Sweatpants","count":2,"hours":4.0},{"year":2024,"service":"Thank You Card","count":1816,"hours":1597.0},{"year":2024,"service":"Thanksgiving Card","count":605,"hours":848.3},{"year":2024,"service":"Towels","count":124,"hours":190.8},{"year":2024,"service":"Troop Birthday Card","count":405,"hours":295.8},{"year":2024,"service":"Twin Blankets & Quilts","count":14,"hours":666.8},{"year":2024,"service":"Veteran's Day","count":592,"hours":1299.1},{"year":2024,"service":"Wash cloths","count":43,"hours":92.2},{"year":2024,"service":"Welcome Home Card","count":162,"hours":157.2},{"year":2024,"service":"Wheelchair & Walker Totes","count":13,"hours":710.0},{"year":2025,"service":"Adopt-A-Family Holiday Gifts and Gift Card","count":1915,"hours":14160.8},{"year":2025,"service":"Adoption","count":6528,"hours":23327.4},{"year":2025,"service":"Anniversary Card","count":2834,"hours":2856.9},{"year":2025,"service":"Baby Bibs","count":6,"hours":30.0},{"year":2025,"service":"Baby Blankets","count":39,"hours":1178.5},{"year":2025,"service":"Baby Body Wash","count":94,"hours":130.1},{"year":2025,"service":"Baby Bottles","count":87,"hours":161.6},{"year":2025,"service":"Baby Caps/Hats/Bonnets","count":11,"hours":121.5},{"year":2025,"service":"Baby Lotion","count":44,"hours":49.5},{"year":2025,"service":"Baby Pacifier Clips","count":5,"hours":37.0},{"year":2025,"service":"Baby Powder","count":13,"hours":16.5},{"year":2025,"service":"Baby Shampoo","count":45,"hours":86.9},{"year":2025,"service":"Baby Shower Card","count":946,"hours":871.9},{"year":2025,"service":"Baby Wipes (Packages)","count":223,"hours":247.3},{"year":2025,"service":"Baked Goods Care Package","count":1509,"hours":9703.4},{"year":2025,"service":"Bibs","count":69,"hours":141.6},{"year":2025,"service":"Birthday Card","count":37651,"hours":33498.4},{"year":2025,"service":"Blankets","count":197,"hours":1143.8},{"year":2025,"service":"Blessings Box","count":891,"hours":1359.7},{"year":2025,"service":"Burp Cloths","count":94,"hours":451.2},{"year":2025,"service":"Care Package","count":2209,"hours":9724.7},{"year":2025,"service":"Changing Pad and Cover","count":35,"hours":75.6},{"year":2025,"service":"Cloth Diapers (Packages)","count":14,"hours":8.8},{"year":2025,"service":"Clothing Set","count":237,"hours":2174.1},{"year":2025,"service":"Condolences Card","count":351,"hours":254.4},{"year":2025,"service":"Congratulations Card","count":221,"hours":171.9},{"year":2025,"service":"Crib Sheet Protector","count":27,"hours":53.4},{"year":2025,"service":"Crib Sheets","count":88,"hours":132.8},{"year":2025,"service":"Diaper Cream","count":60,"hours":75.6},{"year":2025,"service":"Disposable Diapers (Packages)","count":200,"hours":411.9},{"year":2025,"service":"Drawstring Pillowcases/Laundry Bags","count":13,"hours":339.0},{"year":2025,"service":"Encouragement Card","count":4727,"hours":3877.1},{"year":2025,"service":"Fidget Blankets","count":5,"hours":138.0},{"year":2025,"service":"Formula Bags","count":10,"hours":6.5},{"year":2025,"service":"Get Well Card","count":561,"hours":447.8},{"year":2025,"service":"Hats","count":44,"hours":103.3},{"year":2025,"service":"Holiday Cards","count":3999,"hours":3932.2},{"year":2025,"service":"Honor Flight Card","count":1672,"hours":6669.6},{"year":2025,"service":"Knit Caps","count":38,"hours":805.0},{"year":2025,"service":"Lap Blankets & Quilts","count":75,"hours":2157.8},{"year":2025,"service":"Letter","count":23286,"hours":21047.6},{"year":2025,"service":"Mittens","count":37,"hours":68.5},{"year":2025,"service":"One Time Support","count":1529,"hours":2296.3},{"year":2025,"service":"Onesies","count":152,"hours":762.0},{"year":2025,"service":"Other","count":184,"hours":321.6},{"year":2025,"service":"Pacifier Clip/Leash","count":30,"hours":77.9},{"year":2025,"service":"Pacifiers","count":54,"hours":67.6},{"year":2025,"service":"Pajama Pants","count":2,"hours":35.0},{"year":2025,"service":"Paracord Bracelets","count":10,"hours":238.0},{"year":2025,"service":"Pillowcases for Deployed","count":9,"hours":309.0},{"year":2025,"service":"Sleepers","count":210,"hours":1079.3},{"year":2025,"service":"Socks","count":82,"hours":173.8},{"year":2025,"service":"Stocking","count":196,"hours":2366.6},{"year":2025,"service":"Thank You Card","count":1246,"hours":773.6},{"year":2025,"service":"Thanksgiving Card","count":776,"hours":696.2},{"year":2025,"service":"Towels","count":96,"hours":187.4},{"year":2025,"service":"Troop Birthday Card","count":121,"hours":98.0},{"year":2025,"service":"Twin Blankets & Quilts","count":9,"hours":199.0},{"year":2025,"service":"Wash cloths","count":43,"hours":53.0},{"year":2025,"service":"Welcome Home Card","count":124,"hours":79.1},{"year":2025,"service":"Wheelchair & Walker Totes","count":13,"hours":542.0},{"year":2026,"service":"Adopt-A-Family Holiday Gifts and Gift Card","count":25,"hours":12.3},{"year":2026,"service":"Adoption","count":1937,"hours":4067.5},{"year":2026,"service":"Anniversary Card","count":1485,"hours":1404.4},{"year":2026,"service":"Baby Bibs","count":1,"hours":2.0},{"year":2026,"service":"Baby Blankets","count":5,"hours":195.0},{"year":2026,"service":"Baby Body Wash","count":62,"hours":62.5},{"year":2026,"service":"Baby Bottles","count":70,"hours":99.2},{"year":2026,"service":"Baby Lotion","count":39,"hours":67.0},{"year":2026,"service":"Baby Powder","count":8,"hours":9.2},{"year":2026,"service":"Baby Shampoo","count":19,"hours":28.2},{"year":2026,"service":"Baby Shower Card","count":711,"hours":702.2},{"year":2026,"service":"Baby Wipes (Packages)","count":162,"hours":1318.5},{"year":2026,"service":"Baked Goods Care Package","count":593,"hours":4232.6},{"year":2026,"service":"Bibs","count":43,"hours":52.1},{"year":2026,"service":"Birthday Card","count":18682,"hours":16179.9},{"year":2026,"service":"Blankets","count":156,"hours":502.4},{"year":2026,"service":"Blessings Box","count":492,"hours":894.5},{"year":2026,"service":"Burp Cloths","count":67,"hours":398.4},{"year":2026,"service":"Care Package","count":967,"hours":4058.1},{"year":2026,"service":"Care Package for Deployed Adoption","count":325,"hours":871.8},{"year":2026,"service":"Changing Pad and Cover","count":19,"hours":35.1},{"year":2026,"service":"Cloth Diapers (Packages)","count":7,"hours":7.2},{"year":2026,"service":"Clothing Set","count":167,"hours":1117.4},{"year":2026,"service":"Condolences Card","count":112,"hours":114.0},{"year":2026,"service":"Congratulations Card","count":42,"hours":34.0},{"year":2026,"service":"Crib Sheet Protector","count":22,"hours":24.7},{"year":2026,"service":"Crib Sheets","count":54,"hours":53.5},{"year":2026,"service":"Diaper Cream","count":51,"hours":37.6},{"year":2026,"service":"Disposable Diapers (Packages)","count":107,"hours":173.4},{"year":2026,"service":"Drawstring Pillowcases/Laundry Bags","count":17,"hours":376.5},{"year":2026,"service":"Encouragement Card","count":2097,"hours":1496.8},{"year":2026,"service":"Fidget Blankets","count":13,"hours":207.0},{"year":2026,"service":"Formula Bags","count":5,"hours":5.0},{"year":2026,"service":"Get Well Card","count":192,"hours":120.0},{"year":2026,"service":"Hats","count":31,"hours":49.6},{"year":2026,"service":"Holiday Cards","count":260,"hours":490.3},{"year":2026,"service":"Honor Flight Card","count":731,"hours":3719.5},{"year":2026,"service":"Knit Caps","count":24,"hours":1021.0},{"year":2026,"service":"Lap Blankets & Quilts","count":33,"hours":946.2},{"year":2026,"service":"Letter","count":9431,"hours":62367.2},{"year":2026,"service":"Letter/Card for Deployed Adoption","count":672,"hours":848.7},{"year":2026,"service":"Mittens","count":24,"hours":24.0},{"year":2026,"service":"One Time Support","count":1435,"hours":1761.5},{"year":2026,"service":"Onesies","count":155,"hours":1982.2},{"year":2026,"service":"Other","count":81,"hours":60.0},{"year":2026,"service":"Pacifier Clip/Leash","count":28,"hours":77.5},{"year":2026,"service":"Pacifiers","count":58,"hours":48.4},{"year":2026,"service":"Paracord Bracelets","count":10,"hours":332.5},{"year":2026,"service":"Pillowcases for Deployed","count":1,"hours":2.0},{"year":2026,"service":"Sleepers","count":165,"hours":1074.0},{"year":2026,"service":"Socks","count":49,"hours":63.3},{"year":2026,"service":"Stocking","count":1,"hours":3.0},{"year":2026,"service":"Thank You Card","count":590,"hours":1053.6},{"year":2026,"service":"Towels","count":66,"hours":122.5},{"year":2026,"service":"Troop Birthday Card","count":21,"hours":13.9},{"year":2026,"service":"Twin Blankets & Quilts","count":7,"hours":359.6},{"year":2026,"service":"Wash cloths","count":32,"hours":164.9},{"year":2026,"service":"Welcome Home Card","count":62,"hours":45.3},{"year":2026,"service":"Wheelchair & Walker Totes","count":9,"hours":799.0}],"status":[{"year":2023,"status":"Active Duty","count":492},{"year":2023,"status":"Deployed","count":10754},{"year":2023,"status":"Fallen Soldier","count":4},{"year":2023,"status":"Guard/Reserves","count":120},{"year":2023,"status":"HUD/VASH","count":786},{"year":2023,"status":"Veteran","count":1095},{"year":2023,"status":"Wounded/Ill/Injured","count":2912},{"year":2024,"status":"Active Duty","count":1755},{"year":2024,"status":"Deployed","count":46296},{"year":2024,"status":"Fallen Soldier","count":3},{"year":2024,"status":"Guard/Reserves","count":523},{"year":2024,"status":"HUD/VASH","count":1423},{"year":2024,"status":"Veteran","count":2291},{"year":2024,"status":"Wounded/Ill/Injured","count":9216},{"year":2025,"status":"Active Duty","count":2513},{"year":2025,"status":"Deployed","count":54589},{"year":2025,"status":"Fallen Soldier","count":1},{"year":2025,"status":"Guard/Reserves","count":380},{"year":2025,"status":"HUD/VASH","count":2512},{"year":2025,"status":"Veteran","count":8564},{"year":2025,"status":"Wounded/Ill/Injured","count":14471},{"year":2026,"status":"Active Duty","count":905},{"year":2026,"status":"Deployed","count":22573},{"year":2026,"status":"Fallen Soldier","count":5},{"year":2026,"status":"Guard/Reserves","count":211},{"year":2026,"status":"HUD/VASH","count":1126},{"year":2026,"status":"Veteran","count":5111},{"year":2026,"status":"Wounded/Ill/Injured","count":7739}],"volDist":[{"year":2023,"bucket":"10-49 hrs","count":761},{"year":2023,"bucket":"100-249 hrs","count":68},{"year":2023,"bucket":"250+ hrs","count":18},{"year":2023,"bucket":"50-99 hrs","count":101},{"year":2023,"bucket":"<10 hrs","count":1610},{"year":2024,"bucket":"10-49 hrs","count":658},{"year":2024,"bucket":"100-249 hrs","count":168},{"year":2024,"bucket":"250+ hrs","count":113},{"year":2024,"bucket":"50-99 hrs","count":157},{"year":2024,"bucket":"<10 hrs","count":886},{"year":2025,"bucket":"10-49 hrs","count":1008},{"year":2025,"bucket":"100-249 hrs","count":162},{"year":2025,"bucket":"250+ hrs","count":116},{"year":2025,"bucket":"50-99 hrs","count":168},{"year":2025,"bucket":"<10 hrs","count":1788},{"year":2026,"bucket":"10-49 hrs","count":421},{"year":2026,"bucket":"100-249 hrs","count":80},{"year":2026,"bucket":"250+ hrs","count":44},{"year":2026,"bucket":"50-99 hrs","count":103},{"year":2026,"bucket":"<10 hrs","count":931}]}</script>
+<script>
+const C={gold:'#9C7016',gold2:'#B8891F',steel:'#4E7C9B',moss:'#4F7D5B',ember:'#B23A2B',
+         dim:'#7A8494',rule:'#C7CBD1',sunk:'#E1E3E6',night:'#FFFFFF'};
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let D=null,YEAR='all',METRIC='hours',YFAM='Hours',SORT={k:'hours',dir:-1};
+
+const nf=n=>n>=1e6?(n/1e6).toFixed(2)+'M':Math.round(n).toLocaleString();
+const money=n=>'$'+nf(n);
+const money0=n=>'$'+Math.round(n).toLocaleString();
+const dec=(n,d)=>n.toFixed(d);
+const pc=n=>(n*100).toFixed(1)+'%';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const yearLabel=()=>YEAR==='all'?'all years':String(YEAR);
+
+/* ---------- data ---------- */
+function years(){return [...new Set(D.summary.map(r=>r.year))].sort()}
+function totals(y){
+  const rows=D.summary.filter(r=>r.program==='All Programs'&&(y==='all'||r.year===y));
+  const s=k=>rows.reduce((a,r)=>a+(r[k]||0),0);
+  return{volunteers:s('volunteers'),hours:s('hours'),inKind:s('inKind'),timeValue:s('timeValue'),
+         staffLabor:s('staffLabor'),packages:s('packages'),letters:s('letters'),items:s('items'),
+         quantity:s('quantity'),engagements:s('engagements'),falseReports:s('falseReports')};
+}
+function progRows(y){
+  const m={};
+  D.summary.filter(r=>r.program!=='All Programs'&&(y==='all'||r.year===y)).forEach(r=>{
+    const p=m[r.program]||(m[r.program]={program:r.program,volunteers:0,hours:0,inKind:0,timeValue:0,
+      packages:0,letters:0,items:0,quantity:0,engagements:0});
+    ['volunteers','hours','inKind','timeValue','packages','letters','items','quantity','engagements']
+      .forEach(k=>p[k]+=r[k]||0);
+  });
+  const list=Object.values(m),t=totals(y);
+  list.forEach(p=>{
+    p.avgHrs=p.volunteers?p.hours/p.volunteers:0;
+    p.shareHrs=t.hours?p.hours/t.hours:0;
+  });
+  return list;
+}
+
+/* ---------- chart primitive ---------- */
+function hbars(rows,opt){
+  opt=opt||{};
+  const fmt=opt.fmt||nf,color=opt.color||C.gold,w=opt.w||880,rowH=opt.rowH||34,labelW=opt.labelW||210;
+  if(!rows.length)return '<p class="note">No data for this selection.</p>';
+  const max=Math.max.apply(null,rows.map(r=>r.v))||1,barW=w-labelW-108,h=rows.length*rowH+12;
+  let s=`<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Bar chart">`;
+  rows.forEach((r,i)=>{
+    const y=i*rowH+8,bw=Math.max(2,(r.v/max)*barW);
+    s+=`<text class="blab" x="0" y="${y+15}">${esc(r.k)}</text>`;
+    s+=`<rect x="${labelW}" y="${y+3}" width="${barW}" height="16" rx="2" fill="${C.sunk}"/>`;
+    s+=`<rect class="bar" x="${labelW}" y="${y+3}" width="${bw}" height="16" rx="2" fill="${color}"><title>${esc(r.k)}: ${fmt(r.v)}</title></rect>`;
+    s+=`<text class="bval" x="${labelW+barW+10}" y="${y+16}">${fmt(r.v)}</text>`;
+  });
+  return s+'</svg>';
+}
+
+function monthChart(){
+  const w=880,h=300,pl=56,pr=42,pt=14,pb=32,ys=years();
+  const series=ys.map(y=>({y:y,pts:MON.map(function(_,i){
+    const m=D.monthly.find(r=>r.year===y&&r.month===i+1);return Math.max(0,m?m.hours:0);})}));
+  let mx=0;series.forEach(s=>s.pts.forEach(v=>{if(v>mx)mx=v;}));
+  const max=(mx||1)*1.08;
+  const X=i=>pl+(i/11)*(w-pl-pr),Y=v=>h-pb-(v/max)*(h-pt-pb);
+  let s=`<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Volunteer hours by month">`;
+  for(let g=0;g<=4;g++){const v=max*g/4,y=Y(v);
+    s+=`<line class="gridline" x1="${pl}" y1="${y}" x2="${w-pr}" y2="${y}"/>`;
+    s+=`<text class="tick" x="${pl-10}" y="${y+3.5}" text-anchor="end">${nf(v)}</text>`;}
+  MON.forEach((m,i)=>{s+=`<text class="tick" x="${X(i)}" y="${h-pb+17}" text-anchor="middle">${m}</text>`;});
+  const act=YEAR==='all'?ys[ys.length-1]:YEAR;
+  series.filter(sr=>sr.y!==act).forEach(sr=>{
+    s+=`<polyline fill="none" stroke="${C.rule}" stroke-width="1.6" points="${sr.pts.map((v,i)=>X(i)+','+Y(v)).join(' ')}"/>`;
+    s+=`<text class="tick" x="${X(11)+6}" y="${Y(sr.pts[11])+3.5}">${sr.y}</text>`;});
+  const a=series.find(sr=>sr.y===act);
+  if(a){
+    s+=`<polygon fill="${C.gold}" opacity=".10" points="${pl},${h-pb} ${a.pts.map((v,i)=>X(i)+','+Y(v)).join(' ')} ${X(11)},${h-pb}"/>`;
+    s+=`<polyline fill="none" stroke="${C.gold}" stroke-width="2.4" stroke-linejoin="round" points="${a.pts.map((v,i)=>X(i)+','+Y(v)).join(' ')}"/>`;
+    a.pts.forEach((v,i)=>{s+=`<circle cx="${X(i)}" cy="${Y(v)}" r="3.8" fill="${C.night}" stroke="${C.gold}" stroke-width="2"><title>${MON[i]} ${act}: ${nf(v)} hrs</title></circle>`;});
+  }
+  s+=`<line class="axis" x1="${pl}" y1="${h-pb}" x2="${w-pr}" y2="${h-pb}"/></svg>`;
+  return s+`<div class="legend"><span><i style="background:${C.gold}"></i>${act}</span><span><i style="background:${C.rule}"></i>Other years</span></div>`;
+}
+
+/* ---------- Annual Impact Report ---------- */
+const COLS=[
+  {k:'program',t:'Program',f:esc},
+  {k:'volunteers',t:'Volunteers',f:nf},
+  {k:'hours',t:'Hours volunteered',f:n=>Math.round(n).toLocaleString()},
+  {k:'avgHrs',t:'Avg hrs / volunteer',f:n=>dec(n,1)},
+  {k:'packages',t:'Packages supported',f:nf},
+  {k:'letters',t:'Letters supported',f:nf},
+  {k:'items',t:'Items supported',f:nf},
+  {k:'engagements',t:'Engagements',f:nf},
+  {k:'inKind',t:'In-kind value',f:money0},
+  {k:'timeValue',t:'Volunteer time value',f:money0},
+  {k:'shareHrs',t:'% of hours',f:pc,share:true}
+];
+function renderReport(){
+  document.getElementById('reportTitle').textContent='Program by program, '+yearLabel();
+  document.getElementById('reportHead').innerHTML=COLS.map(function(c){
+    const on=SORT.k===c.k;
+    return '<th class="sortable" data-k="'+c.k+'" tabindex="0" role="button"'+
+      (on?' aria-sort="'+(SORT.dir<0?'descending':'ascending')+'"':'')+'>'+c.t+'<span class="car"></span></th>';
+  }).join('');
+
+  const rows=progRows(YEAR).slice().sort(function(a,b){
+    const x=a[SORT.k],y=b[SORT.k];
+    return typeof x==='string'?SORT.dir*x.localeCompare(y):SORT.dir*(x-y);
+  });
+  let maxShare=0.0001;rows.forEach(r=>{if(r.shareHrs>maxShare)maxShare=r.shareHrs;});
+
+  document.getElementById('reportBody').innerHTML=rows.map(function(r){
+    return '<tr>'+COLS.map(function(c){
+      if(c.share)return '<td class="share">'+pc(r.shareHrs)+
+        '<span class="track"><span class="fill" style="width:'+(r.shareHrs/maxShare*100).toFixed(1)+'%"></span></span></td>';
+      return '<td>'+c.f(r[c.k])+'</td>';
+    }).join('')+'</tr>';
+  }).join('');
+
+  const t=totals(YEAR);
+  const tv=Object.assign({},t,{program:'Total',avgHrs:t.volunteers?t.hours/t.volunteers:0,shareHrs:1});
+  document.getElementById('reportFoot').innerHTML=COLS.map(function(c){
+    return c.share?'<td>100.0%</td>':'<td>'+c.f(tv[c.k])+'</td>';
+  }).join('');
+}
+
+/* ---------- renderers ---------- */
+function renderHeadline(){
+  const t=totals('all');
+  const items=[[nf(t.hours),'Volunteer hours, all years'],[nf(t.engagements),'Engagements completed'],
+    [money(t.timeValue+t.inKind),'Total value delivered'],[nf(t.quantity),'Items, letters &amp; packages']];
+  document.getElementById('headline').innerHTML=items.map(function(p){
+    return '<div><div class="n">'+p[0]+'</div><div class="l">'+p[1]+'</div></div>';}).join('');
+}
+function renderKpis(){
+  const t=totals(YEAR),allY=YEAR==='all';
+  document.getElementById('glanceTitle').textContent=allY?'Totals across all years':String(YEAR)+' totals';
+  const k=[['Volunteer hours',Math.round(t.hours).toLocaleString(),'logged and verified',C.gold],
+    ['Volunteers',nf(t.volunteers),allY?'counted once per year served':'distinct people serving',C.steel],
+    ['Volunteer time value',money0(t.timeValue),'at Independent Sector rate',C.moss],
+    ['In-kind value',money0(t.inKind),'goods bought and sent',C.gold2],
+    ['Engagements',nf(t.engagements),'individual acts of support',C.gold],
+    ['Packages &amp; letters',nf(t.packages+t.letters),'sent to those we serve',C.steel]];
+  document.getElementById('kpis').innerHTML=k.map(function(r){
+    return '<div class="kpi"><div class="label">'+r[0]+'</div><div class="n" style="color:'+r[3]+'">'+r[1]+
+           '</div><div class="s">'+r[2]+'</div></div>';}).join('');
+}
+const METRICS=[['hours','Hours',n=>Math.round(n).toLocaleString(),C.gold],
+  ['inKind','In-kind value',money0,C.gold2],['timeValue','Time value',money0,C.moss],
+  ['volunteers','Volunteers',nf,C.steel],['engagements','Engagements',nf,C.steel],
+  ['quantity','Items supported',nf,C.moss]];
+function renderProg(){
+  const m=METRICS.find(x=>x[0]===METRIC);
+  const rows=progRows(YEAR).map(p=>({k:p.program,v:p[m[0]]||0})).filter(r=>r.v>0).sort((a,b)=>b.v-a.v);
+  document.getElementById('progChart').innerHTML=hbars(rows,{fmt:m[2],color:m[3],labelW:220});
+}
+function renderSvc(){
+  const m={};D.services.filter(r=>YEAR==='all'||r.year===YEAR).forEach(r=>{m[r.service]=(m[r.service]||0)+r.count;});
+  const top=Object.keys(m).map(k=>({k:k,v:m[k]})).sort((a,b)=>b.v-a.v).slice(0,9);
+  document.getElementById('svcChart').innerHTML=hbars(top,{color:C.steel,w:520,labelW:180,rowH:32});
+}
+function renderStatus(){
+  const m={};D.status.filter(r=>(YEAR==='all'||r.year===YEAR)&&r.status!=='nan')
+    .forEach(r=>{m[r.status]=(m[r.status]||0)+r.count;});
+  let tot=0;Object.keys(m).forEach(k=>tot+=m[k]);tot=tot||1;
+  const top=Object.keys(m).map(k=>({k:k,v:m[k]})).sort((a,b)=>b.v-a.v).slice(0,9);
+  document.getElementById('statusChart').innerHTML=hbars(top,{fmt:v=>nf(v)+'  ('+pc(v/tot)+')',color:C.moss,w:520,labelW:180,rowH:32});
+}
+function renderVol(){
+  const order=['<10 hrs','10-49 hrs','50-99 hrs','100-249 hrs','250+ hrs'],m={};
+  D.volDist.filter(r=>YEAR==='all'||r.year===YEAR).forEach(r=>{m[r.bucket]=(m[r.bucket]||0)+r.count;});
+  const data=order.filter(b=>m[b]).map(b=>({k:b,v:m[b]}));
+  let tot=0;data.forEach(r=>tot+=r.v);tot=tot||1;
+  document.getElementById('volChart').innerHTML=hbars(data,{fmt:v=>nf(v)+'  ('+pc(v/tot)+')',color:C.gold,labelW:150,rowH:38});
+}
+/* Shown above the year-over-year tables. Edit this one line to change it. */
+const YTD_NOTE='During the first and second quarters of 2026, a ZIP code suspension hindered mailing, so some activity is not fully reflected in these figures.';
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function daysIn(m,y){return [31,(y%4===0&&y%100!==0)||y%400===0?29:28,31,30,31,30,31,31,30,31,30,31][m];}
+
+/* The reporting window is never hardcoded. It comes from the workbook:
+   first from the month names the YTD sheet labels its own columns with,
+   and failing that from the last month the engagement log has real activity in. */
+function windowFromLabels(y){
+  const hay=[y.currentLabel,y.priorLabel,y.period,y.banner].filter(Boolean).join('  ');
+  let last=-1;
+  MONTHS.forEach(function(full,i){
+    if(new RegExp('\\b('+full+'|'+full.slice(0,3)+')\\b','i').test(hay))last=Math.max(last,i);
+  });
+  return last;
+}
+function windowFromData(yr){
+  const rows=D.monthly.filter(r=>r.year===yr);
+  if(!rows.length)return -1;
+  let mx=0;rows.forEach(r=>{if(r.engagements>mx)mx=r.engagements;});
+  let last=-1;rows.forEach(r=>{if(r.engagements>=mx*0.05&&r.month-1>last)last=r.month-1;});
+  return last;
+}
+function cleanLabel(raw,yr){
+  let t=String(raw||'').trim();
+  MONTHS.forEach(function(full){
+    t=t.replace(new RegExp('\\b('+full+'|'+full.slice(0,3)+')\\b\\.?','gi'),'');
+  });
+  t=t.replace(/[\u2010-\u2015-]/g,' ').replace(/\(\s*\)/g,'').replace(/\s{2,}/g,' ').trim();
+  t=t.replace(/[\s,(-]+$/,'').trim();
+  return t||(yr+' YTD');
+}
+function ytdYears(y){
+  const found=[];
+  [y.priorLabel,y.currentLabel,y.banner].filter(Boolean).forEach(function(s){
+    (String(s).match(/\b(20\d{2})\b/g)||[]).forEach(v=>{if(found.indexOf(+v)<0)found.push(+v);});
+  });
+  found.sort((a,b)=>a-b);
+  if(found.length>=2)return[found[0],found[found.length-1]];
+  const ys=years();
+  return[ys[ys.length-2],ys[ys.length-1]];
+}
+
+function renderYtd(){
+  const y=D.ytd&&!Array.isArray(D.ytd)?D.ytd:{metrics:Array.isArray(D.ytd)?D.ytd:[],
+    priorLabel:'Prior',currentLabel:'Current',families:[],programs:[],total:null};
+
+  const yy=ytdYears(y),priorYr=yy[0],curYr=yy[1];
+  document.getElementById('ytdTitle').textContent='Year to date: '+priorYr+' vs '+curYr;
+
+  const endM=windowFromData(curYr)>=0?windowFromData(curYr):windowFromLabels(y);
+  let periodLine;
+  if(endM>=0){
+    periodLine='January 1 through '+MONTHS[endM]+' '+daysIn(endM,curYr)+', compared against the same window in '+priorYr+'.';
+  }else{
+    periodLine='A matched window in both years, so the comparison is not flattered by a partial year.';
+  }
+  // carry over any non-date wording the sheet added to its own period line
+  if(y.period){
+    String(y.period).split(/(?<=\.)\s+/).forEach(function(sent){
+      const t=sent.trim();
+      if(t&&!/\d/.test(t)&&MONTHS.every(m=>!new RegExp(m.slice(0,3),'i').test(t)))periodLine+=' '+t;
+    });
+  }
+  document.getElementById('ytdPeriod').textContent=periodLine;
+  window.__ytdWindow=endM>=0?('January 1 through '+MONTHS[endM]+' '+daysIn(endM,curYr)):null;
+
+  const dis=document.getElementById('ytdDisclaimer');
+  dis.innerHTML='<b>Note on this period:</b> '+YTD_NOTE;
+  dis.hidden=!YTD_NOTE;
+
+  const priorHead=cleanLabel(y.priorLabel,priorYr),currentHead=cleanLabel(y.currentLabel,curYr);
+  document.getElementById('ytdHead').innerHTML=
+    '<th>Metric</th><th>'+esc(priorHead)+'</th><th>'+esc(currentHead)+
+    '</th><th>Change</th><th>Percent</th>';
+  if(window.__ytdWindow)document.getElementById('periodEcho').textContent=window.__ytdWindow;
+
+  document.getElementById('ytdBody').innerHTML=(y.metrics||[]).map(function(r){
+    const isM=/value/i.test(r.metric),isA=/^avg/i.test(r.metric);
+    const f=v=>v==null?'&mdash;':isA?dec(v,1):(isM?money0(v):nf(v));
+    const up=(r.delta||0)>=0,cls=up?'up':'down';
+    return '<tr><td>'+esc(r.metric)+'</td><td>'+f(r.prior)+'</td><td>'+f(r.current)+'</td><td class="'+cls+'">'+
+      (up?'+':'&minus;')+f(Math.abs(r.delta||0))+'</td><td class="'+cls+'">'+
+      (r.pct==null?'&mdash;':(up?'+':'')+pc(r.pct))+'</td></tr>';
+  }).join('');
+
+  const card=document.getElementById('ytdProgCard');
+  const fams=y.families||[];
+  if(!fams.length||!(y.programs||[]).length){card.hidden=true;return;}
+  card.hidden=false;
+  if(fams.indexOf(YFAM)<0)YFAM=fams.indexOf('Hours')>=0?'Hours':fams[0];
+
+  const tg=document.getElementById('ytdToggle');
+  tg.innerHTML=fams.map(function(f){
+    return '<button class="tg" data-f="'+esc(f)+'" aria-pressed="'+(f===YFAM)+'">'+esc(f)+'</button>';}).join('');
+
+  const yy2=ytdYears(y),priorYr2=yy2[0],curYr2=yy2[1];
+  const isMoney=/kind|value|cost/i.test(YFAM);
+  const fmt=v=>isMoney?money0(v):(Math.round(v)===v?Math.round(v).toLocaleString()
+    :v.toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1}));
+  document.getElementById('ytdProgHead').innerHTML='<th>Program</th><th>'+esc(cleanLabel(y.priorLabel,priorYr2))+
+    '</th><th>'+esc(cleanLabel(y.currentLabel,curYr2))+'</th><th>Change</th><th>Percent</th>';
+
+  const line=function(r,foot){
+    const c=r[YFAM]||{prior:0,current:0},d=(c.current||0)-(c.prior||0);
+    const up=d>=0,cls=d===0?'':(up?'up':'down');
+    const p=c.prior?d/c.prior:null;
+    return '<tr><td>'+esc(r.program)+'</td><td>'+fmt(c.prior||0)+'</td><td>'+fmt(c.current||0)+
+      '</td><td class="'+cls+'">'+(d===0?'&mdash;':(up?'+':'&minus;')+fmt(Math.abs(d)))+
+      '</td><td class="'+cls+'">'+(p==null?'&mdash;':(p>=0?'+':'')+pc(p))+'</td></tr>';
+  };
+  document.getElementById('ytdProgBody').innerHTML=y.programs.map(function(r){return line(r);}).join('');
+  document.getElementById('ytdProgFoot').innerHTML=y.total?line(y.total):'';
+}
+function renderAll(){
+  renderKpis();renderReport();
+  document.getElementById('monthChart').innerHTML=monthChart();
+  renderProg();renderSvc();renderStatus();renderVol();
+}
+
+/* ---------- boot ---------- */
+try{
+  D=JSON.parse(document.getElementById('vs-data').textContent);
+  document.getElementById('genDate').textContent='Data current as of '+D.generated;
+  document.getElementById('asOf').textContent='As of '+D.generated;
+
+  const yp=document.getElementById('yearPills');
+  yp.innerHTML=[['all','All years']].concat(years().map(y=>[y,y])).map(function(p){
+    return '<button class="pill" data-y="'+p[0]+'" aria-pressed="'+(p[0]==='all')+'">'+p[1]+'</button>';}).join('');
+  yp.addEventListener('click',function(e){
+    const b=e.target.closest('.pill');if(!b)return;
+    YEAR=b.dataset.y==='all'?'all':+b.dataset.y;
+    Array.prototype.forEach.call(yp.children,c=>c.setAttribute('aria-pressed',c===b));
+    renderAll();
+  });
+
+  const mt=document.getElementById('metricToggle');
+  mt.innerHTML=METRICS.map(function(m){
+    return '<button class="tg" data-m="'+m[0]+'" aria-pressed="'+(m[0]==='hours')+'">'+m[1]+'</button>';}).join('');
+  mt.addEventListener('click',function(e){
+    const b=e.target.closest('.tg');if(!b)return;
+    METRIC=b.dataset.m;
+    Array.prototype.forEach.call(mt.children,c=>c.setAttribute('aria-pressed',c===b));
+    renderProg();
+  });
+
+  const sortHandler=function(e){
+    const th=e.target.closest('th.sortable');if(!th)return;
+    if(e.type==='keydown'){if(e.key!=='Enter'&&e.key!==' ')return;e.preventDefault();}
+    const k=th.dataset.k;
+    SORT=SORT.k===k?{k:k,dir:-SORT.dir}:{k:k,dir:k==='program'?1:-1};
+    renderReport();
+  };
+  const rh=document.getElementById('reportHead');
+  rh.addEventListener('click',sortHandler);
+  rh.addEventListener('keydown',sortHandler);
+  document.getElementById('ytdToggle').addEventListener('click',function(e){
+    const b=e.target.closest('.tg');if(!b)return;
+    YFAM=b.dataset.f;renderYtd();
+  });
+  document.getElementById('printBtn').addEventListener('click',function(){window.print();});
+
+  renderHeadline();renderYtd();renderAll();
+}catch(err){
+  document.querySelector('main').innerHTML=
+    '<section><h2>The data did not load</h2><p class="lede">Open refresh.html, drop the workbook in again, and upload the index.html it produces.</p></section>';
+  console.error(err);
+}
+</script>
 </body>
 </html>

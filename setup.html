@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Sealing the Vault | Virtual Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,400..700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--night:#0A0E1C;--panel:#141A33;--panel2:#1A2140;--vellum:#EFE6D2;--gold:#C9A227;--gold2:#E8C766;
+ --moss:#6E8F5F;--ember:#B4472E;--dim:#7C87A8;--rule:rgba(201,162,39,.26)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--night);color:var(--vellum);
+ font-family:"EB Garamond","Palatino Linotype",Georgia,serif;font-size:17.5px;line-height:1.65}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:
+ radial-gradient(1px 1px at 14% 16%,rgba(255,255,255,.6),transparent),
+ radial-gradient(1px 1px at 62% 10%,rgba(255,255,255,.45),transparent),
+ radial-gradient(1.3px 1.3px at 86% 24%,rgba(255,255,255,.5),transparent),
+ radial-gradient(ellipse 900px 520px at 78% -6%,rgba(201,162,39,.13),transparent 64%),
+ radial-gradient(ellipse 760px 470px at 3% 20%,rgba(60,90,160,.15),transparent 62%)}
+.wrap{max-width:660px;margin:0 auto;padding:0 26px 80px;position:relative}
+header{border-bottom:1px solid var(--rule);margin-bottom:44px}
+header .wrap{padding:16px 26px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+.crest{font-family:"Cinzel",Georgia,serif;font-weight:700;letter-spacing:.18em;text-transform:uppercase;font-size:12.5px;color:var(--gold2)}
+.tag{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+h1{font-family:"Cinzel",Georgia,serif;font-size:clamp(28px,5vw,44px);line-height:1.1;margin:0 0 14px;font-weight:900;
+ text-shadow:0 0 34px rgba(201,162,39,.22)}
+.lede{color:#C7CFE4;margin:0 0 8px;font-size:18px}
+.fine{color:var(--dim);font-family:"IBM Plex Mono",monospace;font-size:13.5px;line-height:1.65;margin:0 0 34px}
+h2{font-family:"Cinzel",Georgia,serif;font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin:34px 0 14px;font-weight:700}
+label{display:block;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);margin:0 0 7px}
+input{width:100%;background:var(--panel);color:var(--vellum);border:1px solid var(--rule);border-radius:3px;
+ padding:12px 14px;font-family:"IBM Plex Mono",monospace;font-size:14px;margin-bottom:18px}
+input:focus{outline:2px solid var(--gold2);outline-offset:1px;border-color:var(--gold)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.hint{margin:-12px 0 18px;font-size:14px;color:var(--dim);font-style:italic}
+.btn{font-family:"IBM Plex Mono",monospace;font-size:14px;background:var(--gold);color:#151006;border:1px solid var(--gold);
+ padding:13px 24px;border-radius:3px;cursor:pointer;font-weight:500}
+.btn:hover{background:var(--gold2)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible{outline:2px solid var(--gold2);outline-offset:3px}
+.meter{height:4px;background:var(--panel2);border-radius:2px;overflow:hidden;margin:-10px 0 8px}
+.meter i{display:block;height:100%;width:0;transition:.25s;background:var(--ember)}
+.mtext{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--dim);margin:0 0 18px}
+.scroll{background:linear-gradient(#F3EBD8,#E6DBC0);color:#2A2418;border:1px solid #CDBF9C;border-radius:3px;
+ padding:24px 26px;margin-top:30px;box-shadow:0 18px 44px -26px rgba(0,0,0,.85)}
+.scroll h3{font-family:"Cinzel",Georgia,serif;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:#6B5418;margin:0 0 12px}
+.scroll ol{margin:0;padding-left:22px}.scroll li{margin-bottom:9px}
+.scroll code{background:rgba(107,84,24,.1);border:1px solid rgba(107,84,24,.24);padding:1px 6px;border-radius:2px;
+ font-family:"IBM Plex Mono",monospace;font-size:13px}
+.scroll a{color:#7A5A12}
+.warn{border-left:4px solid var(--ember)}.warn h3{color:#8C3A25}
+.out{margin-top:26px}
+.ok{background:rgba(110,143,95,.12);border:1px solid rgba(110,143,95,.45);border-left:4px solid var(--moss);
+ padding:18px 20px;border-radius:3px}
+.ok b{color:var(--moss);font-family:"Cinzel",Georgia,serif;letter-spacing:.06em}
+.err{background:rgba(180,71,46,.1);border:1px solid rgba(180,71,46,.4);border-left:4px solid var(--ember);
+ padding:15px 18px;border-radius:3px;font-family:"IBM Plex Mono",monospace;font-size:13px;color:#F0C7BC}
+@media(max-width:560px){.row{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="crest">Soldiers' Angels &nbsp;&middot;&nbsp; Virtual Services</div>
+  <div class="tag">One-time setup</div>
+</div></header>
+
+<div class="wrap">
+  <h1>Sealing the Vault</h1>
+  <p class="lede">This page runs once. It locks your GitHub key inside a file that only your passphrase can open.</p>
+  <p class="fine">Everything happens in this browser. Nothing is sent anywhere. You end up with one small file to place in your repository.</p>
+
+  <h2>Choose a passphrase</h2>
+  <label for="p1">Passphrase</label>
+  <input type="password" id="p1" autocomplete="new-password" spellcheck="false">
+  <div class="meter"><i id="meter"></i></div>
+  <p class="mtext" id="mtext">Six characters minimum. Longer is stronger, but short is fine on a private repository.</p>
+  <label for="p2">Type it again</label>
+  <input type="password" id="p2" autocomplete="new-password" spellcheck="false">
+  <p class="hint">There is no reset. If you lose this, run setup again and replace the file.</p>
+
+  <h2>Where the site lives</h2>
+  <div class="row">
+    <div><label for="owner">GitHub username</label><input id="owner" value="CheesyGrunt" spellcheck="false"></div>
+    <div><label for="repo">Repository name</label><input id="repo" placeholder="vs-impact" spellcheck="false"></div>
+  </div>
+  <div class="row">
+    <div><label for="branch">Branch</label><input id="branch" value="main" spellcheck="false"></div>
+    <div><label for="site">Live site URL (optional)</label><input id="site" placeholder="https://vs-impact.onrender.com" spellcheck="false"></div>
+  </div>
+
+  <h2>The key itself</h2>
+  <label for="token">GitHub fine-grained token</label>
+  <input type="password" id="token" autocomplete="off" spellcheck="false" placeholder="github_pat_...">
+  <p class="hint">Scope it to this one repository with Contents set to read and write. Nothing else.</p>
+
+  <button class="btn" id="go">Seal the vault</button>
+  <div class="out" id="out"></div>
+
+  <div class="scroll">
+    <h3>Minting the token</h3>
+    <ol>
+      <li>Go to <b>github.com/settings/personal-access-tokens/new</b></li>
+      <li>Name it <code>vs-dashboard-publish</code> and set an expiry you will remember</li>
+      <li>Repository access: <b>Only select repositories</b>, then pick this one repo</li>
+      <li>Permissions: expand <b>Repository permissions</b>, set <b>Contents</b> to <b>Read and write</b>. Leave every other permission alone.</li>
+      <li>Generate, copy the token, and paste it above</li>
+    </ol>
+  </div>
+
+  <div class="scroll warn">
+    <h3>Read this part</h3>
+    <p style="margin:0 0 10px">Make the repository <b>private</b> in its GitHub settings. Render deploys private repositories on the free tier just the same, and your live site stays public either way. It takes about thirty seconds and it is the single thing that matters most here.</p>
+    <p style="margin:0">Here is why. The sealed file lives in the repository. On a <b>private</b> repository nobody can download it, so a short passphrase is perfectly fine. On a <b>public</b> one anyone can grab it and take unlimited guesses on their own machine, and a six character passphrase does not survive that. Short passphrase and private repository is a good combination. Short passphrase and public repository is not.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var enc=new TextEncoder();
+  var b64=function(buf){var b=new Uint8Array(buf),s='';
+    for(var i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));
+    return btoa(s);};
+
+  var ITER=600000;
+
+  function strength(p){
+    var words=p.trim().split(/\s+/).filter(Boolean).length;
+    var sets=(/[a-z]/.test(p)?1:0)+(/[A-Z]/.test(p)?1:0)+(/\d/.test(p)?1:0)+(/[^\w\s]/.test(p)?1:0);
+    var score=Math.min(100,p.length*5+(words>=4?24:words>=3?14:0)+sets*6);
+    if(p.length<6)score=Math.min(score,20);
+    return score;
+  }
+  function paintMeter(){
+    var p=$('p1').value,s=strength(p),m=$('meter');
+    m.style.width=s+'%';
+    m.style.background=s<40?'#B4472E':s<70?'#C9A227':'#6E8F5F';
+    $('mtext').textContent=!p?'Six characters minimum. Longer is stronger, but short is fine on a private repository.'
+      :p.length<6?'Six characters minimum.'
+      :s<45?'Short. Fine if the repository is private. Worth lengthening if it is public.'
+      :s<75?'Solid.'
+      :'Strong. Write it down somewhere real.';
+  }
+  $('p1').addEventListener('input',paintMeter);
+
+  async function seal(){
+    var out=$('out');
+    var p1=$('p1').value,p2=$('p2').value,token=$('token').value.trim();
+    var owner=$('owner').value.trim(),repo=$('repo').value.trim(),
+        branch=$('branch').value.trim()||'main',site=$('site').value.trim();
+
+    var problems=[];
+    if(p1.length<6)problems.push('The passphrase needs to be at least 6 characters.');
+    if(p1!==p2)problems.push('The two passphrases do not match.');
+    if(!token)problems.push('Paste the GitHub token.');
+    if(!owner)problems.push('Enter the GitHub username.');
+    if(!repo)problems.push('Enter the repository name.');
+    if(problems.length){out.innerHTML='<div class="err">'+problems.join('<br>')+'</div>';return;}
+
+    $('go').disabled=true;
+    out.innerHTML='<div class="err" style="border-color:rgba(201,162,39,.4);color:#E8C766;background:rgba(201,162,39,.08);border-left-color:#C9A227">Turning the key. This takes a moment on purpose.</div>';
+    try{
+      var salt=crypto.getRandomValues(new Uint8Array(16)),
+          iv=crypto.getRandomValues(new Uint8Array(12));
+      var km=await crypto.subtle.importKey('raw',enc.encode(p1),'PBKDF2',false,['deriveKey']);
+      var key=await crypto.subtle.deriveKey(
+        {name:'PBKDF2',salt:salt,iterations:ITER,hash:'SHA-256'},km,
+        {name:'AES-GCM',length:256},false,['encrypt']);
+      var payload=JSON.stringify({token:token,owner:owner,repo:repo,branch:branch,site:site});
+      var ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,enc.encode(payload));
+      var blob={v:1,alg:'AES-GCM',kdf:'PBKDF2-SHA256',iterations:ITER,
+                salt:b64(salt),iv:b64(iv),ct:b64(ct)};
+      var text=JSON.stringify(blob,null,2);
+
+      var url=URL.createObjectURL(new Blob([text],{type:'application/json'}));
+      var a=document.createElement('a');a.href=url;a.download='auth.json';
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
+      setTimeout(function(){URL.revokeObjectURL(url);},4000);
+
+      out.innerHTML='<div class="ok"><b>The vault is sealed.</b><br><br>'+
+        '<code style="font-family:monospace">auth.json</code> is in your downloads folder. '+
+        'Upload it to <b>'+owner+'/'+repo+'</b> the same way you upload everything else: '+
+        'Add file, Upload files, drag it in, commit.<br><br>'+
+        'After that, open <b>refresh.html</b> from your live site, unlock it with the passphrase, '+
+        'and it will publish straight to the page.<br><br>'+
+        '<span style="color:#9FB3C8;font-size:15px">Close this tab when you are done. '+
+        'You will not need it again unless the token expires.</span></div>';
+    }catch(e){
+      out.innerHTML='<div class="err">Could not seal the vault: '+String(e.message||e).replace(/[<>&]/g,'')+'</div>';
+    }
+    $('go').disabled=false;
+  }
+  $('go').addEventListener('click',seal);
+  ['p2','token'].forEach(function(id){
+    $(id).addEventListener('keydown',function(e){if(e.key==='Enter')seal();});
+  });
+})();
+</script>
+</body>
+</html>
