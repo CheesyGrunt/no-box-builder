@@ -1,27 +1,25 @@
-// Community Support Program Numbers - settings. Edit these in GitHub's web editor; Render redeploys on save.
-window.GREAT_HALL_CONFIG = {
-  year: 'auto',               // 'auto' = the year of the newest session in the reports. Put a number (like 2026) to pin a year.
-  householdCap: 20,           // household sizes above this are treated as data-entry errors and left out of people totals
+/* ============================================================
+   Site settings.
 
-  // Salesforce reports, shown in the Kitchens with an "Open all reports" button.
-  // Keys match the upload slots. Paste a new link here if a report moves.
-  reports: [
-    { slot: 'mvfdValue',      name: '2026 - MVFD Value/Pounds',          url: 'https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR000008eSH72AM/view?queryScope=userFolders' },
-    { slot: 'community',      name: '2026 Community Support',            url: 'https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR000009K9Er2AK/view?queryScope=userFolders' },
-    { slot: 'pantryValue',    name: '2026 - Pantry Total Value/Pounds',  url: 'https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR000008Ot8P2AS/view?queryScope=userFolders' },
-    { slot: 'pantryAttended', name: '2026 Pantry Attended Clients',      url: 'https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR000008TbVp2AK/view?queryScope=userFolders' },
-    { slot: 'stats',          name: '2026- MVFD Stats',                  url: 'https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR000009dckz2AA/view?queryScope=userFolders' },
-    { slot: 'mvfdAttended',   name: '2026 MVFD Attended Clients',        url: 'https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR000008OsM12AK/view?queryScope=userFolders' },
-    { slot: 'pantryStats',    name: '2026 Pantry Attended Client Stats', url: 'https://soldiersangels.lightning.force.com/lightning/r/Report/00OTR000009ddHF2AY/view?queryScope=userFolders' }
-  ],
+   TESTING MODE. Both passwords are empty on purpose, so the site
+   opens for anyone with the link while you get it working.
 
-  // "Did you put in a ticket?" in the Kitchens emails all of these addresses
-  recommendTo: ['cmackall@soldiersangels.org', 'cody.a.mackall@gmail.com'],
+   Turn passwords on before staff or real member data:
+     1. open set-password.html
+     2. type a team password and an admin password
+     3. paste the generated block over this whole file
+     4. run the report again and publish, so the file is re-encrypted
+        with the real password
+   ============================================================ */
 
-  // Where the Kitchens page publishes updates (your GitHub repo)
+window.NOBOX_CONFIG = {
+  passwordHash: '993b149becc003454368476b6e7f1aa897b46b68dd1c0a06fc32b3acaed89f2e',
+  adminHash: '02db35715383f3b0982ee56b885bea24c579ffec4048d60aa7e802befa49eee8',
+  hint: '',
   github: {
     owner: 'CheesyGrunt',
-    repo: 'sa-food-impact',
-    branch: 'main'
+    repo:  'no-box-builder',
+    branch:'main',
+    path:  'data/latest.enc'
   }
 };
