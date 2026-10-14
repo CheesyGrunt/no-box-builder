@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Kitchens | Update Community Support Program Numbers</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f2326'/%3E%3Cpath d='M19 3 9 17h6l-4 12 12-16h-6z' fill='%23a8824a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<header class="mast">
+  <div class="wrap">
+    <div>
+      <div class="kicker">Admin &middot; Community Support Program Numbers</div>
+      <h1>The Kitchens</h1>
+      <p class="sub">Drop in the Salesforce reports, check the numbers, send them up to the dashboard.</p>
+    </div>
+    <div class="mast-actions">
+      <a class="btn" href="index.html">&larr; Back to the dashboard</a>
+      <a class="btn ghost hidden" id="pwLink" href="passwords.html">Change passwords</a>
+      <a class="hidden" id="signOut" href="#" style="font-size:15px">Sign out</a>
+    </div>
+  </div>
+  <hr class="rule">
+</header>
+
+<!-- admin gate -->
+<main class="wrap gate" id="gate">
+  <div class="card">
+    <div class="seal">SA</div>
+    <h2 id="gateTitle">Admin sign in</h2>
+    <p class="lede" style="margin:0" id="gateSub">Use the admin password you already set. Nothing gets reset here.</p>
+    <form id="gateForm" autocomplete="off">
+      <div class="pw"><input type="password" id="adminPass" name="cspn-admin" placeholder="Admin password" aria-label="Admin password" autocomplete="current-password"><button type="button" class="eye" data-for="adminPass">Show</button></div>
+      <label style="font-size:15px;text-align:left"><input type="checkbox" id="keepIn" checked> Keep me signed in on this computer</label>
+      <button type="submit">Sign in</button>
+    </form>
+    <!-- first-time setup -->
+    <form id="setupForm" class="hidden" autocomplete="off" style="text-align:left">
+      <label class="field">New admin password (for the Kitchens)<input type="password" id="sa1" autocomplete="new-password"></label>
+      <label class="field">Admin password again<input type="password" id="sa2" autocomplete="new-password"></label>
+      <label class="field" style="margin-top:8px">New viewer password (for staff to see the dashboard)<input type="password" id="sv1" autocomplete="new-password"></label>
+      <label class="field">Viewer password again<input type="password" id="sv2" autocomplete="new-password"></label>
+      <button type="submit" style="margin-top:6px">Set passwords</button>
+    </form>
+    <div class="msg" id="gateMsg"></div>
+  </div>
+</main>
+
+<main class="wrap hidden" id="work">
+  <section>
+    <ol class="steps">
+      <li>
+        <h3>Pull the reports from Salesforce</h3>
+        <p class="lede" style="margin-bottom:12px">Open each report, click the dropdown next to Edit, and choose <b>Export</b> &gt; <b>Details Only</b> &gt; <b>Excel</b>.</p>
+        <div class="card">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+            <b style="font-family:Cinzel,serif;letter-spacing:.06em">Salesforce reports</b>
+            <button class="gold" id="openAll" type="button">Open all reports</button>
+          </div>
+          <ul class="replist" id="repList"></ul>
+          <p class="notes" id="popNote" style="margin:6px 0 0">First time only: if Chrome only opens one tab, click the blocked pop-up icon at the right end of the address bar, pick <b>Always allow pop-ups</b>, and click the button again.</p>
+        </div>
+      </li>
+
+      <li>
+        <h3>Bring in the reports</h3>
+        <p class="lede" style="margin-bottom:12px">Drop all of them at once. Each one sorts itself into its slot by name and column headers. Nothing leaves this computer until you publish, and raw reports are never uploaded.</p>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose report files">
+          <strong>Drop the reports here</strong><br><span style="font-size:16px;color:var(--ink-soft)">or click to choose files (.xls or .xlsx)</span>
+          <input type="file" id="multi" multiple accept=".xls,.xlsx,.csv" class="hidden">
+        </div>
+        <div class="slots" id="slots" style="margin-top:14px"></div>
+        <div class="row" style="margin-top:14px">
+          <label class="field">In-kind value, if you have the total but not the report
+            <input type="number" id="inKindManual" step="0.01" min="0" placeholder="$ total (optional)">
+          </label>
+        </div>
+      </li>
+
+      <li>
+        <h3>Cook it</h3>
+        <button id="run" disabled>Process reports</button>
+        <div id="preview" style="margin-top:16px"></div>
+      </li>
+
+      <li>
+        <h3>Send it up</h3>
+        <p class="lede" style="margin-bottom:12px">Everything is locked with the viewer password before it leaves this page. Publish straight to GitHub (Render redeploys in about a minute), or download the files and upload them to the <span class="mono">data</span> folder yourself.</p>
+        <div class="card">
+          <div class="row">
+            <label class="field">Repo <input type="text" id="repo" placeholder="owner/repo"></label>
+            <label class="field">Branch <input type="text" id="branch" style="width:110px"></label>
+            <label class="field" style="flex:1;min-width:220px">GitHub token <input type="password" id="token" placeholder="github_pat_..." autocomplete="off"></label>
+          </div>
+          <label style="font-size:15px;display:block;margin-top:8px"><input type="checkbox" id="remember" checked> Remember the token on this computer (locked with the admin password)</label>
+          <div id="vaultNote" class="notes"></div>
+          <div class="row" style="margin-top:14px">
+            <button class="gold" id="publish" disabled>Publish to GitHub</button>
+            <button class="ghost" id="download" disabled>Download files instead</button>
+          </div>
+        </div>
+        <div class="log hidden" id="log" style="margin-top:14px"></div>
+      </li>
+    </ol>
+  </section>
+
+  <section id="recommend">
+    <h2>Did you put in a ticket?</h2>
+    <p class="lede">Spot a number that looks off, a report that needs a new filter, or something the dashboard should show? Put in a ticket and it goes straight to Cody. This opens your email with everything filled in, you just hit Send.</p>
+    <div class="card">
+      <form id="recForm" autocomplete="on">
+        <div class="row">
+          <label class="field" style="flex:1;min-width:200px">Your name <input type="text" id="recName" required></label>
+          <label class="field" style="flex:2;min-width:260px">Which report is this about? <select id="recReport" required></select></label>
+        </div>
+        <label class="field" style="margin-top:12px">What should change?
+          <textarea id="recText" rows="5" maxlength="1500" required placeholder="Example: The Detroit pantry on 10/8 shows 43 lbs, but the sign-in sheet says 430."></textarea>
+        </label>
+        <p class="notes" style="margin:6px 0 12px">Please leave out client addresses, phone numbers and case details. A name or date is enough for Cody to find it.</p>
+        <button type="submit" class="gold">Submit ticket</button>
+        <span class="notes" id="recMsg" style="margin-left:10px"></span>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="sig">
+      <svg viewBox="0 0 26 46" aria-hidden="true"><path d="M17 0 3 21h8L5 46l18-28h-9L22 0z" fill="#a8824a"/></svg>
+      <span class="line">The house-elves thank you</span>
+    </div>
+    <span>Built for Soldiers' Angels by Cody Mackall</span>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="config.js"></script>
+<script src="assets/processor.js"></script>
+<script src="assets/github.js"></script>
+<script src="assets/kitchens.js"></script>
+<script>document.querySelectorAll('.eye').forEach(function (b) { b.onclick = function () { var i = document.getElementById(b.dataset.for); var s = i.type === 'password'; i.type = s ? 'text' : 'password'; b.textContent = s ? 'Hide' : 'Show'; i.focus(); }; });</script>
+</body>
+</html>

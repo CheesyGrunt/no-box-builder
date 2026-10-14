@@ -1,0 +1,1 @@
+{ "name": "great-hall-build", "private": true, "description": "Optional command-line build. The Kitchens page does the same in the browser.", "dependencies": { "xlsx": "0.18.5" } }

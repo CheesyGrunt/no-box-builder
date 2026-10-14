@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: sa-food-impact
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: .
+    headers:
+      - path: /data/*
+        name: Cache-Control
+        value: no-cache
+      - path: /*
+        name: X-Robots-Tag
+        value: noindex
