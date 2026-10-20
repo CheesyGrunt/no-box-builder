@@ -41,14 +41,14 @@
   {
     "monthKey": "2026-10",
     "month": "October 2026",
-    "published": "2026-10-02T17:24:42.306Z",
+    "published": "2026-10-20T19:18:02.627Z",
     "updatedBy": "Director of Virtual Services",
-    "total": 515,
-    "got": 502,
-    "noBox": 13,
+    "total": 606,
+    "got": 290,
+    "noBox": 316,
     "waitlisted": 2,
-    "eligible": 513,
-    "coverage": 97,
-    "rawCoverage": 97
+    "eligible": 604,
+    "coverage": 48,
+    "rawCoverage": 47
   }
 ]
