@@ -697,7 +697,7 @@ async function updateHistory(g, payload){
    The Volunteer Services notes file lives in the same folder and must survive
    every publish, so it is named here and skipped. Deleting it would throw away
    an entire month of outreach the moment the report was re-run. */
-const KEEP_FILES = ['requests.enc'];
+const KEEP_FILES = ['requests.enc', 'vskey.enc'];
 async function sweepOldFiles(g){
   const dir = g.path.indexOf('/') > -1 ? g.path.slice(0, g.path.lastIndexOf('/')) : '';
   if (!dir) return [];
@@ -995,6 +995,44 @@ $('#btnToPublish').addEventListener('click', async () => {
   }
   openStage('#p5', '#chip4', null);
 });
+/* Publishing the Volunteer Services password. Their token is encrypted under
+   it and written with the Director's own token, so the password is the only
+   thing that ever leaves this screen. */
+async function publishVsPassword(){
+  const out = $('#vsKeyOut');
+  const note = (k, t, b) => { out.innerHTML = '<div class="note' + (k ? ' ' + k : '') + '"><div class="lbl">' + t + '</div><p>' + b + '</p></div>'; };
+
+  const pw = ($('#vsPw').value || '').trim();
+  const tok = ($('#vsTok').value || '').trim();
+  const g = GH.cfg();
+
+  if (!pw) return note('warn', 'Password needed', 'Type the password you want Volunteer Services to use.');
+  if (pw.length < 6) return note('warn', 'Too short', 'Six characters at the very least. This one guards a token that can write to the repository.');
+  if (!tok) return note('warn', 'Their token needed', 'Paste the second GitHub token, the one for Volunteer Services.');
+  if (tok === GH.token()) return note('warn', 'That is your own token',
+    'Generate a separate one for Volunteer Services, so revoking theirs never stops you publishing.');
+  if (!g.owner || !g.repo) return note('warn', 'Repo needed', 'Fill in the GitHub owner and repository above.');
+  if (!GH.token()) return note('warn', 'Your token needed', 'Paste your own access token above. It is what writes this file.');
+  if (!cryptoReady()) return note('warn', 'Open the live site', 'Encryption needs the https address, not a file on your hard drive.');
+
+  out.innerHTML = '<p class="hint">Encrypting and publishing...</p>';
+  try {
+    await publishVsKey(GH.token(), g, pw, tok);
+    $('#vsTok').value = '';
+    note('', 'Volunteer Services password set',
+      'Give them the password and nothing else. They type it on the staff site, with their name, ' +
+      'and the Volunteer Services tab becomes a worksheet. Render needs about a minute first.');
+  } catch(e){
+    const m = String(e.message || e);
+    note('warn', 'Could not publish it',
+      /401/.test(m) ? 'GitHub did not accept your token. Check it was copied whole and has not expired.'
+      : /403/.test(m) ? 'Your token needs Contents set to Read and write on this repository.'
+      : m + '. Nothing was changed.');
+  }
+}
+const vsBtn = $('#btnVsKey');
+if (vsBtn) vsBtn.addEventListener('click', publishVsPassword);
+
 GH.restore();
 restoreWho();
 openModeBanner();

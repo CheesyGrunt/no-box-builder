@@ -1,8 +1,9 @@
 /* ============================================================
    TEST SITE. Sample data only, no real members.
 
-   Team password:  alohomora
-   Admin password: patronus
+   Team password:               alohomora
+   Volunteer Services password: lumos
+   Admin password:              patronus
 
    Saves from this site write to the vs-notes-test branch, never to main,
    so nothing here can reach the live list.

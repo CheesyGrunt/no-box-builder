@@ -124,7 +124,11 @@
      this fails, the page falls back to the plain published list rather than
      showing an error over the top of the report.
      ============================================================ */
-  const VS_KEY = 'nobox-vs-token';      // shared with the builder's own token box
+  /* Both live in sessionStorage, not localStorage, on purpose. Closing the
+     browser ends the shift: the next person to open the page on a shared
+     computer types their own password and their own name, rather than
+     inheriting somebody else's and signing notes with it. */
+  const VS_KEY = 'nobox-vs-token';
   const ME_KEY = 'nobox-vs-name';
   let overlayDirty = 0, overlayBusy = false;
 
@@ -132,11 +136,11 @@
     const g = (cfg().github || {});
     return { owner:g.owner || '', repo:g.repo || '', branch:g.branch || 'main', path:g.path || 'data/latest.enc' };
   };
-  const vsToken = () => { try { return localStorage.getItem(VS_KEY) || ''; } catch(e){ return ''; } };
+  const vsToken = () => { try { return sessionStorage.getItem(VS_KEY) || ''; } catch(e){ return ''; } };
 
   async function loadOverlay(){
     await attachOverlay(teamPw);
-    try { state.whoami = localStorage.getItem(ME_KEY) || ''; } catch(e){}
+    try { state.whoami = sessionStorage.getItem(ME_KEY) || ''; } catch(e){}
     state.vsEdit = !!vsToken() && ghCfg().path !== OVERLAY_PATH;
   }
 
@@ -151,7 +155,7 @@
   /* Somebody typed a different name beside a note. That becomes the default
      for the rest of their session, so they type it once. */
   window.onWhoChange = function(name){
-    try { localStorage.setItem(ME_KEY, name); } catch(e){}
+    try { sessionStorage.setItem(ME_KEY, name); } catch(e){}
   };
 
   function paintVsBar(){
@@ -171,7 +175,7 @@
       bar.innerHTML =
         '<span class="vsnag">Editing is off.</span>' +
         '<span class="hint">You can read everything here. To log contact and notes, or to ask for a box, ' +
-        'turn on editing with the key from the Director of Virtual Services.</span>' +
+        'turn on editing with the Volunteer Services password.</span>' +
         '<button class="btn sm gold" id="vsOn">Turn on editing</button>';
       $('vsOn').addEventListener('click', askVsKey);
       return;
@@ -196,7 +200,7 @@
       state.whoami || '');
     if (name == null) return;
     state.whoami = name.trim();
-    try { localStorage.setItem(ME_KEY, state.whoami); } catch(e){}
+    try { sessionStorage.setItem(ME_KEY, state.whoami); } catch(e){}
     paintVsBar();
     renderView();
   }
@@ -226,29 +230,40 @@
       overlayBusy = false; paintVsBar();
       const m = String(e.message || e);
       $('vsOut').innerHTML = /401/.test(m)
-        ? msg('warn', 'That key was not accepted', 'Ask the Director of Virtual Services for a new editing key. Nothing was lost, your changes are still on screen.')
+        ? msg('warn', 'Editing access was refused', 'The Volunteer Services access may have been changed or expired. Ask the Director of Virtual Services. Nothing was lost, your changes are still on screen.')
         : /403/.test(m)
-        ? msg('warn', 'That key cannot write here', 'It needs Contents set to Read and write on this repository. Your changes are still on screen.')
+        ? msg('warn', 'Editing access cannot write here', 'The Director of Virtual Services needs to set the Volunteer Services password up again. Your changes are still on screen.')
         : msg('warn', 'Could not save', m + '. Nothing was changed on the site, and your work is still on screen. Try again in a moment.');
     }
   }
 
-  /* The editing key. Pasting it turns the Volunteer Services tab from a list
-     into a worksheet. It is kept in this browser only. */
+  /* Turning on editing. Password and name in one dialog, both required: the
+     password decides whether you may write, the name decides whose name goes
+     on what you write. Asking for them together is what stops a note from
+     being signed by whoever used this computer last.
+
+     The password is not checked against a hash. It is the key that opens the
+     write key, so a wrong password simply fails to open it. */
   function askVsKey(){
     const back = document.createElement('div');
     back.className = 'modal-back';
     back.innerHTML =
       '<div class="modal" role="dialog" aria-modal="true">' +
         '<h3 class="mt"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">' +
-        '<path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg>Volunteer Services key</h3>' +
-        '<p>Paste the editing key the Director of Virtual Services gave you. It stays in this browser, ' +
-        'so you only do this once on this computer.</p>' +
-        '<p><input type="password" id="vkPw" placeholder="Editing key" style="width:100%;font-size:16px;padding:11px 13px"></p>' +
-        '<p class="hint">Without it you can still read everything. You just cannot add notes.</p>' +
+        '<path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg>Turn on editing</h3>' +
+        '<p>The Volunteer Services password, and your name. Every note you add is signed with it, ' +
+        'so whoever reads this later knows who made contact.</p>' +
+        '<p><input type="password" id="vkPw" placeholder="Volunteer Services password" ' +
+          'autocomplete="current-password" style="width:100%;font-size:16px;padding:11px 13px"></p>' +
+        '<p><input type="text" id="vkWho" placeholder="Your name" ' +
+          'style="width:100%;font-size:16px;padding:11px 13px" value="' +
+          String(state.whoami || '').replace(/"/g,'&quot;') + '"></p>' +
+        '<div id="vkErr"></div>' +
+        '<p class="hint">This lasts until you close the browser. Without it you can still read ' +
+        'everything, you just cannot add notes.</p>' +
         '<div class="mact"><button class="btn" id="vkGo">Turn on editing</button>' +
         '<button class="btn out" id="vkNo">Cancel</button>' +
-        (vsToken() ? '<button class="btn out" id="vkClear">Forget this key</button>' : '') +
+        (vsToken() ? '<button class="btn out" id="vkClear">Sign out of editing</button>' : '') +
         '</div></div>';
     document.body.appendChild(back);
     const close = () => { back.remove(); document.removeEventListener('keydown', esc); };
@@ -256,24 +271,42 @@
     document.addEventListener('keydown', esc);
     back.addEventListener('click', e => { if (e.target === back) close(); });
     back.querySelector('#vkNo').addEventListener('click', close);
+
     const clr = back.querySelector('#vkClear');
     if (clr) clr.addEventListener('click', () => {
-      try { localStorage.removeItem(VS_KEY); } catch(e){}
-      state.vsEdit = false; close(); paint(); paintVsBar();
+      try { sessionStorage.removeItem(VS_KEY); sessionStorage.removeItem(ME_KEY); } catch(e){}
+      state.vsEdit = false; state.whoami = '';
+      close(); paint(); paintVsBar();
     });
-    const go = () => {
-      const v = back.querySelector('#vkPw').value.trim();
-      if (!v) return;
-      try { localStorage.setItem(VS_KEY, v); } catch(e){}
+
+    const err = (t, b) => { back.querySelector('#vkErr').innerHTML = msg('warn', t, b); };
+    const go = async () => {
+      const pw = back.querySelector('#vkPw').value.trim();
+      const nm = back.querySelector('#vkWho').value.trim();
+      if (!pw) return err('Password needed', 'Enter the Volunteer Services password.');
+      if (!nm) return err('Name needed',
+        'Put your name in so the notes you add are signed. It is the only way anyone can tell later who made contact.');
+      if (!cryptoReady()) return err('Open the live site',
+        'This needs the https address, not a file opened from your hard drive.');
+
+      back.querySelector('#vkGo').disabled = true;
+      const r = await loadVsKey(pw);
+      back.querySelector('#vkGo').disabled = false;
+
+      if (r.missing) return err('Editing is not set up yet',
+        'No Volunteer Services password has been published for this site. The Director of Virtual Services sets it in the builder.');
+      if (r.bad) return err('That password did not work',
+        'Check it with the Director of Virtual Services. It is not the one you used to sign in.');
+
+      try { sessionStorage.setItem(VS_KEY, r.token); sessionStorage.setItem(ME_KEY, nm); } catch(e){}
+      state.whoami = nm;
       state.vsEdit = ghCfg().path !== OVERLAY_PATH;
-      close();
-      if (!state.whoami) askWho();
-      paint(); paintVsBar();
+      close(); paint(); paintVsBar();
     };
     back.querySelector('#vkGo').addEventListener('click', go);
-    const b = back.querySelector('#vkPw');
-    b.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
-    b.focus();
+    ['vkPw','vkWho'].forEach(id =>
+      back.querySelector('#' + id).addEventListener('keydown', e => { if (e.key === 'Enter') go(); }));
+    back.querySelector('#vkPw').focus();
   }
 
   /* Leaving with notes not yet sent is almost always a mistake. */

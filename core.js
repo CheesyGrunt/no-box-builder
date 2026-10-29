@@ -39,6 +39,12 @@ const state = {
    never the report. Nothing is ever deleted either: notes append, and an
    approval records a decision beside the request rather than replacing it. */
 const OVERLAY_PATH = 'data/requests.enc';
+/* The write key, encrypted under the Volunteer Services password. It means
+   there are three passwords and no tokens to hand around: the Director sets
+   this once in the builder, and Volunteer Services only ever types a password.
+   The password is not checked against a hash, it IS the key, so a wrong one
+   simply fails to open the file. */
+const VSKEY_PATH = 'data/vskey.enc';
 /* Who signs off on a box request. Whoever holds the admin password is acting
    in this role, so it is the role that gets recorded against the decision. */
 const APPROVER_ROLE = 'Director of Virtual Services';
@@ -1240,6 +1246,34 @@ function rowsForPublish(){
     delete c.vs; delete c.req;
     return c;
   });
+}
+
+/* Open the write key with the Volunteer Services password. Three outcomes
+   worth telling apart: nobody has set one up, the password is wrong, or here
+   is the key. Saying which saves a round of "it just does not work". */
+async function loadVsKey(pw){
+  let raw;
+  try {
+    const res = await fetch(VSKEY_PATH + '?_=' + Date.now(), { cache:'no-store' });
+    if (!res.ok) return { missing:true };
+    raw = await res.text();
+    const probe = JSON.parse(raw);          // an HTML 404 page would throw here
+    if (!(probe && probe.ct && probe.salt && probe.iv)) return { missing:true };
+  } catch(e){ return { missing:true }; }
+  try {
+    const o = await decryptPayload(pw, raw);
+    return (o && o.token) ? { token:o.token } : { bad:true };
+  } catch(e){ return { bad:true }; }
+}
+/* Setting it. Run from the builder, with the Director's own token doing the
+   writing, so the Volunteer Services password is all anybody else needs. */
+async function publishVsKey(adminToken, g, vsPassword, vsToken){
+  const text = await encryptPayload(vsPassword, {
+    v:1, token:vsToken, set:new Date().toISOString() });
+  let sha = null;
+  const cur = await ghGetText(adminToken, g, VSKEY_PATH);
+  if (cur) sha = cur.sha;
+  return ghPutText(adminToken, g, VSKEY_PATH, text, 'Set the Volunteer Services password', sha);
 }
 
 /* The single door through which Volunteer Services writes anything.
