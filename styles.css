@@ -194,3 +194,48 @@ a{color:var(--maroon)}
   .batches{grid-template-columns:1fr}
   .pubstamp{flex-wrap:wrap}
 }
+
+/* ============================================================
+   Volunteer Services: notes, box requests, and the sign off.
+   ============================================================ */
+
+/* A row somebody has asked about, but nobody has decided on yet. */
+tr.asked td{background:#FFF8E1!important}
+tr.asked{border-left-color:var(--gold)}
+
+/* The outreach tabs carry sentences, not codes, so they wrap. */
+table.vs{table-layout:fixed;width:100%;font-size:12.5px}
+table.vs th,table.vs td{white-space:normal;word-break:break-word;padding:7px 8px;vertical-align:top}
+table.vs .tag{white-space:normal;display:inline-block;margin-bottom:2px}
+table.vs th:nth-child(1){width:92px}
+table.vs input{font-size:12px;padding:4px 6px;width:100%;min-width:0}
+
+.notecell{display:flex;flex-direction:column;gap:5px;min-width:150px}
+.notelog{display:flex;flex-direction:column;gap:3px}
+.nlog{display:block;font-size:12px;line-height:1.45;padding-left:8px;
+  border-left:2px solid var(--rule);color:var(--ink)}
+.nlog b{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--maroon);font-weight:500;margin-right:5px}
+.nlog i{font-family:var(--mono);font-size:10px;color:var(--ink-soft);font-style:normal;margin-left:5px}
+.nby{display:block;font-family:var(--mono);font-size:10px;color:var(--ink-soft);margin-top:3px}
+
+.boxask{display:flex;gap:7px;align-items:flex-start;font-size:12px;cursor:pointer;line-height:1.35}
+.boxask input{width:16px;height:16px;flex:0 0 16px;margin-top:1px}
+
+.apact{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.apact .btn{white-space:nowrap}
+
+/* The save bar. Sits above the table so unsent work is impossible to miss. */
+.vsbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:0 0 12px;
+  background:#FFFCF2;border:1px solid var(--gold);border-left:4px solid var(--gold);padding:10px 14px}
+.vswho{display:flex;gap:7px;align-items:baseline}
+.vswho .lb{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+.linky{background:none;border:none;padding:0;font-family:var(--body);font-size:13px;font-weight:600;
+  color:var(--maroon);cursor:pointer;border-bottom:1px dotted var(--maroon)}
+.linky:hover{color:var(--maroon-deep)}
+.vsnag{font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;color:var(--maroon);font-weight:500}
+.vsbar .btn[disabled]{opacity:.45;cursor:default}
+.vsout{flex:1 1 100%}
+.vsout .note{margin:8px 0 0}
+
+.role.app{border-top-color:var(--gold)}

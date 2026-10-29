@@ -1,25 +1,21 @@
 /* ============================================================
-   Site settings.
+   TEST SITE. Sample data only, no real members.
 
-   TESTING MODE. Both passwords are empty on purpose, so the site
-   opens for anyone with the link while you get it working.
+   Team password:  alohomora
+   Admin password: patronus
 
-   Turn passwords on before staff or real member data:
-     1. open set-password.html
-     2. type a team password and an admin password
-     3. paste the generated block over this whole file
-     4. run the report again and publish, so the file is re-encrypted
-        with the real password
+   Saves from this site write to the vs-notes-test branch, never to main,
+   so nothing here can reach the live list.
    ============================================================ */
 
 window.NOBOX_CONFIG = {
-  passwordHash: '993b149becc003454368476b6e7f1aa897b46b68dd1c0a06fc32b3acaed89f2e',
-  adminHash: '02db35715383f3b0982ee56b885bea24c579ffec4048d60aa7e802befa49eee8',
-  hint: '',
+  passwordHash: 'c597799f11525c838ce3248c94bde997cc0669bd0d075dbb9c80c64e51031492',
+  adminHash: 'c3e223bfe7480019c8ad2d898968d721d6736d11b1439f8b20066eb8a91d8fa8',
+  hint: 'Test site. The password is in the handover note.',
   github: {
     owner: 'CheesyGrunt',
     repo:  'no-box-builder',
-    branch:'main',
+    branch:'vs-notes-test',
     path:  'data/latest.enc'
   }
 };

@@ -79,6 +79,7 @@
     <div class="stages"><div class="stage-chip" id="monthChip">Not signed in</div></div>
     <div class="bar-actions">
       <button class="ghost" id="btnHistory" style="display:none">Past months</button>
+      <button class="ghost" id="btnVsKey" style="display:none">Volunteer Services key</button>
       <button class="ghost" id="btnUpdate" style="display:none">Update report</button>
       <button class="ghost" id="btnSF" style="display:none">Salesforce import</button>
       <button class="ghost" id="btnSop">SOP</button>
@@ -139,6 +140,11 @@
           <div class="rc" id="r-rev">0</div>
           <div class="rd">address or eligibility to confirm</div>
         </button>
+        <button class="role app" id="roleApprove" data-goto="approvals" style="display:none">
+          <div class="rn">Needs approval</div>
+          <div class="rc" id="r-app">0</div>
+          <div class="rd">Volunteer Services came up empty</div>
+        </button>
       </div>
 
       <dl class="stats" id="stats2"></dl>
@@ -150,6 +156,7 @@
         <button class="view-tab" data-view="volunteer">Volunteer Services: reach out <span class="n" id="n-volunteer">0</span></button>
         <button class="view-tab" data-view="waitlisted">Waitlisted <span class="n" id="n-waitlisted">0</span></button>
         <button class="view-tab" data-view="review">Needs review <span class="n" id="n-review">0</span></button>
+        <button class="view-tab" data-view="approvals" style="display:none">Needs approval <span class="n" id="n-approvals">0</span></button>
         <button class="view-tab" data-view="decisions" style="display:none">Decisions <span class="n" id="n-decisions">0</span></button>
       </div>
       <div class="viewbox">
@@ -161,6 +168,7 @@
           </div>
         </div>
         <div class="filters" id="vFilters"></div>
+        <div class="vsbar" id="vsbar" style="display:none"></div>
         <div class="tw"><table id="vTable"><thead></thead><tbody></tbody></table></div>
         <p class="hint" id="vFoot" style="margin-top:10px"></p>
       </div>

@@ -692,7 +692,12 @@ async function updateHistory(g, payload){
 }
 
 /* Anything ending .enc in the data folder that is not the live file is left
-   over from a manual upload. Remove it so nobody opens the wrong month. */
+   over from a manual upload. Remove it so nobody opens the wrong month.
+
+   The Volunteer Services notes file lives in the same folder and must survive
+   every publish, so it is named here and skipped. Deleting it would throw away
+   an entire month of outreach the moment the report was re-run. */
+const KEEP_FILES = ['requests.enc'];
 async function sweepOldFiles(g){
   const dir = g.path.indexOf('/') > -1 ? g.path.slice(0, g.path.lastIndexOf('/')) : '';
   if (!dir) return [];
@@ -703,7 +708,8 @@ async function sweepOldFiles(g){
   const items = await res.json();
   if (!Array.isArray(items)) return [];
 
-  const strays = items.filter(f => f.type === 'file' && f.name !== live && /\.enc$/i.test(f.name));
+  const strays = items.filter(f => f.type === 'file' && f.name !== live
+    && KEEP_FILES.indexOf(f.name) === -1 && /\.enc$/i.test(f.name));
   const gone = [];
   for (const f of strays){
     const del = await GH.call('https://api.github.com/repos/' + g.owner + '/' + g.repo +
