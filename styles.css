@@ -10,7 +10,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
 .bar{position:sticky;top:0;z-index:60;background:var(--maroon-deep);color:#fff;border-bottom:3px solid var(--gold)}
-.bar-in{max-width:1240px;margin:0 auto;padding:11px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.bar-in{max-width:min(1760px, max(1240px, 88vw));margin:0 auto;padding:11px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
 .bar-title{font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:.09em;text-transform:uppercase}
 .bar-title span{color:var(--gold)}
 .bolt{color:var(--gold);opacity:.85;vertical-align:-2px;margin-left:9px}
@@ -22,7 +22,11 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);f
 .bar-actions{display:flex;gap:8px}
 .ghost{font-family:var(--display);text-transform:uppercase;letter-spacing:.1em;font-size:13px;background:none;border:1px solid rgba(255,255,255,.3);color:#F0E6DE;padding:5px 11px;cursor:pointer}
 .ghost:hover{border-color:var(--gold);color:var(--gold)}
-.wrap{max-width:1240px;margin:0 auto;padding:30px 24px 90px}
+/* The page grows with the window: never narrower than it used to be, and
+   capped so a very wide monitor does not stretch it past the point of
+   being readable. Prose keeps its own character limits below, so the
+   extra width goes to the tables, which is what needs it. */
+.wrap{max-width:min(1760px, max(1240px, 88vw));margin:0 auto;padding:30px 24px 90px}
 h1{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:clamp(30px,5vw,48px);line-height:1;margin:0 0 6px;color:var(--maroon)}
 .sub{color:var(--ink-soft);max-width:76ch;margin:0 0 8px}
 .privacy{font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;color:var(--ok);margin-bottom:26px}
@@ -101,7 +105,7 @@ select{flex:1;min-width:0}
 .viewhead .txt{flex:1;min-width:240px}
 .viewhead p{margin:0;font-size:14px;color:var(--ink-soft)}
 .tools{display:flex;gap:8px;flex-wrap:wrap}
-.tw{overflow:auto;max-height:560px;border:1px solid var(--rule)}
+.tw{overflow:auto;max-height:clamp(560px, calc(100vh - 260px), 1200px);border:1px solid var(--rule)}
 table{border-collapse:collapse;width:100%;font-size:13px}
 th{position:sticky;top:0;background:var(--maroon);color:#fff;text-align:left;padding:8px 10px;font-family:var(--display);text-transform:uppercase;letter-spacing:.07em;font-size:13px;font-weight:600;white-space:nowrap;z-index:2}
 td{padding:7px 10px;border-bottom:1px solid var(--rule);vertical-align:top;white-space:nowrap}
