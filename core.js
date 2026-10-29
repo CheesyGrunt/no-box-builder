@@ -90,7 +90,7 @@ function overlayEntry(r, make){
   const id = rowId(r);
   if (!id) return null;
   if (!state.overlay.entries[id] && make)
-    state.overlay.entries[id] = { contact:'', who:'', contactAt:'', notes:[], req:null };
+    state.overlay.entries[id] = { contact:'', who:'', contactAt:'', notes:[], req:null, sf:null };
   const e = state.overlay.entries[id] || null;
   if (e){ r.vs = e; r.req = e.req || null; }
   return e;
@@ -102,6 +102,26 @@ function outcomeNoSend(r){ return decidedBox(r) && r.req.outcome === WANT.NOSEND
 /* The Director went against what was recommended. Worth showing, because
    Volunteer Services should not have to wonder what happened to their ask. */
 function overruled(r){ return decidedBox(r) && r.req.want && r.req.outcome !== r.req.want; }
+
+/* ---------- what still has to be typed into Salesforce ----------
+   Everything Volunteer Services does here is a note on a web page until
+   somebody puts it into Salesforce. This works out what that is, member by
+   member, so the trail from outreach to system of record does not depend on
+   anyone remembering. */
+function sfAction(r){
+  const q = r.req;
+  if (q && q.state === REQ.DECIDED){
+    return q.outcome === WANT.SEND
+      ? 'Approved for a box. Log the One Time Support record and close the open engagement.'
+      : 'No box this month. Close or reassign the open engagement so it stops reporting.';
+  }
+  if (q && q.state === REQ.PENDING) return '';     // undecided, nothing to enter yet
+  const n = r.vs && r.vs.notes ? r.vs.notes.length : 0;
+  if (n) return 'Outreach was logged here. Add the contact to the client record in Salesforce.';
+  return '';
+}
+function sfDone(r){ return !!(r.vs && r.vs.sf && r.vs.sf.done); }
+function sfNeeded(r){ return !!sfAction(r) && !sfDone(r); }
 
 /* Two people can have the list open at once. Rather than let the second save
    wipe the first, the remote file is re-read and merged entry by entry: notes
@@ -127,12 +147,24 @@ function mergeOverlays(a, b){
       const dx = String(rx.decidedAt || ''), dy = String(ry.decidedAt || '');
       req = dy > dx ? ry : dx > dy ? rx : (String(ry.at || '') >= String(rx.at || '') ? ry : rx);
     } else req = ry || rx || null;
+    /* The Salesforce tick is the one field that legitimately goes backwards,
+       because the usual reason to untick is realising you ticked the wrong
+       row. So unticking writes a dated false rather than nothing, and the
+       newer of the two timestamps wins either way. Dropping this field, or
+       letting a stale true outrank a fresh false, would quietly resurrect a
+       change somebody had already taken back. */
+    let sf = null;
+    const fx = x.sf, fy = y.sf;
+    if (fx && fy) sf = String(fy.at || '') >= String(fx.at || '') ? fy : fx;
+    else sf = fy || fx || null;
+
     out.entries[id] = {
       contact:   yNewer ? (y.contact || x.contact || '') : (x.contact || y.contact || ''),
       who:       yNewer ? (y.who || x.who || '')         : (x.who || y.who || ''),
       contactAt: yNewer ? (y.contactAt || x.contactAt || '') : (x.contactAt || ''),
       notes: notes,
-      req: req
+      req: req,
+      sf: sf
     };
   });
   return out;
@@ -440,6 +472,15 @@ const COLS = {
     ['engagement','Pending Engagement'],['contactBlock','Contact'],
     ['vsnotes','What happened'],['wants','Volunteer Services says'],['approve','Your call']
   ],
+  /* The bridge to the system of record. Client ID sits second so it is easy
+     to copy straight into a Salesforce search. */
+  sfcheck: [
+    ['name','Client'],['clientId','Client ID'],
+    ['sfaction','What to update in Salesforce'],
+    ['engagement','Open Engagement'],
+    ['vsnotes','What Volunteer Services logged'],
+    ['decidedBy','Decided by'],['sfdone','Done']
+  ],
   waitlisted: [
     ['name','Client Name'],['clientId','Client ID'],['mailStop','Mail Stop Date'],['reportBy','Report by Date']
   ]
@@ -490,6 +531,17 @@ const VIEWS = {
     sort:'reportBy',
     rows: () => counted().filter(pendingBox)
   },
+  sfcheck: {
+    title:'These need checking in Salesforce',
+    desc:'Everything Volunteer Services logged and you decided, and what each one means for the record in Salesforce. Outstanding members are at the top. Tick one off once you have made the change, and it stays here greyed out so the month has a full audit trail rather than an empty list. Nothing on this page writes to Salesforce.',
+    cols: COLS.sfcheck, exportCols: COLS.sfcheck, hideWhenEmpty:true, adminOnly:true,
+    /* Outstanding first, then the ones already done, newest decision first
+       within each group. */
+    rows: () => counted().filter(r => !!sfAction(r))
+            .sort((a, b) => (sfDone(a) ? 1 : 0) - (sfDone(b) ? 1 : 0)),
+    /* The badge counts what is left to do, not the whole history. */
+    count: () => counted().filter(sfNeeded).length
+  },
   waitlisted: {
     title:'Already waitlisted',
     desc:'On the Currently Waitlisted Clients report. No box, no outreach needed. Here for the record.',
@@ -537,6 +589,13 @@ function cellVal(r, k){
     return n.map(x => (x.by ? x.by + ': ' : '') + x.t).join(' · ');
   }
   if (k === 'wants') return r.req && r.req.want ? WANT_LABEL[r.req.want] : '';
+  if (k === 'sfaction') return sfAction(r);
+  if (k === 'sfdone'){
+    if (!sfDone(r)) return 'Outstanding';
+    const s = r.vs.sf;
+    return 'Done' + (s.by ? ' by ' + s.by : '') +
+      (s.at ? ' ' + new Date(s.at).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : '');
+  }
   if (k === 'decidedBy') return r.req && r.req.decidedBy ? r.req.decidedBy : '';
   if (k === 'boxreq' || k === 'approve'){
     if (!r.req) return '';
@@ -588,8 +647,16 @@ function activeRows(){
 function renderView(){
   document.querySelectorAll('.view-tab').forEach(t => {
     const def = VIEWS[t.dataset.view];
-    if (def && def.hideWhenEmpty) t.style.display = def.rows().length ? '' : 'none';
+    if (!def) return;
+    /* An admin only tab is hidden outright, not merely inert, so the people
+       it is not for never see it listed. */
+    if (def.adminOnly && !state.canApprove){ t.style.display = 'none'; return; }
+    if (def.hideWhenEmpty) t.style.display = def.rows().length ? '' : 'none';
   });
+  if (VIEWS[state.view] && VIEWS[state.view].adminOnly && !state.canApprove){
+    state.view = 'all';
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('on', t.dataset.view === 'all'));
+  }
   if (VIEWS[state.view] && VIEWS[state.view].hideWhenEmpty && !VIEWS[state.view].rows().length){
     state.view = 'all';
     document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('on', t.dataset.view === 'all'));
@@ -598,7 +665,10 @@ function renderView(){
   const v = VIEWS[state.view];
   $('#vTitle').textContent = v.title;
   $('#vDesc').textContent = v.desc;
-  for (const k in VIEWS) { const n = document.getElementById('n-' + k); if (n) n.textContent = VIEWS[k].rows().length; }
+  for (const k in VIEWS) {
+    const n = document.getElementById('n-' + k);
+    if (n) n.textContent = VIEWS[k].count ? VIEWS[k].count() : VIEWS[k].rows().length;
+  }
 
   const help = $('#decisionHelp');
   if (help) help.style.display = (state.view === 'review' || state.view === 'decisions') ? '' : 'none';
@@ -621,7 +691,8 @@ function renderView(){
   t.querySelector('thead').innerHTML = '<tr>' + cols.map(c => `<th>${c[1]}</th>`).join('') + '</tr>';
   t.querySelector('tbody').innerHTML = rows.map(r => {
     let cls = '';
-    if (excluded(r)) cls = 'excluded';
+    if (state.view === 'sfcheck' && sfDone(r)) cls = 'sfdone';
+    else if (excluded(r)) cls = 'excluded';
     else if (outcomeSend(r)) cls = 'decided';
     else if (outcomeNoSend(r)) cls = 'decided-no';
     else if (pendingBox(r)) cls = 'asked';
@@ -713,6 +784,29 @@ function renderView(){
         } else {
           val = q ? `<span class="tag gold">${esc(WANT_SHORT[q.want] || '')}</span>` : '';
         }
+        return `<td data-l="${c[1]}">${val}</td>`;
+      }
+
+      /* ---- ticking a change off once it is in Salesforce ---- */
+      if (c[0] === 'sfdone'){
+        const idx = state.rows.indexOf(r);
+        const done = sfDone(r);
+        if (state.canApprove){
+          val = `<label class="boxask"><input type="checkbox" class="sfbox" data-row="${idx}"` +
+                (done ? ' checked' : '') + `> ` + (done ? 'In Salesforce' : 'Mark done') + `</label>`;
+          if (done && r.vs.sf.by)
+            val += `<span class="nby">${String(r.vs.sf.by).replace(/^The\s+/i,'')}</span>`;
+        } else {
+          val = `<span class="tag ${done ? 'send' : 'gold'}">${done ? 'Done' : 'Outstanding'}</span>`;
+        }
+        return `<td data-l="${c[1]}">${val}</td>`;
+      }
+      if (c[0] === 'sfaction'){
+        const q = r.req;
+        const tone = !q ? 'blue' : q.outcome === WANT.SEND ? 'send' : 'grey';
+        val = `<span class="tag ${tone}">${!q ? 'Log the contact' :
+                q.outcome === WANT.SEND ? 'Box approved' : 'No box'}</span>` +
+              `<span class="sfwhat">${String(val).replace(/</g,'&lt;')}</span>`;
         return `<td data-l="${c[1]}">${val}</td>`;
       }
 
@@ -886,6 +980,22 @@ function renderView(){
     };
     t.querySelectorAll('.apyes').forEach(b => b.addEventListener('click', () => decide(+b.dataset.row, true)));
     t.querySelectorAll('.apno').forEach(b => b.addEventListener('click', () => decide(+b.dataset.row, false)));
+
+    /* Ticked off once the change is actually in Salesforce. Unticking is
+       allowed, because the usual reason is realising you ticked the wrong row. */
+    t.querySelectorAll('.sfbox').forEach(box => {
+      box.addEventListener('change', () => {
+        const row = state.rows[+box.dataset.row];
+        if (!row) return;
+        const e = overlayEntry(row, true);
+        if (!e) return;
+        /* Dated either way, so unticking survives a merge with somebody
+           else's older copy instead of being read as "never ticked". */
+        e.sf = { done: box.checked, by: state.whoami || APPROVER_ROLE, at: new Date().toISOString() };
+        renderView();
+        touched();
+      });
+    });
   }
 }
 
@@ -1097,6 +1207,39 @@ async function ghPutText(token, g, path, text, message, sha){
     throw new Error('status ' + put.status + (e.message ? '. ' + e.message : ''));
   }
   return put.json();
+}
+
+/* Reading the notes file. Used by the staff page, the builder, and the
+   Salesforce export, so all three agree on who is getting a box. A file that
+   is missing or will not open yields an empty set rather than an error: the
+   report has to keep working whatever state the notes are in. */
+async function fetchOverlay(pw){
+  try {
+    const res = await fetch(OVERLAY_PATH + '?_=' + Date.now(), { cache:'no-store' });
+    if (!res.ok) return emptyOverlay();
+    const raw = await res.text();
+    const probe = JSON.parse(raw);            // an HTML 404 page would throw here
+    if (!(probe && probe.ct && probe.salt && probe.iv)) return emptyOverlay();
+    const o = await decryptPayload(pw, raw);
+    return (o && o.entries) ? o : emptyOverlay();
+  } catch(e){ return emptyOverlay(); }
+}
+/* Load it and hang it on the rows, ignoring a file left from another month. */
+async function attachOverlay(pw){
+  state.overlay = await fetchOverlay(pw);
+  if (state.overlay.monthKey && monthKeyNow() && state.overlay.monthKey !== monthKeyNow())
+    state.overlay = emptyOverlay();
+  applyOverlay();
+  return state.overlay;
+}
+/* The notes belong in the notes file, not in two places. The published list
+   carries the members and nothing Volunteer Services typed. */
+function rowsForPublish(){
+  return state.rows.map(r => {
+    const c = Object.assign({}, r);
+    delete c.vs; delete c.req;
+    return c;
+  });
 }
 
 /* The single door through which Volunteer Services writes anything.

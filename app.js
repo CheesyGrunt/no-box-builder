@@ -476,7 +476,7 @@ async function publish(){
       waitlisted: counted().filter(r => effStatus(r) === STATUS.WAIT).length,
       angel: counted().filter(r => effStatus(r) === STATUS.ANGEL).length
     },
-    rows: state.rows
+    rows: rowsForPublish()
   };
   try {
     const text = await encryptPayload(pw, payload);
@@ -742,6 +742,28 @@ async function publishLive(){
   if (!g.owner || !g.repo) return note('warn', 'Repo needed', 'Fill in the GitHub owner and repository name.');
   if (!GH.token()) return note('warn', 'Token needed', 'Paste a GitHub token with Contents write access to this repo. Instructions are below.');
 
+  /* Decisions live in the notes file, not in the exports this run was built
+     from. Pull them in before the numbers are worked out, so the counts that
+     get published match what staff see, and a member approved for a box last
+     week is still on the Logistics list after a re-run. */
+  out.innerHTML = '<p class="hint">Checking for Volunteer Services decisions...</p>';
+  try { await attachOverlay(pw); } catch(e){ state.overlay = null; }
+
+  const waiting = counted().filter(pendingBox).length;
+  if (waiting){
+    const go = await askConfirm({
+      title: 'Requests still waiting on you',
+      body: '<p>' + waiting + ' member' + (waiting === 1 ? '' : 's') + ' Volunteer Services asked about ' +
+            (waiting === 1 ? 'has' : 'have') + ' no decision yet, so ' +
+            (waiting === 1 ? 'it stays' : 'they stay') + ' off the Logistics list in this publish.</p>' +
+            '<p>Publishing now costs nothing: decisions live in their own file and take effect the ' +
+            'moment you make them, with no re-run needed.</p>',
+      yes: 'Publish anyway', no: 'Let me decide first'
+    });
+    if (!go) return note('', 'Nothing published',
+      'Open the staff site, work through the Needs approval tab, then come back here.');
+  }
+
   out.innerHTML = '<p class="hint">Encrypting ' + counted().length + ' counted rows...</p>';
   const label = new Date(state.month.y, state.month.m, 1).toLocaleString('en-US', { month:'long', year:'numeric' });
   const payload = {
@@ -755,7 +777,7 @@ async function publishLive(){
       waitlisted: counted().filter(r => effStatus(r) === STATUS.WAIT).length,
       angel: counted().filter(r => effStatus(r) === STATUS.ANGEL).length
     },
-    rows: state.rows
+    rows: rowsForPublish()
   };
 
   let text;

@@ -135,28 +135,9 @@
   const vsToken = () => { try { return localStorage.getItem(VS_KEY) || ''; } catch(e){ return ''; } };
 
   async function loadOverlay(){
-    state.overlay = emptyOverlay();
-    try {
-      const res = await fetch(OVERLAY_PATH + '?_=' + Date.now(), { cache:'no-store' });
-      if (res.ok){
-        const raw = await res.text();
-        const probe = JSON.parse(raw);
-        if (probe && probe.ct && probe.salt && probe.iv){
-          const o = await decryptPayload(teamPw, raw);
-          if (o && o.entries) state.overlay = o;
-        }
-      }
-    } catch(e){
-      /* No notes file yet, or it will not open. Either way the report itself
-         is unaffected, so carry on with an empty set rather than stopping. */
-      state.overlay = emptyOverlay();
-    }
-    /* A notes file left over from last month is set aside, not merged. */
-    if (state.overlay.monthKey && monthKeyNow() && state.overlay.monthKey !== monthKeyNow())
-      state.overlay = emptyOverlay();
+    await attachOverlay(teamPw);
     try { state.whoami = localStorage.getItem(ME_KEY) || ''; } catch(e){}
     state.vsEdit = !!vsToken() && ghCfg().path !== OVERLAY_PATH;
-    applyOverlay();
   }
 
   /* Dirty tracking. The save is explicit rather than automatic: Volunteer
@@ -407,6 +388,7 @@
     $('btnUpdate').style.display = '';
     $('btnSF').style.display = '';
     $('btnVsKey').style.display = '';
+    $('btnSfCheck').style.display = '';
   }
 
   /* Both admin doors, one dialog. The password is the same either way, so the
@@ -427,7 +409,16 @@
         const n = VIEWS.approvals.rows().length;
         return (n ? n + ' member' + (n === 1 ? '' : 's') + ' Volunteer Services could not place. '
                   : 'Nothing is waiting right now. ') +
-               'Approving one puts it on the Logistics list for a box. Nothing is deleted either way.';
+               'You can send a box or decide against one. Nothing is deleted either way.';
+      }
+    },
+    'sfcheck': {
+      title: 'Salesforce checks',
+      body: () => {
+        const n = VIEWS.sfcheck.count();
+        return (n ? n + ' change' + (n === 1 ? '' : 's') + ' still to make in Salesforce. '
+                  : 'Nothing outstanding in Salesforce right now. ') +
+               'This list is only for the people who keep the record straight, which is why it is behind this password.';
       }
     }
   };
@@ -503,6 +494,16 @@
     if (card){
       card.style.display = waiting ? '' : 'none';
       $('r-app').textContent = waiting;
+    }
+
+    /* The Salesforce list is for whoever keeps the record straight. Nobody
+       else sees the tab or the card, even though everyone can see the queue
+       it comes from. */
+    const sfLeft = VIEWS.sfcheck.count();
+    const sfCard = $('roleSf');
+    if (sfCard){
+      sfCard.style.display = (state.canApprove && sfLeft) ? '' : 'none';
+      $('r-sf').textContent = sfLeft;
     }
 
     const who = (state.updatedBy || 'Director of Virtual Services').replace(/^The\s+/i, '');
@@ -597,12 +598,15 @@
     document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('on', t.dataset.view === v));
     renderView();
     paintVsBar();
-    /* The approvals tab is readable by anyone signed in, so the queue is never
-       a secret. The buttons only appear once the admin password is in. This
-       runs before the scroll so nothing can swallow the prompt. */
-    if (v === 'approvals' && !state.canApprove){
-      if (cfg().adminHash) askAdmin('approve', () => { state.canApprove = true; renderView(); paintVsBar(); });
-      else { state.canApprove = true; renderView(); paintVsBar(); }
+    /* The approvals queue is readable by anyone signed in, so no request is
+       ever a secret. The buttons only appear once the admin password is in.
+       The Salesforce list is different: it is only for whoever keeps the
+       record straight, so the tab itself stays hidden until then. Both run
+       before the scroll so nothing can swallow the prompt. */
+    if ((v === 'approvals' || v === 'sfcheck') && !state.canApprove){
+      const open = () => { state.canApprove = true; paint(); paintVsBar(); };
+      if (cfg().adminHash) askAdmin(v === 'sfcheck' ? 'sfcheck' : 'approve', open);
+      else open();
     }
     try { $('views').scrollIntoView({ behavior:'smooth', block:'start' }); } catch(e){}
   }
@@ -622,6 +626,7 @@
   $('btnUpdate').addEventListener('click', () => askAdmin('build.html'));
   $('btnSF').addEventListener('click', () => askAdmin('salesforce.html'));
   $('btnVsKey').addEventListener('click', askVsKey);
+  $('btnSfCheck').addEventListener('click', () => switchTo('sfcheck'));
   $('btnSop').addEventListener('click', () => window.open('sop.html', '_blank'));
   $('btnHistory').addEventListener('click', toggleHistory);
   $('btnCsv').addEventListener('click', exportCsv);

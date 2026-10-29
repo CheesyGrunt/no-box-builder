@@ -100,6 +100,12 @@
     const mk = String(payload.monthKey || '').split('-');
     if (mk.length === 2) state.month = { y:+mk[0], m:+mk[1] - 1 };
 
+    /* Without this the workbook would quietly miss every member the Director
+       approved after Volunteer Services came up empty, and would still include
+       anyone decided against. Those decisions live in the notes file, so it has
+       to be read here too. */
+    try { await attachOverlay(keyFor(typed)); } catch(e){}
+
     $('unlock').style.display = 'none';
     $('content').style.display = '';
     setUp();

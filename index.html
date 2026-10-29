@@ -81,6 +81,7 @@
       <button class="ghost" id="btnHistory" style="display:none">Past months</button>
       <button class="ghost" id="btnVsKey" style="display:none">Volunteer Services key</button>
       <button class="ghost" id="btnUpdate" style="display:none">Update report</button>
+      <button class="ghost" id="btnSfCheck" style="display:none">Salesforce checks</button>
       <button class="ghost" id="btnSF" style="display:none">Salesforce import</button>
       <button class="ghost" id="btnSop">SOP</button>
     </div>
@@ -145,6 +146,11 @@
           <div class="rc" id="r-app">0</div>
           <div class="rd">Volunteer Services came up empty</div>
         </button>
+        <button class="role sf" id="roleSf" data-goto="sfcheck" style="display:none">
+          <div class="rn">Check in Salesforce</div>
+          <div class="rc" id="r-sf">0</div>
+          <div class="rd">decisions not yet in the record</div>
+        </button>
       </div>
 
       <dl class="stats" id="stats2"></dl>
@@ -157,6 +163,7 @@
         <button class="view-tab" data-view="waitlisted">Waitlisted <span class="n" id="n-waitlisted">0</span></button>
         <button class="view-tab" data-view="review">Needs review <span class="n" id="n-review">0</span></button>
         <button class="view-tab" data-view="approvals" style="display:none">Needs approval <span class="n" id="n-approvals">0</span></button>
+        <button class="view-tab" data-view="sfcheck" style="display:none">Check in Salesforce <span class="n" id="n-sfcheck">0</span></button>
         <button class="view-tab" data-view="decisions" style="display:none">Decisions <span class="n" id="n-decisions">0</span></button>
       </div>
       <div class="viewbox">

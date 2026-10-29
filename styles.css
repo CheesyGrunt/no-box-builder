@@ -250,3 +250,11 @@ table.vs input{font-size:12px;padding:4px 6px;width:100%;min-width:0}
 .vsout .note{margin:8px 0 0}
 
 .role.app{border-top-color:var(--gold)}
+
+/* The Salesforce worklist. Outstanding rows read normally, finished ones
+   fade back so the eye lands on what is left. */
+.role.sf{border-top-color:var(--blue)}
+.sfwhat{display:block;font-size:12px;line-height:1.45;margin-top:4px;color:var(--ink-soft)}
+table.vs th:last-child{width:120px}
+tr.sfdone td{background:#F4F6F4!important;color:#7A857C}
+tr.sfdone .sfwhat{color:#8F998F}
