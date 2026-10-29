@@ -264,39 +264,52 @@
     </details>
 
     <details style="margin-top:10px">
-      <summary class="hint" style="cursor:pointer">Set the Volunteer Services password</summary>
-      <div class="note" style="margin-top:12px">
-        <div class="lbl">Three passwords, no tokens to hand out</div>
-        <p>Staff sign in with the <strong>team password</strong> and can read everything. Volunteer Services
-        types a <strong>second password</strong> to log contact and notes and to ask for a box. You keep the
-        <strong>admin password</strong> for approving those asks and for the Salesforce list.</p>
-        <p>Set the middle one here. Generate a second GitHub token the same way as above, named
-        "No Box volunteer services", with the same single repository and the same Contents permission.
-        Paste it below with the password you want Volunteer Services to use. The token is encrypted under
-        that password and published, so the only thing you ever hand out is the password itself. Changing
-        the password later is just doing this again.</p>
-        <p>Use a separate token rather than your own, so revoking their access never touches your publishing.</p>
-      </div>
-      <div class="map" style="display:block;margin-top:12px">
-        <div class="map-row"><label>VS password</label>
-          <input type="text" id="vsPw" placeholder="the password Volunteer Services will type" style="flex:1"></div>
-        <div class="map-row"><label>Their token</label>
-          <input type="password" id="vsTok" placeholder="github_pat_..." style="flex:1"></div>
-      </div>
-      <div class="rowline" style="margin-top:10px">
-        <button class="btn sm gold" id="btnVsKey">Publish the Volunteer Services password</button>
-        <span class="hint">Uses your token above to write it.</span>
-      </div>
-      <div id="vsKeyOut"></div>
-    </details>
-
-    <details style="margin-top:10px">
       <summary class="hint" style="cursor:pointer">Manual fallback, if GitHub is down or the token is expired</summary>
       <div style="margin-top:12px">
         <button class="btn sm out" id="btnPublish">Encrypt and download the file instead</button>
         <p class="hint" style="margin-top:8px">Then upload it into the <code>data</code> folder in GitHub yourself.</p>
       </div>
     </details>
+  </section>
+
+  <!-- A setup step, not reference material, so it gets its own panel rather
+       than hiding inside a disclosure alongside the optional help. -->
+  <section class="panel" id="p6" style="border-left-color:var(--blue)">
+    <div class="eyebrow">Setup &nbsp;·&nbsp; one time, or whenever you change it</div>
+    <h2>Let Volunteer Services log their outreach</h2><div class="h2rule"></div>
+
+    <p>Three passwords, and nothing else to hand out. Staff sign in with the
+    <strong>team password</strong> and can read everything. Volunteer Services types a
+    <strong>second password</strong> to log contact and notes and to recommend sending a box or not.
+    You keep the <strong>admin password</strong> for deciding those and for the Salesforce list.</p>
+
+    <p>Set the middle one here. Generate a second GitHub token the same way as above, named
+    "No Box volunteer services", scoped to this one repository with Contents set to Read and write.
+    Paste it below with the password you want Volunteer Services to use. The token is encrypted
+    under that password and published, so the only thing that ever leaves this screen is the
+    password. Changing it later is just doing this again.</p>
+
+    <div class="note">
+      <div class="lbl">Use a separate token, not your own</div>
+      <p>Revoking their access should never stop you publishing. This refuses your own token
+      for that reason.</p>
+    </div>
+
+    <div class="map" style="display:block;margin-top:14px">
+      <div class="map-row"><label>VS password</label>
+        <input type="text" id="vsPw" placeholder="the password Volunteer Services will type" style="flex:1"></div>
+      <div class="map-row"><label>Their token</label>
+        <input type="password" id="vsTok" placeholder="github_pat_..." style="flex:1"></div>
+    </div>
+    <div class="rowline" style="margin-top:12px">
+      <button class="btn gold" id="btnVsKey">Publish the Volunteer Services password</button>
+      <span class="hint">Writes it using your own token from stage 5.</span>
+    </div>
+    <div id="vsKeyOut"></div>
+
+    <p class="hint" style="margin-top:16px">Once it is published, test it yourself before handing it
+    out: open the staff site, click <strong>Turn on editing</strong>, and sign in with that password
+    and your name.</p>
   </section>
 
   <footer>
