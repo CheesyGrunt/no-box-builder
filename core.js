@@ -101,6 +101,27 @@ function overlayEntry(r, make){
   if (e){ r.vs = e; r.req = e.req || null; }
   return e;
 }
+/* How contact was made. Recorded per note rather than per member, because a
+   member texted on the 26th and called on the 28th has two different answers
+   and the note is where each one belongs. */
+const METHODS = ['Phone', 'Email', 'Text'];
+function latestNote(r){
+  const n = r.vs && r.vs.notes ? r.vs.notes : [];
+  return n.length ? n[n.length - 1] : null;
+}
+/* Older entries kept the method and the name once per member. Read those as a
+   fallback so notes written before this change still show who and how. */
+function contactMethod(r){
+  const n = latestNote(r);
+  if (n && n.m) return n.m;
+  return r.vs ? (r.vs.contact || '') : '';
+}
+function contactWho(r){
+  const n = latestNote(r);
+  if (n && n.by) return n.by;
+  return r.vs ? (r.vs.who || '') : '';
+}
+
 function pendingBox(r){ return !!(r.req && r.req.state === REQ.PENDING); }
 function decidedBox(r){ return !!(r.req && r.req.state === REQ.DECIDED); }
 function outcomeSend(r){ return decidedBox(r) && r.req.outcome === WANT.SEND; }
@@ -481,7 +502,7 @@ const COLS = {
     ['reportBy','Report by Date'],['name','Client'],
     ['engagement','Pending Engagement'],
     ['provider','Provider'],['providerEmail','Provider Email'],
-    ['contactBlock','Contact'],['vsnotes','Notes'],['boxreq','Box?']
+    ['outreach','Contact and notes'],['boxreq','Box?']
   ],
   /* In a file they come apart again, because a spreadsheet wants one fact
      per column. */
@@ -496,8 +517,8 @@ const COLS = {
      argument either way, so it gets the room. */
   approvals: [
     ['name','Client'],['clientId','Client ID'],['reportBy','Report by'],
-    ['engagement','Pending Engagement'],['contactBlock','Contact'],
-    ['vsnotes','What happened'],['wants','Volunteer Services says'],['approve','Your call']
+    ['engagement','Pending Engagement'],
+    ['outreach','What happened'],['wants','Volunteer Services says'],['approve','Your call']
   ],
   /* The bridge to the system of record. Client ID sits second so it is easy
      to copy straight into a Salesforce search. */
@@ -535,7 +556,7 @@ const VIEWS = {
       const drop = [];
       if (!state.rows.some(r => r.engagement)) drop.push('engagement');
       if (!state.vsEdit && !state.rows.some(r => r.vs || r.req))
-        drop.push('contactBlock', 'vsnotes', 'boxreq');
+        drop.push('outreach', 'boxreq');
       return drop.length ? COLS.volunteer.filter(c => drop.indexOf(c[0]) === -1) : COLS.volunteer;
     },
     exportCols: () => {
@@ -605,15 +626,16 @@ function cellVal(r, k){
   if (k === 'pending') return r.pending ? String(r.pending) : '';
   if (k === 'engagement') return r.engagement || '';
   if (k === 'decision') return r.override ? (DECISION_LABEL[r.override] || r.override) : '';
-  if (k === 'contact') return r.vs ? (r.vs.contact || '') : '';
-  if (k === 'who') return r.vs ? (r.vs.who || '') : '';
-  if (k === 'contactBlock'){
-    const a = cellVal(r, 'contact'), b = cellVal(r, 'who');
-    return [a, b].filter(Boolean).join(' · ');
-  }
-  if (k === 'vsnotes'){
+  if (k === 'contact') return contactMethod(r);
+  if (k === 'who') return contactWho(r);
+  /* One cell on screen, and the same thing in a file: every attempt, how it
+     was made, by whom, in order. */
+  if (k === 'vsnotes' || k === 'outreach'){
     const n = r.vs && r.vs.notes ? r.vs.notes : [];
-    return n.map(x => (x.by ? x.by + ': ' : '') + x.t).join(' · ');
+    return n.map(x => {
+      const head = [x.m, x.by].filter(Boolean).join(' ');
+      return (head ? head + ': ' : '') + x.t;
+    }).join(' · ');
   }
   if (k === 'wants') return r.req && r.req.want ? WANT_LABEL[r.req.want] : '';
   if (k === 'sfaction') return sfAction(r);
@@ -757,37 +779,31 @@ function renderView(){
       }
 
       /* ---- Volunteer Services cells ---- */
-      if (c[0] === 'contactBlock' || c[0] === 'vsnotes' || c[0] === 'boxreq' || c[0] === 'wants'){
+      if (c[0] === 'outreach' || c[0] === 'boxreq' || c[0] === 'wants'){
         const idx = state.rows.indexOf(r);
         const esc = s => String(s == null ? '' : s)
           .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 
-        /* How they were reached, and who reached them. Two boxes, one cell. */
-        if (c[0] === 'contactBlock'){
-          if (state.vsEdit){
-            val = `<div class="ctgrid">` +
-              `<input class="vsfix" data-row="${idx}" data-f="contact" value="${esc(r.vs ? r.vs.contact : '')}" placeholder="how, e.g. text 10/28">` +
-              `<input class="vsfix" data-row="${idx}" data-f="who" value="${esc(r.vs ? r.vs.who : '')}" placeholder="who made contact">` +
-            `</div>`;
-          } else {
-            const a = esc(cellVal(r, 'contact')), b = esc(cellVal(r, 'who'));
-            val = (a ? '<span class="ctm">' + a + '</span>' : '') +
-                  (b ? '<span class="ctw">' + b + '</span>' : '');
-          }
-          return `<td data-l="${c[1]}">${val}</td>`;
-        }
-
-        if (c[0] === 'vsnotes'){
+        /* Every attempt in one cell: how it was made, who made it, what came
+           of it. Three boxes rather than four spread over two columns, and the
+           name is asked once instead of twice. */
+        if (c[0] === 'outreach'){
           const notes = (r.vs && r.vs.notes) ? r.vs.notes : [];
-          const log = notes.map(n =>
-            `<span class="nlog"><b>${esc(n.by || 'Volunteer Services')}</b> ${esc(n.t)}` +
-            `<i>${n.at ? new Date(n.at).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : ''}</i></span>`
-          ).join('');
-          /* Each note is signed where it is typed, so a second person picking
-             the member up does not get recorded as the first. */
+          const log = notes.map(n => {
+            const tag = n.m ? `<em>${esc(n.m)}</em>` : '';
+            return `<span class="nlog">${tag}<b>${esc(n.by || 'Volunteer Services')}</b> ${esc(n.t)}` +
+              `<i>${n.at ? new Date(n.at).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : ''}</i></span>`;
+          }).join('');
+          /* Each note carries its own method and name, so a member texted on
+             Monday and called on Wednesday reads correctly, and a second
+             person picking them up is not recorded as the first. */
           val = `<div class="notecell">${log ? '<div class="notelog">' + log + '</div>' : ''}` +
             (state.vsEdit
               ? `<div class="noteadd">` +
+                `<select class="vsmethod" data-row="${idx}">` +
+                  `<option value="">How?</option>` +
+                  METHODS.map(m => `<option value="${m}">${m}</option>`).join('') +
+                `</select>` +
                 `<input class="vsby" data-row="${idx}" value="${esc(state.whoami)}" placeholder="your name">` +
                 `<input class="vsnote" data-row="${idx}" placeholder="${notes.length ? 'Add another note' : 'What happened'}">` +
                 `</div>`
@@ -928,19 +944,6 @@ function renderView(){
   const touched = () => { if (typeof window.onOverlayChange === 'function') window.onOverlayChange(); };
 
   if (state.vsEdit){
-    t.querySelectorAll('.vsfix').forEach(inp => {
-      inp.addEventListener('change', () => {
-        const row = state.rows[+inp.dataset.row];
-        if (!row) return;
-        const e = overlayEntry(row, true);
-        if (!e) return;
-        e[inp.dataset.f] = inp.value.trim();     // contact, or who made it
-        e.contactAt = new Date().toISOString();
-        touched();
-      });
-      inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); });
-    });
-
     /* Notes append. Nothing typed here ever overwrites what somebody else
        wrote, which is why the box empties instead of holding the last note.
        The name beside it signs that one note and becomes the default for the
@@ -952,7 +955,9 @@ function renderView(){
         if (!row || !txt) return;
         const cell = inp.closest('.noteadd');
         const nameBox = cell ? cell.querySelector('.vsby') : null;
+        const methodBox = cell ? cell.querySelector('.vsmethod') : null;
         const by = (nameBox && nameBox.value.trim()) || state.whoami || 'Volunteer Services';
+        const m = methodBox ? methodBox.value : '';
         if (by && by !== state.whoami){
           state.whoami = by;
           if (typeof window.onWhoChange === 'function') window.onWhoChange(by);
@@ -960,10 +965,7 @@ function renderView(){
         const e = overlayEntry(row, true);
         if (!e) return;
         e.notes = e.notes || [];
-        e.notes.push({ t: txt, by: by, at: new Date().toISOString() });
-        /* Whoever logged the last note is who is working the member, unless
-           somebody has already said otherwise. */
-        if (!e.who) e.who = by;
+        e.notes.push({ t: txt, by: by, m: m, at: new Date().toISOString() });
         inp.value = '';
         renderView();
         touched();
