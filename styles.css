@@ -201,16 +201,27 @@ a{color:var(--maroon)}
 
 /* A row somebody has asked about, but nobody has decided on yet. */
 tr.asked td{background:#FFF8E1!important}
+tr.decided-no td{background:#F0EEE9!important;color:#6B645B}
+tr.decided-no{border-left-color:#B3AB9C}
 tr.asked{border-left-color:var(--gold)}
 
 /* The outreach tabs carry sentences, not codes, so they wrap. */
 table.vs{table-layout:fixed;width:100%;font-size:12.5px}
 table.vs th,table.vs td{white-space:normal;word-break:break-word;padding:7px 8px;vertical-align:top}
 table.vs .tag{white-space:normal;display:inline-block;margin-bottom:2px}
-table.vs th:nth-child(1){width:92px}
+table.vs th:nth-child(1){width:88px}
+table.vs select.vsbox{width:100%;font-size:11.5px;padding:4px 5px}
 table.vs input{font-size:12px;padding:4px 6px;width:100%;min-width:0}
 
+/* How they were reached, and who reached them. */
+.ctgrid{display:flex;flex-direction:column;gap:4px;min-width:118px}
+.ctm{display:block;font-size:12px}
+.ctw{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;
+  color:var(--ink-soft);margin-top:2px}
+
 .notecell{display:flex;flex-direction:column;gap:5px;min-width:150px}
+.noteadd{display:flex;flex-direction:column;gap:4px}
+.noteadd .vsby{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em}
 .notelog{display:flex;flex-direction:column;gap:3px}
 .nlog{display:block;font-size:12px;line-height:1.45;padding-left:8px;
   border-left:2px solid var(--rule);color:var(--ink)}

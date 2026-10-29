@@ -167,17 +167,35 @@
     paint();            // paint ends by refreshing the save bar
   };
 
+  /* Somebody typed a different name beside a note. That becomes the default
+     for the rest of their session, so they type it once. */
+  window.onWhoChange = function(name){
+    try { localStorage.setItem(ME_KEY, name); } catch(e){}
+  };
+
   function paintVsBar(){
     const bar = $('vsbar');
     if (!bar) return;
-    /* Unsaved work keeps the bar on screen whatever tab you are on. Approving
+    /* Unsaved work keeps the bar on screen whatever tab you are on. Deciding
        the last request empties the approvals tab, which bounces you back to
        the full list, and the Save button must not leave with it. */
-    const show = overlayDirty > 0 ||
-      ((state.view === 'volunteer' || state.view === 'approvals') && (state.vsEdit || state.canApprove));
+    const onVsTab = state.view === 'volunteer' || state.view === 'approvals';
+    const show = overlayDirty > 0 || onVsTab;
     bar.style.display = show ? '' : 'none';
     if (!show) return;
-    const who = state.whoami || 'not set';
+
+    /* Without the key the tab is a list, not a worksheet. Saying so beats
+       leaving somebody hunting for a text box that is not there. */
+    if (!state.vsEdit && !state.canApprove && !overlayDirty){
+      bar.innerHTML =
+        '<span class="vsnag">Editing is off.</span>' +
+        '<span class="hint">You can read everything here. To log contact and notes, or to ask for a box, ' +
+        'turn on editing with the key from the Director of Virtual Services.</span>' +
+        '<button class="btn sm gold" id="vsOn">Turn on editing</button>';
+      $('vsOn').addEventListener('click', askVsKey);
+      return;
+    }
+    const who = state.whoami || 'click to set your name';
     bar.innerHTML =
       '<div class="vswho"><span class="lb">Working as</span>' +
         '<button class="linky" id="vsWho">' + who + '</button></div>' +
@@ -489,20 +507,26 @@
 
     const who = (state.updatedBy || 'Director of Virtual Services').replace(/^The\s+/i, '');
     const settled = state.rows.filter(isSettled).length;
-    const approved = counted().filter(approvedForBox).length;
+    const added = counted().filter(outcomeSend).length;
+    const skipped = counted().filter(outcomeNoSend).length;
+    const n = (k, s, p) => k + ' member' + (k === 1 ? ' ' + s : 's ' + p);
 
     let alerts = '';
     if (waiting){
       alerts += msg('warn', 'Waiting on the Director',
-        waiting + ' member' + (waiting === 1 ? '' : 's') + ' Volunteer Services could not place ' +
-        (waiting === 1 ? 'is' : 'are') + ' waiting on a decision. ' +
-        'Until then ' + (waiting === 1 ? 'it is' : 'they are') + ' not on the Logistics list.');
+        n(waiting, 'is', 'are') + ' waiting on a decision from Volunteer Services. ' +
+        'Nothing moves either way until that call is made.');
     }
-    if (approved){
+    if (added){
       alerts += msg('', 'Added after outreach',
-        approved + ' member' + (approved === 1 ? '' : 's') + ' moved onto the Logistics list after ' +
-        'Volunteer Services came up empty and the Director approved a box. ' +
-        'They are still on the Volunteer Services tab with the full history against them.');
+        n(added, 'was', 'were') + ' put on the Logistics list after Volunteer Services came up ' +
+        'empty and the Director approved a box. They are still on the Volunteer Services tab ' +
+        'with the full history against them.');
+    }
+    if (skipped){
+      alerts += msg('', 'Deliberately not sent',
+        n(skipped, 'was', 'were') + ' looked at and left off the Logistics list on purpose. ' +
+        'The reason is on the Volunteer Services tab, so nobody has to ask why later.');
     }
     if (settled){
       alerts += msg('', 'Reviewed', 'The ' + who + ' has reviewed everything annotated under Needs review. ' +

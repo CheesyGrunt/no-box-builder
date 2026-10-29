@@ -42,12 +42,15 @@ const OVERLAY_PATH = 'data/requests.enc';
 /* Who signs off on a box request. Whoever holds the admin password is acting
    in this role, so it is the role that gets recorded against the decision. */
 const APPROVER_ROLE = 'Director of Virtual Services';
-const REQ = { PENDING:'pending', APPROVED:'approved', DECLINED:'declined' };
-const REQ_LABEL = {
-  pending:  'Box requested',
-  approved: 'Approved, on Logistics',
-  declined: 'Not approved'
-};
+
+/* A request has two halves: what Volunteer Services recommends, and what the
+   Director decides. Keeping them apart means the record shows both, including
+   the times the Director went the other way. */
+const REQ = { PENDING:'pending', DECIDED:'decided' };
+const WANT = { SEND:'send', NOSEND:'nosend' };
+const WANT_LABEL  = { send:'Send a box', nosend:'Do not send a box' };
+const WANT_SHORT  = { send:'Box requested', nosend:'Asked to skip' };
+const OUT_LABEL   = { send:'Approved, on Logistics', nosend:'Agreed, no box' };
 
 function monthKeyNow(){
   return state.month ? state.month.y + '-' + String(state.month.m + 1).padStart(2, '0') : '';
@@ -69,22 +72,36 @@ function applyOverlay(){
     const e = o.entries[rowId(r)];
     if (!e) return;
     r.vs = e;
-    r.req = e.req || null;
+    r.req = normaliseReq(e.req);
+    e.req = r.req;
   });
+}
+/* Requests written before the recommendation had two directions carried a bare
+   state. Read them as a request for a box, which is what they meant. */
+function normaliseReq(q){
+  if (!q) return null;
+  if (q.want || q.outcome) return q;
+  if (q.state === 'approved') return Object.assign({}, q, { want:WANT.SEND, state:REQ.DECIDED, outcome:WANT.SEND });
+  if (q.state === 'declined') return Object.assign({}, q, { want:WANT.SEND, state:REQ.DECIDED, outcome:WANT.NOSEND });
+  return Object.assign({}, q, { want:WANT.SEND, state:REQ.PENDING });
 }
 function overlayEntry(r, make){
   if (!state.overlay) return null;
   const id = rowId(r);
   if (!id) return null;
   if (!state.overlay.entries[id] && make)
-    state.overlay.entries[id] = { contact:'', contactAt:'', notes:[], req:null };
+    state.overlay.entries[id] = { contact:'', who:'', contactAt:'', notes:[], req:null };
   const e = state.overlay.entries[id] || null;
   if (e){ r.vs = e; r.req = e.req || null; }
   return e;
 }
-function approvedForBox(r){ return !!(r.req && r.req.state === REQ.APPROVED); }
 function pendingBox(r){ return !!(r.req && r.req.state === REQ.PENDING); }
-function declinedBox(r){ return !!(r.req && r.req.state === REQ.DECLINED); }
+function decidedBox(r){ return !!(r.req && r.req.state === REQ.DECIDED); }
+function outcomeSend(r){ return decidedBox(r) && r.req.outcome === WANT.SEND; }
+function outcomeNoSend(r){ return decidedBox(r) && r.req.outcome === WANT.NOSEND; }
+/* The Director went against what was recommended. Worth showing, because
+   Volunteer Services should not have to wonder what happened to their ask. */
+function overruled(r){ return decidedBox(r) && r.req.want && r.req.outcome !== r.req.want; }
 
 /* Two people can have the list open at once. Rather than let the second save
    wipe the first, the remote file is re-read and merged entry by entry: notes
@@ -111,7 +128,8 @@ function mergeOverlays(a, b){
       req = dy > dx ? ry : dx > dy ? rx : (String(ry.at || '') >= String(rx.at || '') ? ry : rx);
     } else req = ry || rx || null;
     out.entries[id] = {
-      contact:   yNewer ? (y.contact || x.contact || '') : (x.contact || ''),
+      contact:   yNewer ? (y.contact || x.contact || '') : (x.contact || y.contact || ''),
+      who:       yNewer ? (y.who || x.who || '')         : (x.who || y.who || ''),
       contactAt: yNewer ? (y.contactAt || x.contactAt || '') : (x.contactAt || ''),
       notes: notes,
       req: req
@@ -173,11 +191,11 @@ function applyEdit(row, field, raw){
 }
 
 function effStatus(r){
-  /* An approved box request outranks everything else. Volunteer Services
-     worked the member, nobody picked them up, and the Director signed off, so
-     from here on they are a box. They stay on the Volunteer Services tab with
-     the approval shown against them, so the outreach history is not lost. */
-  if (approvedForBox(r)) return STATUS.SEND;
+  /* A decision to send outranks everything else. Volunteer Services worked the
+     member, nobody picked them up, and the Director signed off, so from here on
+     they are a box. They stay on the Volunteer Services tab with the decision
+     shown against them, so the outreach history is not lost. */
+  if (outcomeSend(r)) return STATUS.SEND;
   if (r.override === 'angel') return STATUS.ANGEL;
   if (r.override === 'waitlist') return STATUS.WAIT;
   return r.status;
@@ -196,7 +214,11 @@ function heldBack(r){
    nothing to print on the label. */
 function shippable(r){
   if (excluded(r)) return false;
-  if (approvedForBox(r)) return !!r.addr1;
+  /* A decision not to send pulls the member off the Logistics list whatever
+     their status was. That covers the member who moved, who already got one
+     another way, or who Volunteer Services placed at the last minute. */
+  if (outcomeNoSend(r)) return false;
+  if (outcomeSend(r)) return !!r.addr1;
   return effStatus(r) === STATUS.SEND && !heldBack(r);
 }
 /* Still open: flagged, and nobody has said what to do about it yet. A row with
@@ -394,18 +416,29 @@ const COLS = {
     ['street','Mailing Address Line 1'],
     ['city','Mailing City'],['state','State/Province'],['zip','Zip/Postal Code']
   ],
+  /* On screen, how the member was contacted and who did it share one cell, so
+     nine columns of outreach still fit without scrolling sideways. */
   volunteer: [
     ['reportBy','Report by Date'],['name','Client'],
     ['engagement','Pending Engagement'],
     ['provider','Provider'],['providerEmail','Provider Email'],
-    ['contact','Contact Method'],['vsnotes','Notes'],['boxreq','Box?']
+    ['contactBlock','Contact'],['vsnotes','Notes'],['boxreq','Box?']
+  ],
+  /* In a file they come apart again, because a spreadsheet wants one fact
+     per column. */
+  volunteerExport: [
+    ['reportBy','Report by Date'],['name','Client'],
+    ['engagement','Pending Engagement'],
+    ['provider','Provider'],['providerEmail','Provider Email'],
+    ['contact','Contact Method'],['who','Contacted by'],
+    ['vsnotes','Notes'],['boxreq','Box?'],['decidedBy','Decided by']
   ],
   /* What the Director sees when signing off. The note trail is the whole
-     argument for the box, so it gets the room. */
+     argument either way, so it gets the room. */
   approvals: [
     ['name','Client'],['clientId','Client ID'],['reportBy','Report by'],
-    ['engagement','Pending Engagement'],['contact','Contact Method'],
-    ['vsnotes','Why Volunteer Services asked'],['approve','Decision']
+    ['engagement','Pending Engagement'],['contactBlock','Contact'],
+    ['vsnotes','What happened'],['wants','Volunteer Services says'],['approve','Your call']
   ],
   waitlisted: [
     ['name','Client Name'],['clientId','Client ID'],['mailStop','Mail Stop Date'],['reportBy','Report by Date']
@@ -425,7 +458,7 @@ const VIEWS = {
   },
   volunteer: {
     title:'Volunteer Services: reach out',
-    desc:'These members have a service delivery this month and are waiting on an Angel to make contact. Soonest Report by Date first, so the top of the list is the most urgent. Pending Engagement is the open engagement that the Report by Date belongs to. Log what you tried under Contact Method and Notes. If nobody picks a member up, tick Box? to send them to the Director, who decides whether they go to Logistics.',
+    desc:'These members have a service delivery this month and are waiting on an Angel to make contact. Soonest Report by Date first, so the top of the list is the most urgent. Pending Engagement is the open engagement that the Report by Date belongs to. Under Contact log how you reached them and who made contact, and add a note for each thing you tried. When you know the answer, set Box? to either send a box or do not send a box. Both go to the Director for a decision, and neither moves anybody on its own.',
     /* Columns earn their place. Pending Engagement only appears once a run has
        produced it, and the three outreach columns only once there is something
        in them, or once this browser can actually type into them. That keeps the
@@ -434,8 +467,15 @@ const VIEWS = {
       const drop = [];
       if (!state.rows.some(r => r.engagement)) drop.push('engagement');
       if (!state.vsEdit && !state.rows.some(r => r.vs || r.req))
-        drop.push('contact', 'vsnotes', 'boxreq');
+        drop.push('contactBlock', 'vsnotes', 'boxreq');
       return drop.length ? COLS.volunteer.filter(c => drop.indexOf(c[0]) === -1) : COLS.volunteer;
+    },
+    exportCols: () => {
+      const drop = [];
+      if (!state.rows.some(r => r.engagement)) drop.push('engagement');
+      if (!state.rows.some(r => r.vs || r.req)) drop.push('contact','who','vsnotes','boxreq','decidedBy');
+      else if (!state.rows.some(r => decidedBox(r))) drop.push('decidedBy');
+      return drop.length ? COLS.volunteerExport.filter(c => drop.indexOf(c[0]) === -1) : COLS.volunteerExport;
     },
     sort:'reportBy',
     /* Approved members have become boxes, but they stay here. Their outreach
@@ -445,7 +485,7 @@ const VIEWS = {
   },
   approvals: {
     title:'Waiting on your approval',
-    desc:'Volunteer Services worked these members and nobody picked them up. Approving one moves it onto the Logistics list for a box. Nothing is deleted either way: the member stays on the Volunteer Services tab with the decision and the full note trail against them.',
+    desc:'Volunteer Services has worked these members and is telling you what they think should happen. Their recommendation is in the Volunteer Services says column, with the notes behind it. You can go either way: sending a box puts the member on the Logistics list, not sending leaves them off it and records that the call was made deliberately. Nothing is deleted either way. The member stays on the Volunteer Services tab with the full history, and a decision that went against the recommendation says so.',
     cols: COLS.approvals, exportCols: COLS.approvals, hideWhenEmpty:true,
     sort:'reportBy',
     rows: () => counted().filter(pendingBox)
@@ -487,18 +527,29 @@ function cellVal(r, k){
   if (k === 'engagement') return r.engagement || '';
   if (k === 'decision') return r.override ? (DECISION_LABEL[r.override] || r.override) : '';
   if (k === 'contact') return r.vs ? (r.vs.contact || '') : '';
+  if (k === 'who') return r.vs ? (r.vs.who || '') : '';
+  if (k === 'contactBlock'){
+    const a = cellVal(r, 'contact'), b = cellVal(r, 'who');
+    return [a, b].filter(Boolean).join(' · ');
+  }
   if (k === 'vsnotes'){
     const n = r.vs && r.vs.notes ? r.vs.notes : [];
-    return n.map(x => x.t).join(' · ');
+    return n.map(x => (x.by ? x.by + ': ' : '') + x.t).join(' · ');
   }
-  if (k === 'boxreq' || k === 'approve') return r.req ? (REQ_LABEL[r.req.state] || r.req.state) : '';
+  if (k === 'wants') return r.req && r.req.want ? WANT_LABEL[r.req.want] : '';
+  if (k === 'decidedBy') return r.req && r.req.decidedBy ? r.req.decidedBy : '';
+  if (k === 'boxreq' || k === 'approve'){
+    if (!r.req) return '';
+    if (r.req.state === REQ.PENDING) return WANT_SHORT[r.req.want] || 'Sent to the Director';
+    return (OUT_LABEL[r.req.outcome] || '') + (overruled(r) ? ', against what was asked' : '');
+  }
   if (k === 'review'){
     /* A row taken out of the counts says so and nothing else. The original
        flag is no longer the useful fact about it. */
     if (excluded(r)) return r.override === 'passedmsd' ? 'Passed MSD, not counted' : 'Not counted';
     /* On the Logistics list, why a member is here matters more than what was
        once wrong with their address. An approved request says so plainly. */
-    if (approvedForBox(r)){
+    if (outcomeSend(r)){
       const who = (r.req.decidedBy || 'the Director of Virtual Services').replace(/^The\s+/i, '');
       const t = ['Approved by ' + who];
       if (!r.addr1) t.push('No address');
@@ -571,7 +622,8 @@ function renderView(){
   t.querySelector('tbody').innerHTML = rows.map(r => {
     let cls = '';
     if (excluded(r)) cls = 'excluded';
-    else if (approvedForBox(r)) cls = 'decided';
+    else if (outcomeSend(r)) cls = 'decided';
+    else if (outcomeNoSend(r)) cls = 'decided-no';
     else if (pendingBox(r)) cls = 'asked';
     else if (r.override === 'hold') cls = 'decided-hold';
     else if (r.override) cls = 'decided';
@@ -597,15 +649,23 @@ function renderView(){
       }
 
       /* ---- Volunteer Services cells ---- */
-      if (c[0] === 'contact' || c[0] === 'vsnotes' || c[0] === 'boxreq'){
+      if (c[0] === 'contactBlock' || c[0] === 'vsnotes' || c[0] === 'boxreq' || c[0] === 'wants'){
         const idx = state.rows.indexOf(r);
         const esc = s => String(s == null ? '' : s)
           .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 
-        if (c[0] === 'contact'){
-          val = state.vsEdit
-            ? `<input class="vsfix" data-row="${idx}" data-f="contact" value="${esc(r.vs ? r.vs.contact : '')}" placeholder="text 10/28">`
-            : esc(val);
+        /* How they were reached, and who reached them. Two boxes, one cell. */
+        if (c[0] === 'contactBlock'){
+          if (state.vsEdit){
+            val = `<div class="ctgrid">` +
+              `<input class="vsfix" data-row="${idx}" data-f="contact" value="${esc(r.vs ? r.vs.contact : '')}" placeholder="how, e.g. text 10/28">` +
+              `<input class="vsfix" data-row="${idx}" data-f="who" value="${esc(r.vs ? r.vs.who : '')}" placeholder="who made contact">` +
+            `</div>`;
+          } else {
+            const a = esc(cellVal(r, 'contact')), b = esc(cellVal(r, 'who'));
+            val = (a ? '<span class="ctm">' + a + '</span>' : '') +
+                  (b ? '<span class="ctw">' + b + '</span>' : '');
+          }
           return `<td data-l="${c[1]}">${val}</td>`;
         }
 
@@ -615,26 +675,43 @@ function renderView(){
             `<span class="nlog"><b>${esc(n.by || 'Volunteer Services')}</b> ${esc(n.t)}` +
             `<i>${n.at ? new Date(n.at).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : ''}</i></span>`
           ).join('');
+          /* Each note is signed where it is typed, so a second person picking
+             the member up does not get recorded as the first. */
           val = `<div class="notecell">${log ? '<div class="notelog">' + log + '</div>' : ''}` +
             (state.vsEdit
-              ? `<input class="vsnote" data-row="${idx}" placeholder="${notes.length ? 'Add another note' : 'Add a note'}">`
+              ? `<div class="noteadd">` +
+                `<input class="vsby" data-row="${idx}" value="${esc(state.whoami)}" placeholder="your name">` +
+                `<input class="vsnote" data-row="${idx}" placeholder="${notes.length ? 'Add another note' : 'What happened'}">` +
+                `</div>`
               : '') + `</div>`;
           return `<td data-l="${c[1]}">${val}</td>`;
         }
 
-        /* Box? Volunteer Services can raise a request and take it back while it
-           is still pending. Once the Director has decided, the cell reports the
-           decision and stops being a control. */
-        const st = r.req ? r.req.state : '';
-        if (st === REQ.APPROVED || st === REQ.DECLINED){
-          val = `<span class="tag ${st === REQ.APPROVED ? 'send' : 'grey'}">${REQ_LABEL[st]}</span>`;
-          if (r.req.decidedBy) val += `<span class="nby">${esc(String(r.req.decidedBy).replace(/^The\s+/i,''))}</span>`;
+        /* What Volunteer Services recommends, read only, for the Director's tab. */
+        if (c[0] === 'wants'){
+          const w = r.req && r.req.want;
+          val = w ? `<span class="tag ${w === WANT.SEND ? 'gold' : 'grey'}">${WANT_LABEL[w]}</span>` : '';
+          if (r.req && r.req.by) val += `<span class="nby">asked by ${esc(r.req.by)}</span>`;
+          return `<td data-l="${c[1]}">${val}</td>`;
+        }
+
+        /* Box? A recommendation either way, and either way it goes to the
+           Director. Volunteer Services can change their mind right up until
+           he decides, after which the cell reports the decision instead. */
+        const q = r.req;
+        if (q && q.state === REQ.DECIDED){
+          val = `<span class="tag ${q.outcome === WANT.SEND ? 'send' : 'grey'}">${esc(OUT_LABEL[q.outcome] || '')}</span>`;
+          if (overruled(r)) val += `<span class="tag red">Against what was asked</span>`;
+          if (q.decidedBy) val += `<span class="nby">${esc(String(q.decidedBy).replace(/^The\s+/i,''))}</span>`;
         } else if (state.vsEdit){
-          val = `<label class="boxask"><input type="checkbox" class="vsbox" data-row="${idx}"` +
-                (st === REQ.PENDING ? ' checked' : '') + `> ` +
-                (st === REQ.PENDING ? 'Sent to the Director' : 'Needs a box') + `</label>`;
+          const cur = q ? q.want : '';
+          val = `<select class="vsbox" data-row="${idx}">` +
+            [['','No recommendation'], [WANT.SEND, WANT_LABEL.send], [WANT.NOSEND, WANT_LABEL.nosend]]
+              .map(o => `<option value="${o[0]}"${cur === o[0] ? ' selected' : ''}>${o[1]}</option>`).join('') +
+            `</select>` +
+            (q ? `<span class="nby">waiting on the Director</span>` : '');
         } else {
-          val = st === REQ.PENDING ? `<span class="tag gold">${REQ_LABEL[st]}</span>` : '';
+          val = q ? `<span class="tag gold">${esc(WANT_SHORT[q.want] || '')}</span>` : '';
         }
         return `<td data-l="${c[1]}">${val}</td>`;
       }
@@ -644,8 +721,8 @@ function renderView(){
         const idx = state.rows.indexOf(r);
         val = state.canApprove
           ? `<div class="apact">` +
-            `<button class="btn sm gold apyes" data-row="${idx}">Approve, send a box</button>` +
-            `<button class="btn sm out apno" data-row="${idx}">Not this month</button></div>`
+            `<button class="btn sm gold apyes" data-row="${idx}">Send a box</button>` +
+            `<button class="btn sm out apno" data-row="${idx}">Do not send</button></div>`
           : `<span class="hint">Unlock with the admin password to decide.</span>`;
         return `<td data-l="${c[1]}">${val}</td>`;
       }
@@ -726,7 +803,7 @@ function renderView(){
         if (!row) return;
         const e = overlayEntry(row, true);
         if (!e) return;
-        e.contact = inp.value.trim();
+        e[inp.dataset.f] = inp.value.trim();     // contact, or who made it
         e.contactAt = new Date().toISOString();
         touched();
       });
@@ -734,16 +811,28 @@ function renderView(){
     });
 
     /* Notes append. Nothing typed here ever overwrites what somebody else
-       wrote, which is why the box empties instead of holding the last note. */
+       wrote, which is why the box empties instead of holding the last note.
+       The name beside it signs that one note and becomes the default for the
+       next, so a person only types it once. */
     t.querySelectorAll('.vsnote').forEach(inp => {
       const commit = () => {
         const row = state.rows[+inp.dataset.row];
         const txt = inp.value.trim();
         if (!row || !txt) return;
+        const cell = inp.closest('.noteadd');
+        const nameBox = cell ? cell.querySelector('.vsby') : null;
+        const by = (nameBox && nameBox.value.trim()) || state.whoami || 'Volunteer Services';
+        if (by && by !== state.whoami){
+          state.whoami = by;
+          if (typeof window.onWhoChange === 'function') window.onWhoChange(by);
+        }
         const e = overlayEntry(row, true);
         if (!e) return;
         e.notes = e.notes || [];
-        e.notes.push({ t: txt, by: state.whoami || 'Volunteer Services', at: new Date().toISOString() });
+        e.notes.push({ t: txt, by: by, at: new Date().toISOString() });
+        /* Whoever logged the last note is who is working the member, unless
+           somebody has already said otherwise. */
+        if (!e.who) e.who = by;
         inp.value = '';
         renderView();
         touched();
@@ -752,14 +841,17 @@ function renderView(){
       inp.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); commit(); } });
     });
 
-    t.querySelectorAll('.vsbox').forEach(box => {
-      box.addEventListener('change', () => {
-        const row = state.rows[+box.dataset.row];
+    /* Send a box, or do not send a box. Either one is a recommendation, and
+       either one goes to the Director. Neither moves anybody on its own. */
+    t.querySelectorAll('select.vsbox').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const row = state.rows[+sel.dataset.row];
         if (!row) return;
         const e = overlayEntry(row, true);
         if (!e) return;
-        e.req = box.checked
-          ? { state: REQ.PENDING, by: state.whoami || 'Volunteer Services', at: new Date().toISOString() }
+        e.req = sel.value
+          ? { want: sel.value, state: REQ.PENDING,
+              by: state.whoami || 'Volunteer Services', at: new Date().toISOString() }
           : null;
         row.req = e.req;
         renderView();
@@ -769,20 +861,22 @@ function renderView(){
   }
 
   if (state.canApprove){
-    const decide = (idx, yes) => {
+    const decide = (idx, send) => {
       const row = state.rows[idx];
       if (!row) return;
       const e = overlayEntry(row, true);
       if (!e || !e.req) return;
-      /* The request itself is kept. The decision is recorded beside it, so the
-         row still says who asked, when, and on the back of which notes. */
-      /* The note author signs their own name. A decision is signed by the role
-         that holds the admin password, because Logistics needs to know the box
-         was authorised, not who happened to be at the keyboard. This is a
-         constant rather than whoever published the month: publishing the report
-         and approving a box are two different acts by two possible people. */
+      /* The request itself is kept, so the row still says who asked, for what,
+         when, and on the back of which notes. What was asked for sits alongside
+         the outcome, so a decision that went the other way stays visible rather
+         than being silently rewritten.
+
+         A note is signed by its author. A decision is signed by the role that
+         holds the admin password, because Logistics needs to know the box was
+         authorised, not who happened to be at the keyboard. */
       e.req = Object.assign({}, e.req, {
-        state: yes ? REQ.APPROVED : REQ.DECLINED,
+        state: REQ.DECIDED,
+        outcome: send ? WANT.SEND : WANT.NOSEND,
         decidedBy: APPROVER_ROLE,
         decidedAt: new Date().toISOString()
       });
