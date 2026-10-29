@@ -358,8 +358,11 @@
     const when = nx ? nx.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : '';
     box.innerHTML =
       (when ? '<span class="nx">Next run &nbsp;<b>' + when + '</b></span>' : '') +
-      'This report is run on the 15th, the 20th, the 25th, the 27th, and the last day of the month. ' +
-      'The final run happens on the 1st, to show the previous month closed out. ' +
+      '<strong>This report is run on the 15th, the 20th, the 25th, the 27th, and the last day of the month.</strong> ' +
+      'No changes are made after the 27th. Volunteer Services has the 25th and the 26th to make contact, ' +
+      'which gives a member 24 hours to come back. If nobody hears from them, they go onto the box list ' +
+      'automatically, and the final report is pulled on the 27th or the next business day after it. ' +
+      'The run on the 1st closes out the month just gone. ' +
       'Every run lands on a business day, so any of those dates falling on a weekend moves to the following business day.';
   }
 
