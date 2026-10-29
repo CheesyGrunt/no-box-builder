@@ -68,6 +68,8 @@
     const mk = String(payload.monthKey || '').split('-');
     if (mk.length === 2) state.month = { y:+mk[0], m:+mk[1] - 1 };
 
+    await loadOverlay();
+
     state.updatedBy = payload.updatedBy || '';
     state.stats = payload.stats || null;
     if (state.stats && state.stats.coverage != null){
@@ -114,6 +116,206 @@
     setAdmin(gen);
   }
 
+  /* ============================================================
+     Volunteer Services notes and box requests.
+
+     Read by everyone who can sign in. Written only by someone holding the
+     Volunteer Services key, and only ever to data/requests.enc. If any of
+     this fails, the page falls back to the plain published list rather than
+     showing an error over the top of the report.
+     ============================================================ */
+  /* Both live in sessionStorage, not localStorage, on purpose. Closing the
+     browser ends the shift: the next person to open the page on a shared
+     computer types their own password and their own name, rather than
+     inheriting somebody else's and signing notes with it. */
+  const VS_KEY = 'nobox-vs-token';
+  const ME_KEY = 'nobox-vs-name';
+  let overlayDirty = 0, overlayBusy = false;
+
+  const ghCfg = () => {
+    const g = (cfg().github || {});
+    return { owner:g.owner || '', repo:g.repo || '', branch:g.branch || 'main', path:g.path || 'data/latest.enc' };
+  };
+  const vsToken = () => { try { return sessionStorage.getItem(VS_KEY) || ''; } catch(e){ return ''; } };
+
+  async function loadOverlay(){
+    await attachOverlay(teamPw);
+    try { state.whoami = sessionStorage.getItem(ME_KEY) || ''; } catch(e){}
+    state.vsEdit = !!vsToken() && ghCfg().path !== OVERLAY_PATH;
+  }
+
+  /* Dirty tracking. The save is explicit rather than automatic: Volunteer
+     Services should be able to work down the list and send it all at once,
+     and an accidental keystroke should not reach the Director. */
+  window.onOverlayChange = function(){
+    overlayDirty++;
+    paint();            // paint ends by refreshing the save bar
+  };
+
+  /* Somebody typed a different name beside a note. That becomes the default
+     for the rest of their session, so they type it once. */
+  window.onWhoChange = function(name){
+    try { sessionStorage.setItem(ME_KEY, name); } catch(e){}
+  };
+
+  function paintVsBar(){
+    const bar = $('vsbar');
+    if (!bar) return;
+    /* Unsaved work keeps the bar on screen whatever tab you are on. Deciding
+       the last request empties the approvals tab, which bounces you back to
+       the full list, and the Save button must not leave with it. */
+    const onVsTab = state.view === 'volunteer' || state.view === 'approvals';
+    const show = overlayDirty > 0 || onVsTab;
+    bar.style.display = show ? '' : 'none';
+    if (!show) return;
+
+    /* Without the key the tab is a list, not a worksheet. Saying so beats
+       leaving somebody hunting for a text box that is not there. */
+    if (!state.vsEdit && !state.canApprove && !overlayDirty){
+      bar.innerHTML =
+        '<span class="vsnag">Editing is off.</span>' +
+        '<span class="hint">You can read everything here. To log contact and notes, or to ask for a box, ' +
+        'turn on editing with the Volunteer Services password.</span>' +
+        '<button class="btn sm gold" id="vsOn">Turn on editing</button>';
+      $('vsOn').addEventListener('click', askVsKey);
+      return;
+    }
+    const who = state.whoami || 'click to set your name';
+    bar.innerHTML =
+      '<div class="vswho"><span class="lb">Working as</span>' +
+        '<button class="linky" id="vsWho">' + who + '</button></div>' +
+      (overlayDirty
+        ? '<span class="vsnag">' + overlayDirty + ' change' + (overlayDirty === 1 ? '' : 's') + ' not saved yet</span>'
+        : '<span class="hint">Everything is saved.</span>') +
+      '<button class="btn sm gold" id="vsSave"' + (overlayDirty && !overlayBusy ? '' : ' disabled') + '>' +
+        (overlayBusy ? 'Saving...' : 'Save to the site') + '</button>' +
+      '<div id="vsOut" class="vsout"></div>';
+
+    $('vsWho').addEventListener('click', askWho);
+    $('vsSave').addEventListener('click', doSave);
+  }
+
+  function askWho(){
+    const name = prompt('Your name, so notes you add are signed.\n\nThis shows next to every note you write.',
+      state.whoami || '');
+    if (name == null) return;
+    state.whoami = name.trim();
+    try { sessionStorage.setItem(ME_KEY, state.whoami); } catch(e){}
+    paintVsBar();
+    renderView();
+  }
+
+  async function doSave(){
+    const out = () => $('vsOut');
+    if (!state.whoami){ askWho(); if (!state.whoami) return; }
+    const token = vsToken();
+    if (!token){ askVsKey(); return; }
+    if (!cryptoReady()){
+      out().innerHTML = msg('warn', 'Open the live site',
+        'Saving needs the https address, not a file opened from your hard drive.');
+      return;
+    }
+    overlayBusy = true; paintVsBar();
+    try {
+      state.overlay.monthKey = state.overlay.monthKey || monthKeyNow();
+      const merged = await saveOverlay(token, ghCfg(), teamPw, state.overlay);
+      state.overlay = merged;
+      applyOverlay();
+      overlayDirty = 0; overlayBusy = false;
+      paintVsBar(); paint();
+      $('vsOut').innerHTML = msg('', 'Saved',
+        'The Director of Virtual Services will see this. Render takes about a minute to pick it up, ' +
+        'so give it a moment before you reload.');
+    } catch(e){
+      overlayBusy = false; paintVsBar();
+      const m = String(e.message || e);
+      $('vsOut').innerHTML = /401/.test(m)
+        ? msg('warn', 'Editing access was refused', 'The Volunteer Services access may have been changed or expired. Ask the Director of Virtual Services. Nothing was lost, your changes are still on screen.')
+        : /403/.test(m)
+        ? msg('warn', 'Editing access cannot write here', 'The Director of Virtual Services needs to set the Volunteer Services password up again. Your changes are still on screen.')
+        : msg('warn', 'Could not save', m + '. Nothing was changed on the site, and your work is still on screen. Try again in a moment.');
+    }
+  }
+
+  /* Turning on editing. Password and name in one dialog, both required: the
+     password decides whether you may write, the name decides whose name goes
+     on what you write. Asking for them together is what stops a note from
+     being signed by whoever used this computer last.
+
+     The password is not checked against a hash. It is the key that opens the
+     write key, so a wrong password simply fails to open it. */
+  function askVsKey(){
+    const back = document.createElement('div');
+    back.className = 'modal-back';
+    back.innerHTML =
+      '<div class="modal" role="dialog" aria-modal="true">' +
+        '<h3 class="mt"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">' +
+        '<path d="M14.2 2 5.6 13.4h5.1L9.4 22l8.9-11.7h-5.3z" fill="currentColor"/></svg>Turn on editing</h3>' +
+        '<p>The Volunteer Services password, and your name. Every note you add is signed with it, ' +
+        'so whoever reads this later knows who made contact.</p>' +
+        '<p><input type="password" id="vkPw" placeholder="Volunteer Services password" ' +
+          'autocomplete="current-password" style="width:100%;font-size:16px;padding:11px 13px"></p>' +
+        '<p><input type="text" id="vkWho" placeholder="Your name" ' +
+          'style="width:100%;font-size:16px;padding:11px 13px" value="' +
+          String(state.whoami || '').replace(/"/g,'&quot;') + '"></p>' +
+        '<div id="vkErr"></div>' +
+        '<p class="hint">This lasts until you close the browser. Without it you can still read ' +
+        'everything, you just cannot add notes.</p>' +
+        '<div class="mact"><button class="btn" id="vkGo">Turn on editing</button>' +
+        '<button class="btn out" id="vkNo">Cancel</button>' +
+        (vsToken() ? '<button class="btn out" id="vkClear">Sign out of editing</button>' : '') +
+        '</div></div>';
+    document.body.appendChild(back);
+    const close = () => { back.remove(); document.removeEventListener('keydown', esc); };
+    const esc = e => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', esc);
+    back.addEventListener('click', e => { if (e.target === back) close(); });
+    back.querySelector('#vkNo').addEventListener('click', close);
+
+    const clr = back.querySelector('#vkClear');
+    if (clr) clr.addEventListener('click', () => {
+      try { sessionStorage.removeItem(VS_KEY); sessionStorage.removeItem(ME_KEY); } catch(e){}
+      state.vsEdit = false; state.whoami = '';
+      close(); paint(); paintVsBar();
+    });
+
+    const err = (t, b) => { back.querySelector('#vkErr').innerHTML = msg('warn', t, b); };
+    const go = async () => {
+      const pw = back.querySelector('#vkPw').value.trim();
+      const nm = back.querySelector('#vkWho').value.trim();
+      if (!pw) return err('Password needed', 'Enter the Volunteer Services password.');
+      if (!nm) return err('Name needed',
+        'Put your name in so the notes you add are signed. It is the only way anyone can tell later who made contact.');
+      if (!cryptoReady()) return err('Open the live site',
+        'This needs the https address, not a file opened from your hard drive.');
+
+      back.querySelector('#vkGo').disabled = true;
+      const r = await loadVsKey(pw);
+      back.querySelector('#vkGo').disabled = false;
+
+      if (r.missing) return err('Editing is not set up yet',
+        'No Volunteer Services password has been published for this site. The Director of Virtual Services sets it in the builder.');
+      if (r.bad) return err('That password did not work',
+        'Check it with the Director of Virtual Services. It is not the one you used to sign in.');
+
+      try { sessionStorage.setItem(VS_KEY, r.token); sessionStorage.setItem(ME_KEY, nm); } catch(e){}
+      state.whoami = nm;
+      state.vsEdit = ghCfg().path !== OVERLAY_PATH;
+      close(); paint(); paintVsBar();
+    };
+    back.querySelector('#vkGo').addEventListener('click', go);
+    ['vkPw','vkWho'].forEach(id =>
+      back.querySelector('#' + id).addEventListener('keydown', e => { if (e.key === 'Enter') go(); }));
+    back.querySelector('#vkPw').focus();
+  }
+
+  /* Leaving with notes not yet sent is almost always a mistake. */
+  window.addEventListener('beforeunload', e => {
+    if (!overlayDirty) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
+
   /* The date this list was published, said plainly. Staff should never have to
      wonder whether they are working from something a month stale. */
   function stamp(gen){
@@ -132,7 +334,9 @@
 
   /* The run schedule, with the next date worked out so nobody has to count
      forward from the 27th and wonder about the weekend. */
-  const RUN_DAYS = [1, 15, 20, 25, 27];   // plus the last day of the month
+  /* The 15th, 20th, 25th and 27th, then the 1st to close out the month just
+     gone. Nothing runs on the last day of the month. */
+  const RUN_DAYS = [1, 15, 20, 25, 27];
   function nextBusinessDay(d){
     const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     while (x.getDay() === 0 || x.getDay() === 6) x.setDate(x.getDate() + 1);
@@ -144,8 +348,7 @@
     for (let m = -1; m <= 2; m++){
       const base = new Date(today.getFullYear(), today.getMonth() + m, 1);
       const y = base.getFullYear(), mo = base.getMonth();
-      const last = new Date(y, mo + 1, 0).getDate();
-      RUN_DAYS.concat([last]).forEach(d => out.push(nextBusinessDay(new Date(y, mo, d))));
+      RUN_DAYS.forEach(d => out.push(nextBusinessDay(new Date(y, mo, d))));
     }
     return out.filter(d => d >= today).sort((a, b) => a - b)[0] || null;
   }
@@ -156,8 +359,11 @@
     const when = nx ? nx.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : '';
     box.innerHTML =
       (when ? '<span class="nx">Next run &nbsp;<b>' + when + '</b></span>' : '') +
-      'This report is run on the 15th, the 20th, the 25th, the 27th, and the last day of the month. ' +
-      'The final run happens on the 1st, to show the previous month closed out. ' +
+      '<strong>This report is run on the 15th, the 20th, the 25th and the 27th, ' +
+      'with a final run on the 1st that closes out the month just gone.</strong> ' +
+      'No changes are made after the 27th. Volunteer Services has the 25th and the 26th to make contact, ' +
+      'which gives a member 24 hours to come back. If nobody hears from them, they go onto the box list ' +
+      'automatically, and the final report is pulled on the 27th or the next business day after it. ' +
       'Every run lands on a business day, so any of those dates falling on a weekend moves to the following business day.';
   }
 
@@ -218,6 +424,8 @@
     published = gen || null;
     $('btnUpdate').style.display = '';
     $('btnSF').style.display = '';
+    $('btnVsKey').style.display = '';
+    $('btnSfCheck').style.display = '';
   }
 
   /* Both admin doors, one dialog. The password is the same either way, so the
@@ -231,10 +439,28 @@
       title: 'Salesforce import',
       body: () => 'Builds the three tab import workbook for the members Logistics shipped to. ' +
                   'Run it once the boxes have actually gone out.'
+    },
+    'approve': {
+      title: 'Approve box requests',
+      body: () => {
+        const n = VIEWS.approvals.rows().length;
+        return (n ? n + ' member' + (n === 1 ? '' : 's') + ' Volunteer Services could not place. '
+                  : 'Nothing is waiting right now. ') +
+               'You can send a box or decide against one. Nothing is deleted either way.';
+      }
+    },
+    'sfcheck': {
+      title: 'Salesforce checks',
+      body: () => {
+        const n = VIEWS.sfcheck.count();
+        return (n ? n + ' change' + (n === 1 ? '' : 's') + ' still to make in Salesforce. '
+                  : 'Nothing outstanding in Salesforce right now. ') +
+               'This list is only for the people who keep the record straight, which is why it is behind this password.';
+      }
     }
   };
 
-  function askAdmin(dest){
+  function askAdmin(dest, onOk){
     const door = DOORS[dest] || DOORS['build.html'];
     const c = cfg();
     const back = document.createElement('div');
@@ -270,7 +496,8 @@
         }
         try { sessionStorage.setItem('nobox-admin', c.adminHash); } catch(e){}
       }
-      location.href = dest;
+      close();
+      if (typeof onOk === 'function') onOk(); else location.href = dest;
     };
     back.querySelector('#mGo').addEventListener('click', go);
     const pwBox = back.querySelector('#mPw');
@@ -297,14 +524,56 @@
     $('r-vol').textContent = angel;
     $('r-rev').textContent = VIEWS.review.rows().length;
 
+    /* The approvals card only exists when there is something to approve, so an
+       empty queue never sits on the page looking like a job nobody has done. */
+    const waiting = VIEWS.approvals.rows().length;
+    const card = $('roleApprove');
+    if (card){
+      card.style.display = waiting ? '' : 'none';
+      $('r-app').textContent = waiting;
+    }
+
+    /* The Salesforce list is for whoever keeps the record straight. Nobody
+       else sees the tab or the card, even though everyone can see the queue
+       it comes from. */
+    const sfLeft = VIEWS.sfcheck.count();
+    const sfCard = $('roleSf');
+    if (sfCard){
+      sfCard.style.display = (state.canApprove && sfLeft) ? '' : 'none';
+      $('r-sf').textContent = sfLeft;
+    }
+
     const who = (state.updatedBy || 'Director of Virtual Services').replace(/^The\s+/i, '');
     const settled = state.rows.filter(isSettled).length;
-    $('alerts').innerHTML = settled
-      ? msg('', 'Reviewed', 'The ' + who + ' has reviewed everything annotated under Needs review. ' +
-            'Those rows are shown in the applicable tab.')
-      : '';
+    const added = counted().filter(outcomeSend).length;
+    const skipped = counted().filter(outcomeNoSend).length;
+    const n = (k, s, p) => k + ' member' + (k === 1 ? ' ' + s : 's ' + p);
+
+    let alerts = '';
+    if (waiting){
+      alerts += msg('warn', 'Waiting on the Director',
+        n(waiting, 'is', 'are') + ' waiting on a decision from Volunteer Services. ' +
+        'Nothing moves either way until that call is made.');
+    }
+    if (added){
+      alerts += msg('', 'Added after outreach',
+        n(added, 'was', 'were') + ' put on the Logistics list after Volunteer Services came up ' +
+        'empty and the Director approved a box. They are still on the Volunteer Services tab ' +
+        'with the full history against them.');
+    }
+    if (skipped){
+      alerts += msg('', 'Deliberately not sent',
+        n(skipped, 'was', 'were') + ' looked at and left off the Logistics list on purpose. ' +
+        'The reason is on the Volunteer Services tab, so nobody has to ask why later.');
+    }
+    if (settled){
+      alerts += msg('', 'Reviewed', 'The ' + who + ' has reviewed everything annotated under Needs review. ' +
+            'Those rows are shown in the applicable tab.');
+    }
+    $('alerts').innerHTML = alerts;
 
     renderView();
+    paintVsBar();
   }
 
   /* Month by month coverage. Counts only, so it needs no password. */
@@ -365,7 +634,18 @@
     state.view = v;
     document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('on', t.dataset.view === v));
     renderView();
-    $('views').scrollIntoView({ behavior:'smooth', block:'start' });
+    paintVsBar();
+    /* The approvals queue is readable by anyone signed in, so no request is
+       ever a secret. The buttons only appear once the admin password is in.
+       The Salesforce list is different: it is only for whoever keeps the
+       record straight, so the tab itself stays hidden until then. Both run
+       before the scroll so nothing can swallow the prompt. */
+    if ((v === 'approvals' || v === 'sfcheck') && !state.canApprove){
+      const open = () => { state.canApprove = true; paint(); paintVsBar(); };
+      if (cfg().adminHash) askAdmin(v === 'sfcheck' ? 'sfcheck' : 'approve', open);
+      else open();
+    }
+    try { $('views').scrollIntoView({ behavior:'smooth', block:'start' }); } catch(e){}
   }
 
   function warnOpenMode(){
@@ -382,6 +662,8 @@
   $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
   $('btnUpdate').addEventListener('click', () => askAdmin('build.html'));
   $('btnSF').addEventListener('click', () => askAdmin('salesforce.html'));
+  $('btnVsKey').addEventListener('click', askVsKey);
+  $('btnSfCheck').addEventListener('click', () => switchTo('sfcheck'));
   $('btnSop').addEventListener('click', () => window.open('sop.html', '_blank'));
   $('btnHistory').addEventListener('click', toggleHistory);
   $('btnCsv').addEventListener('click', exportCsv);

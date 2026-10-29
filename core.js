@@ -15,8 +15,208 @@ const state = {
   rows: [],           // the No Box records
   batches: [],
   view: 'all',
-  editable: false          // only the builder lets you change a row's bucket
+  editable: false,         // only the builder lets you change a row's bucket
+  overlay: null,           // Volunteer Services notes and box requests, see below
+  whoami: '',              // the name stamped on a note
+  vsEdit: false,           // this browser holds the Volunteer Services key
+  canApprove: false        // this browser has cleared the admin password
 };
+
+/* ---------- Volunteer Services overlay ----------
+
+   Everything Volunteer Services types lives in its own file, separate from the
+   published list. That separation is the whole point, not a detail:
+
+     data/latest.enc     the month's report. Written ONLY by the builder,
+                         behind the admin password. Volunteer Services has
+                         no code path that touches it.
+     data/requests.enc   notes, contact method, and box requests. Written
+                         ONLY here. If it is missing, stale, or corrupt, the
+                         staff page shows the report exactly as it would have
+                         without it.
+
+   So a mistake on the Volunteer Services side can cost at most the notes, and
+   never the report. Nothing is ever deleted either: notes append, and an
+   approval records a decision beside the request rather than replacing it. */
+const OVERLAY_PATH = 'data/requests.enc';
+/* The write key, encrypted under the Volunteer Services password. It means
+   there are three passwords and no tokens to hand around: the Director sets
+   this once in the builder, and Volunteer Services only ever types a password.
+   The password is not checked against a hash, it IS the key, so a wrong one
+   simply fails to open the file. */
+const VSKEY_PATH = 'data/vskey.enc';
+/* Who signs off on a box request. Whoever holds the admin password is acting
+   in this role, so it is the role that gets recorded against the decision. */
+const APPROVER_ROLE = 'Director of Virtual Services';
+
+/* A request has two halves: what Volunteer Services recommends, and what the
+   Director decides. Keeping them apart means the record shows both, including
+   the times the Director went the other way. */
+const REQ = { PENDING:'pending', DECIDED:'decided' };
+const WANT = { SEND:'send', NOSEND:'nosend' };
+const WANT_LABEL  = { send:'Send a box', nosend:'Do not send a box' };
+const WANT_SHORT  = { send:'Box requested', nosend:'Asked to skip' };
+const OUT_LABEL   = { send:'Approved, on Logistics', nosend:'Agreed, no box' };
+
+function monthKeyNow(){
+  return state.month ? state.month.y + '-' + String(state.month.m + 1).padStart(2, '0') : '';
+}
+function emptyOverlay(){
+  return { v:1, monthKey: monthKeyNow(), updated: new Date().toISOString(), entries:{} };
+}
+function rowId(r){ return String(r.clientId == null ? '' : r.clientId).trim(); }
+
+/* Hang the overlay onto the rows so every view can read it without a lookup.
+   A overlay from a previous month is ignored rather than merged, so last
+   month's outreach notes never reappear against this month's list. */
+function applyOverlay(){
+  state.rows.forEach(r => { r.vs = null; r.req = null; });
+  const o = state.overlay;
+  if (!o || !o.entries) return;
+  if (o.monthKey && monthKeyNow() && o.monthKey !== monthKeyNow()) return;
+  state.rows.forEach(r => {
+    const e = o.entries[rowId(r)];
+    if (!e) return;
+    r.vs = e;
+    r.req = normaliseReq(e.req);
+    e.req = r.req;
+  });
+}
+/* Requests written before the recommendation had two directions carried a bare
+   state. Read them as a request for a box, which is what they meant. */
+function normaliseReq(q){
+  if (!q) return null;
+  if (q.want || q.outcome) return q;
+  if (q.state === 'approved') return Object.assign({}, q, { want:WANT.SEND, state:REQ.DECIDED, outcome:WANT.SEND });
+  if (q.state === 'declined') return Object.assign({}, q, { want:WANT.SEND, state:REQ.DECIDED, outcome:WANT.NOSEND });
+  return Object.assign({}, q, { want:WANT.SEND, state:REQ.PENDING });
+}
+function overlayEntry(r, make){
+  if (!state.overlay) return null;
+  const id = rowId(r);
+  if (!id) return null;
+  if (!state.overlay.entries[id] && make)
+    state.overlay.entries[id] = { contact:'', who:'', contactAt:'', notes:[], req:null, sf:null };
+  const e = state.overlay.entries[id] || null;
+  if (e){ r.vs = e; r.req = e.req || null; }
+  return e;
+}
+/* How contact was made. Recorded per note rather than per member, because a
+   member texted on the 26th and called on the 28th has two different answers
+   and the note is where each one belongs. */
+const METHODS = ['Phone', 'Email', 'Text'];
+function latestNote(r){
+  const n = r.vs && r.vs.notes ? r.vs.notes : [];
+  return n.length ? n[n.length - 1] : null;
+}
+/* Older entries kept the method and the name once per member. Read those as a
+   fallback so notes written before this change still show who and how. */
+function contactMethod(r){
+  const n = latestNote(r);
+  if (n && n.m) return n.m;
+  return r.vs ? (r.vs.contact || '') : '';
+}
+function contactWho(r){
+  const n = latestNote(r);
+  if (n && n.by) return n.by;
+  return r.vs ? (r.vs.who || '') : '';
+}
+
+function pendingBox(r){ return !!(r.req && r.req.state === REQ.PENDING); }
+function decidedBox(r){ return !!(r.req && r.req.state === REQ.DECIDED); }
+function outcomeSend(r){ return decidedBox(r) && r.req.outcome === WANT.SEND; }
+function outcomeNoSend(r){ return decidedBox(r) && r.req.outcome === WANT.NOSEND; }
+/* The Director went against what was recommended. Worth showing, because
+   Volunteer Services should not have to wonder what happened to their ask. */
+function overruled(r){ return decidedBox(r) && r.req.want && r.req.outcome !== r.req.want; }
+
+/* ---------- what still has to be typed into Salesforce ----------
+   Everything Volunteer Services does here is a note on a web page until
+   somebody puts it into Salesforce. This works out what that is, member by
+   member, so the trail from outreach to system of record does not depend on
+   anyone remembering. */
+function sfAction(r){
+  const q = r.req;
+  if (q && q.state === REQ.DECIDED){
+    return q.outcome === WANT.SEND
+      ? 'Approved for a box. Log the One Time Support record and close the open engagement.'
+      : 'No box this month. Close or reassign the open engagement so it stops reporting.';
+  }
+  if (q && q.state === REQ.PENDING) return '';     // undecided, nothing to enter yet
+  const n = r.vs && r.vs.notes ? r.vs.notes.length : 0;
+  if (n) return 'Outreach was logged here. Add the contact to the client record in Salesforce.';
+  return '';
+}
+function sfDone(r){ return !!(r.vs && r.vs.sf && r.vs.sf.done); }
+function sfNeeded(r){ return !!sfAction(r) && !sfDone(r); }
+
+/* ---------- colour on the Volunteer Services tab ----------
+   Coloured by what the outreach has produced, not by the member's status.
+   Status is the same for everybody on this tab, so colouring by it told you
+   nothing. This tells you who still needs chasing:
+
+     red     nobody has come back yet. Everyone starts here.
+     yellow  heading for a box, whether Volunteer Services has only asked
+             or the Director has already said yes.
+     green   settled without needing a box. Somebody picked them up.
+
+   Pending and decided share a colour on purpose: the question the colour
+   answers is "do I still need to chase this person", and the Box? column
+   already says which of the two it is. */
+function outreachClass(r){
+  if (excluded(r)) return 'excluded';
+  const q = r.req;
+  if (!q) return 'vs-red';
+  const heading = q.state === REQ.DECIDED ? q.outcome : q.want;
+  return heading === WANT.SEND ? 'vs-yellow' : 'vs-green';
+}
+
+/* Two people can have the list open at once. Rather than let the second save
+   wipe the first, the remote file is re-read and merged entry by entry: notes
+   are unioned, and a decision always beats the request it answered. */
+function mergeOverlays(a, b){
+  a = a || emptyOverlay(); b = b || emptyOverlay();
+  const out = { v:1, monthKey: b.monthKey || a.monthKey, updated: new Date().toISOString(), entries:{} };
+  const ids = {};
+  Object.keys(a.entries || {}).forEach(k => ids[k] = 1);
+  Object.keys(b.entries || {}).forEach(k => ids[k] = 1);
+  Object.keys(ids).forEach(id => {
+    const x = (a.entries || {})[id] || {}, y = (b.entries || {})[id] || {};
+    const notes = [], seen = {};
+    (x.notes || []).concat(y.notes || []).forEach(n => {
+      const k = String(n.at) + '|' + String(n.t);
+      if (!seen[k]){ seen[k] = 1; notes.push(n); }
+    });
+    notes.sort((m, n) => String(m.at).localeCompare(String(n.at)));
+    const yNewer = String(y.contactAt || '') >= String(x.contactAt || '');
+    let req = null;
+    const rx = x.req, ry = y.req;
+    if (rx && ry){
+      const dx = String(rx.decidedAt || ''), dy = String(ry.decidedAt || '');
+      req = dy > dx ? ry : dx > dy ? rx : (String(ry.at || '') >= String(rx.at || '') ? ry : rx);
+    } else req = ry || rx || null;
+    /* The Salesforce tick is the one field that legitimately goes backwards,
+       because the usual reason to untick is realising you ticked the wrong
+       row. So unticking writes a dated false rather than nothing, and the
+       newer of the two timestamps wins either way. Dropping this field, or
+       letting a stale true outrank a fresh false, would quietly resurrect a
+       change somebody had already taken back. */
+    let sf = null;
+    const fx = x.sf, fy = y.sf;
+    if (fx && fy) sf = String(fy.at || '') >= String(fx.at || '') ? fy : fx;
+    else sf = fy || fx || null;
+
+    out.entries[id] = {
+      contact:   yNewer ? (y.contact || x.contact || '') : (x.contact || y.contact || ''),
+      who:       yNewer ? (y.who || x.who || '')         : (x.who || y.who || ''),
+      contactAt: yNewer ? (y.contactAt || x.contactAt || '') : (x.contactAt || ''),
+      notes: notes,
+      req: req,
+      sf: sf
+    };
+  });
+  return out;
+}
 
 /* ---------- overrides ----------
    The flags are the tool's best guess. When you know better, your decision
@@ -71,6 +271,11 @@ function applyEdit(row, field, raw){
 }
 
 function effStatus(r){
+  /* A decision to send outranks everything else. Volunteer Services worked the
+     member, nobody picked them up, and the Director signed off, so from here on
+     they are a box. They stay on the Volunteer Services tab with the decision
+     shown against them, so the outreach history is not lost. */
+  if (outcomeSend(r)) return STATUS.SEND;
   if (r.override === 'angel') return STATUS.ANGEL;
   if (r.override === 'waitlist') return STATUS.WAIT;
   return r.status;
@@ -84,7 +289,18 @@ function heldBack(r){
   if (r.override === 'cleared') return !r.addr1;
   return autoHold(r);
 }
-function shippable(r){ return !excluded(r) && effStatus(r) === STATUS.SEND && !heldBack(r); }
+/* An approved request still needs somewhere to send the box. The address check
+   is the one thing an approval cannot wave through, because there would be
+   nothing to print on the label. */
+function shippable(r){
+  if (excluded(r)) return false;
+  /* A decision not to send pulls the member off the Logistics list whatever
+     their status was. That covers the member who moved, who already got one
+     another way, or who Volunteer Services placed at the last minute. */
+  if (outcomeNoSend(r)) return false;
+  if (outcomeSend(r)) return !!r.addr1;
+  return effStatus(r) === STATUS.SEND && !heldBack(r);
+}
 /* Still open: flagged, and nobody has said what to do about it yet. A row with
    a decision on it is settled, whichever way it went. */
 function needsDecision(r){ return (autoHold(r) || r.zipFixed) && !r.override; }
@@ -280,10 +496,38 @@ const COLS = {
     ['street','Mailing Address Line 1'],
     ['city','Mailing City'],['state','State/Province'],['zip','Zip/Postal Code']
   ],
+  /* On screen, how the member was contacted and who did it share one cell, so
+     nine columns of outreach still fit without scrolling sideways. */
   volunteer: [
     ['reportBy','Report by Date'],['name','Client'],
     ['engagement','Pending Engagement'],
-    ['provider','Provider'],['providerEmail','Provider Email']
+    ['provider','Provider'],['providerEmail','Provider Email'],
+    ['outreach','Contact and notes'],['boxreq','Box?']
+  ],
+  /* In a file they come apart again, because a spreadsheet wants one fact
+     per column. */
+  volunteerExport: [
+    ['reportBy','Report by Date'],['name','Client'],
+    ['engagement','Pending Engagement'],
+    ['provider','Provider'],['providerEmail','Provider Email'],
+    ['contact','Contact Method'],['who','Contacted by'],
+    ['vsnotes','Notes'],['boxreq','Box?'],['decidedBy','Decided by']
+  ],
+  /* What the Director sees when signing off. The note trail is the whole
+     argument either way, so it gets the room. */
+  approvals: [
+    ['name','Client'],['clientId','Client ID'],['reportBy','Report by'],
+    ['engagement','Pending Engagement'],
+    ['outreach','What happened'],['wants','Volunteer Services says'],['approve','Your call']
+  ],
+  /* The bridge to the system of record. Client ID sits second so it is easy
+     to copy straight into a Salesforce search. */
+  sfcheck: [
+    ['name','Client'],['clientId','Client ID'],
+    ['sfaction','What to update in Salesforce'],
+    ['engagement','Open Engagement'],
+    ['vsnotes','What Volunteer Services logged'],
+    ['decidedBy','Decided by'],['sfdone','Done']
   ],
   waitlisted: [
     ['name','Client Name'],['clientId','Client ID'],['mailStop','Mail Stop Date'],['reportBy','Report by Date']
@@ -303,12 +547,48 @@ const VIEWS = {
   },
   volunteer: {
     title:'Volunteer Services: reach out',
-    desc:'These members have a service delivery this month and are waiting on an Angel to make contact. Soonest Report by Date first, so the top of the list is the most urgent. Pending Engagement is the open engagement that the Report by Date belongs to. No box yet.',
-    /* Pending Engagements only appears once a run has produced it. A published
-       file from before that existed would otherwise show an empty column. */
-    cols: () => state.rows.some(r => r.engagement) ? COLS.volunteer : COLS.volunteer.filter(c => c[0] !== 'engagement'),
+    desc:'These members have a service delivery this month and are waiting on an Angel to make contact. Soonest Report by Date first, so the top of the list is the most urgent. Pending Engagement is the open engagement that the Report by Date belongs to. Under Contact log how you reached them and who made contact, and add a note for each thing you tried. When you know the answer, set Box? to either send a box or do not send a box. Both go to the Director for a decision, and neither moves anybody on its own.',
+    /* Columns earn their place. Pending Engagement only appears once a run has
+       produced it, and the three outreach columns only once there is something
+       in them, or once this browser can actually type into them. That keeps the
+       builder's workbook free of three blank columns nobody filled. */
+    cols: () => {
+      const drop = [];
+      if (!state.rows.some(r => r.engagement)) drop.push('engagement');
+      if (!state.vsEdit && !state.rows.some(r => r.vs || r.req))
+        drop.push('outreach', 'boxreq');
+      return drop.length ? COLS.volunteer.filter(c => drop.indexOf(c[0]) === -1) : COLS.volunteer;
+    },
+    exportCols: () => {
+      const drop = [];
+      if (!state.rows.some(r => r.engagement)) drop.push('engagement');
+      if (!state.rows.some(r => r.vs || r.req)) drop.push('contact','who','vsnotes','boxreq','decidedBy');
+      else if (!state.rows.some(r => decidedBox(r))) drop.push('decidedBy');
+      return drop.length ? COLS.volunteerExport.filter(c => drop.indexOf(c[0]) === -1) : COLS.volunteerExport;
+    },
     sort:'reportBy',
-    rows: () => counted().filter(r => effStatus(r) === STATUS.ANGEL)
+    /* Approved members have become boxes, but they stay here. Their outreach
+       history is the record of why the box was sent, and dropping them off the
+       tab would hide the work that went in. */
+    rows: () => counted().filter(r => effStatus(r) === STATUS.ANGEL || r.req)
+  },
+  approvals: {
+    title:'Waiting on your approval',
+    desc:'Volunteer Services has worked these members and is telling you what they think should happen. Their recommendation is in the Volunteer Services says column, with the notes behind it. You can go either way: sending a box puts the member on the Logistics list, not sending leaves them off it and records that the call was made deliberately. Nothing is deleted either way. The member stays on the Volunteer Services tab with the full history, and a decision that went against the recommendation says so.',
+    cols: COLS.approvals, exportCols: COLS.approvals, hideWhenEmpty:true,
+    sort:'reportBy',
+    rows: () => counted().filter(pendingBox)
+  },
+  sfcheck: {
+    title:'These need checking in Salesforce',
+    desc:'Everything Volunteer Services logged and you decided, and what each one means for the record in Salesforce. Outstanding members are at the top. Tick one off once you have made the change, and it stays here greyed out so the month has a full audit trail rather than an empty list. Nothing on this page writes to Salesforce.',
+    cols: COLS.sfcheck, exportCols: COLS.sfcheck, hideWhenEmpty:true, adminOnly:true,
+    /* Outstanding first, then the ones already done, newest decision first
+       within each group. */
+    rows: () => counted().filter(r => !!sfAction(r))
+            .sort((a, b) => (sfDone(a) ? 1 : 0) - (sfDone(b) ? 1 : 0)),
+    /* The badge counts what is left to do, not the whole history. */
+    count: () => counted().filter(sfNeeded).length
   },
   waitlisted: {
     title:'Already waitlisted',
@@ -346,10 +626,43 @@ function cellVal(r, k){
   if (k === 'pending') return r.pending ? String(r.pending) : '';
   if (k === 'engagement') return r.engagement || '';
   if (k === 'decision') return r.override ? (DECISION_LABEL[r.override] || r.override) : '';
+  if (k === 'contact') return contactMethod(r);
+  if (k === 'who') return contactWho(r);
+  /* One cell on screen, and the same thing in a file: every attempt, how it
+     was made, by whom, in order. */
+  if (k === 'vsnotes' || k === 'outreach'){
+    const n = r.vs && r.vs.notes ? r.vs.notes : [];
+    return n.map(x => {
+      const head = [x.m, x.by].filter(Boolean).join(' ');
+      return (head ? head + ': ' : '') + x.t;
+    }).join(' · ');
+  }
+  if (k === 'wants') return r.req && r.req.want ? WANT_LABEL[r.req.want] : '';
+  if (k === 'sfaction') return sfAction(r);
+  if (k === 'sfdone'){
+    if (!sfDone(r)) return 'Outstanding';
+    const s = r.vs.sf;
+    return 'Done' + (s.by ? ' by ' + s.by : '') +
+      (s.at ? ' ' + new Date(s.at).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : '');
+  }
+  if (k === 'decidedBy') return r.req && r.req.decidedBy ? r.req.decidedBy : '';
+  if (k === 'boxreq' || k === 'approve'){
+    if (!r.req) return '';
+    if (r.req.state === REQ.PENDING) return WANT_SHORT[r.req.want] || 'Sent to the Director';
+    return (OUT_LABEL[r.req.outcome] || '') + (overruled(r) ? ', against what was asked' : '');
+  }
   if (k === 'review'){
     /* A row taken out of the counts says so and nothing else. The original
        flag is no longer the useful fact about it. */
     if (excluded(r)) return r.override === 'passedmsd' ? 'Passed MSD, not counted' : 'Not counted';
+    /* On the Logistics list, why a member is here matters more than what was
+       once wrong with their address. An approved request says so plainly. */
+    if (outcomeSend(r)){
+      const who = (r.req.decidedBy || 'the Director of Virtual Services').replace(/^The\s+/i, '');
+      const t = ['Approved by ' + who];
+      if (!r.addr1) t.push('No address');
+      return t.join(' · ');
+    }
     const t = [];
     if (r.matched === false) t.push('Missing from Part 2');
     else if (!r.addr1) t.push('No address');
@@ -383,8 +696,16 @@ function activeRows(){
 function renderView(){
   document.querySelectorAll('.view-tab').forEach(t => {
     const def = VIEWS[t.dataset.view];
-    if (def && def.hideWhenEmpty) t.style.display = def.rows().length ? '' : 'none';
+    if (!def) return;
+    /* An admin only tab is hidden outright, not merely inert, so the people
+       it is not for never see it listed. */
+    if (def.adminOnly && !state.canApprove){ t.style.display = 'none'; return; }
+    if (def.hideWhenEmpty) t.style.display = def.rows().length ? '' : 'none';
   });
+  if (VIEWS[state.view] && VIEWS[state.view].adminOnly && !state.canApprove){
+    state.view = 'all';
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('on', t.dataset.view === 'all'));
+  }
   if (VIEWS[state.view] && VIEWS[state.view].hideWhenEmpty && !VIEWS[state.view].rows().length){
     state.view = 'all';
     document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('on', t.dataset.view === 'all'));
@@ -393,13 +714,25 @@ function renderView(){
   const v = VIEWS[state.view];
   $('#vTitle').textContent = v.title;
   $('#vDesc').textContent = v.desc;
-  for (const k in VIEWS) { const n = document.getElementById('n-' + k); if (n) n.textContent = VIEWS[k].rows().length; }
+  for (const k in VIEWS) {
+    const n = document.getElementById('n-' + k);
+    if (n) n.textContent = VIEWS[k].count ? VIEWS[k].count() : VIEWS[k].rows().length;
+  }
 
   const help = $('#decisionHelp');
   if (help) help.style.display = (state.view === 'review' || state.view === 'decisions') ? '' : 'none';
 
   const fbox = $('#vFilters');
-  if (state.view === 'logistics'){
+  if (state.view === 'volunteer'){
+    /* A key, because a colour nobody can decode is just decoration. */
+    const n = c => counted().filter(r => effStatus(r) === STATUS.ANGEL || r.req)
+                            .filter(r => outreachClass(r) === c).length;
+    fbox.innerHTML = '<span class="vskey">' +
+      '<span><i class="r"></i>' + n('vs-red') + ' no answer yet</span>' +
+      '<span><i class="y"></i>' + n('vs-yellow') + ' needs a box</span>' +
+      '<span><i class="g"></i>' + n('vs-green') + ' settled, no box</span>' +
+      '</span>';
+  } else if (state.view === 'logistics'){
     const held = state.rows.filter(r => effStatus(r) === STATUS.SEND && heldBack(r)).length;
     fbox.innerHTML = held
       ? `<span class="hint">${held} more would ship once resolved on the Needs review tab.</span>`
@@ -409,11 +742,19 @@ function renderView(){
   const rows = activeRows();
   const cols = viewCols(v);
   const t = $('#vTable');
-  t.className = (state.editable && (state.view === 'review' || state.view === 'decisions')) ? 'compact' : '';
+  /* The outreach tabs carry free text, so they wrap rather than run off the
+     side. Everything else keeps the nowrap table it already had. */
+  t.className = (state.editable && (state.view === 'review' || state.view === 'decisions')) ? 'compact'
+              : (state.view === 'volunteer' || state.view === 'approvals') ? 'vs' : '';
   t.querySelector('thead').innerHTML = '<tr>' + cols.map(c => `<th>${c[1]}</th>`).join('') + '</tr>';
   t.querySelector('tbody').innerHTML = rows.map(r => {
     let cls = '';
-    if (excluded(r)) cls = 'excluded';
+    if (state.view === 'sfcheck' && sfDone(r)) cls = 'sfdone';
+    else if (state.view === 'volunteer') cls = outreachClass(r);
+    else if (excluded(r)) cls = 'excluded';
+    else if (outcomeSend(r)) cls = 'decided';
+    else if (outcomeNoSend(r)) cls = 'decided-no';
+    else if (pendingBox(r)) cls = 'asked';
     else if (r.override === 'hold') cls = 'decided-hold';
     else if (r.override) cls = 'decided';
     else if (r.flagRed) cls = 'red';
@@ -429,11 +770,108 @@ function renderView(){
         val = val.split(' · ').map(x => {
           const cls = x === 'Verify address' ? 'purple'
                     : x === 'Cleared' ? 'send'
+                    : /^Approved by/.test(x) ? 'send'
                     : x === 'Check zip' || x === 'Address updated' ? 'gold'
                     : /not counted/i.test(x) ? 'grey'
                     : 'red';
           return `<span class="tag ${cls}">${x}</span>`;
         }).join(' ');
+      }
+
+      /* ---- Volunteer Services cells ---- */
+      if (c[0] === 'outreach' || c[0] === 'boxreq' || c[0] === 'wants'){
+        const idx = state.rows.indexOf(r);
+        const esc = s => String(s == null ? '' : s)
+          .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+
+        /* Every attempt in one cell: how it was made, who made it, what came
+           of it. Three boxes rather than four spread over two columns, and the
+           name is asked once instead of twice. */
+        if (c[0] === 'outreach'){
+          const notes = (r.vs && r.vs.notes) ? r.vs.notes : [];
+          const log = notes.map(n => {
+            const tag = n.m ? `<em>${esc(n.m)}</em>` : '';
+            return `<span class="nlog">${tag}<b>${esc(n.by || 'Volunteer Services')}</b> ${esc(n.t)}` +
+              `<i>${n.at ? new Date(n.at).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : ''}</i></span>`;
+          }).join('');
+          /* Each note carries its own method and name, so a member texted on
+             Monday and called on Wednesday reads correctly, and a second
+             person picking them up is not recorded as the first. */
+          val = `<div class="notecell">${log ? '<div class="notelog">' + log + '</div>' : ''}` +
+            (state.vsEdit
+              ? `<div class="noteadd">` +
+                `<select class="vsmethod" data-row="${idx}">` +
+                  `<option value="">How?</option>` +
+                  METHODS.map(m => `<option value="${m}">${m}</option>`).join('') +
+                `</select>` +
+                `<input class="vsby" data-row="${idx}" value="${esc(state.whoami)}" placeholder="your name">` +
+                `<input class="vsnote" data-row="${idx}" placeholder="${notes.length ? 'Add another note' : 'What happened'}">` +
+                `</div>`
+              : '') + `</div>`;
+          return `<td data-l="${c[1]}">${val}</td>`;
+        }
+
+        /* What Volunteer Services recommends, read only, for the Director's tab. */
+        if (c[0] === 'wants'){
+          const w = r.req && r.req.want;
+          val = w ? `<span class="tag ${w === WANT.SEND ? 'gold' : 'grey'}">${WANT_LABEL[w]}</span>` : '';
+          if (r.req && r.req.by) val += `<span class="nby">asked by ${esc(r.req.by)}</span>`;
+          return `<td data-l="${c[1]}">${val}</td>`;
+        }
+
+        /* Box? A recommendation either way, and either way it goes to the
+           Director. Volunteer Services can change their mind right up until
+           he decides, after which the cell reports the decision instead. */
+        const q = r.req;
+        if (q && q.state === REQ.DECIDED){
+          val = `<span class="tag ${q.outcome === WANT.SEND ? 'send' : 'grey'}">${esc(OUT_LABEL[q.outcome] || '')}</span>`;
+          if (overruled(r)) val += `<span class="tag red">Against what was asked</span>`;
+          if (q.decidedBy) val += `<span class="nby">${esc(String(q.decidedBy).replace(/^The\s+/i,''))}</span>`;
+        } else if (state.vsEdit){
+          const cur = q ? q.want : '';
+          val = `<select class="vsbox" data-row="${idx}">` +
+            [['','No recommendation'], [WANT.SEND, WANT_LABEL.send], [WANT.NOSEND, WANT_LABEL.nosend]]
+              .map(o => `<option value="${o[0]}"${cur === o[0] ? ' selected' : ''}>${o[1]}</option>`).join('') +
+            `</select>` +
+            (q ? `<span class="nby">waiting on the Director</span>` : '');
+        } else {
+          val = q ? `<span class="tag gold">${esc(WANT_SHORT[q.want] || '')}</span>` : '';
+        }
+        return `<td data-l="${c[1]}">${val}</td>`;
+      }
+
+      /* ---- ticking a change off once it is in Salesforce ---- */
+      if (c[0] === 'sfdone'){
+        const idx = state.rows.indexOf(r);
+        const done = sfDone(r);
+        if (state.canApprove){
+          val = `<label class="boxask"><input type="checkbox" class="sfbox" data-row="${idx}"` +
+                (done ? ' checked' : '') + `> ` + (done ? 'In Salesforce' : 'Mark done') + `</label>`;
+          if (done && r.vs.sf.by)
+            val += `<span class="nby">${String(r.vs.sf.by).replace(/^The\s+/i,'')}</span>`;
+        } else {
+          val = `<span class="tag ${done ? 'send' : 'gold'}">${done ? 'Done' : 'Outstanding'}</span>`;
+        }
+        return `<td data-l="${c[1]}">${val}</td>`;
+      }
+      if (c[0] === 'sfaction'){
+        const q = r.req;
+        const tone = !q ? 'blue' : q.outcome === WANT.SEND ? 'send' : 'grey';
+        val = `<span class="tag ${tone}">${!q ? 'Log the contact' :
+                q.outcome === WANT.SEND ? 'Box approved' : 'No box'}</span>` +
+              `<span class="sfwhat">${String(val).replace(/</g,'&lt;')}</span>`;
+        return `<td data-l="${c[1]}">${val}</td>`;
+      }
+
+      /* ---- the Director's sign off ---- */
+      if (c[0] === 'approve'){
+        const idx = state.rows.indexOf(r);
+        val = state.canApprove
+          ? `<div class="apact">` +
+            `<button class="btn sm gold apyes" data-row="${idx}">Send a box</button>` +
+            `<button class="btn sm out apno" data-row="${idx}">Do not send</button></div>`
+          : `<span class="hint">Unlock with the admin password to decide.</span>`;
+        return `<td data-l="${c[1]}">${val}</td>`;
       }
       if (state.editable && (state.view === 'review' || state.view === 'decisions')
           && (EDITABLE_FIELDS.includes(c[0]) || c[0] === 'addressEdit')){
@@ -498,6 +936,103 @@ function renderView(){
         row.override = sel.value;
         renderView();
         if (typeof window.onOverrideChange === 'function') window.onOverrideChange();
+      });
+    });
+  }
+
+  /* ---- Volunteer Services controls ---- */
+  const touched = () => { if (typeof window.onOverlayChange === 'function') window.onOverlayChange(); };
+
+  if (state.vsEdit){
+    /* Notes append. Nothing typed here ever overwrites what somebody else
+       wrote, which is why the box empties instead of holding the last note.
+       The name beside it signs that one note and becomes the default for the
+       next, so a person only types it once. */
+    t.querySelectorAll('.vsnote').forEach(inp => {
+      const commit = () => {
+        const row = state.rows[+inp.dataset.row];
+        const txt = inp.value.trim();
+        if (!row || !txt) return;
+        const cell = inp.closest('.noteadd');
+        const nameBox = cell ? cell.querySelector('.vsby') : null;
+        const methodBox = cell ? cell.querySelector('.vsmethod') : null;
+        const by = (nameBox && nameBox.value.trim()) || state.whoami || 'Volunteer Services';
+        const m = methodBox ? methodBox.value : '';
+        if (by && by !== state.whoami){
+          state.whoami = by;
+          if (typeof window.onWhoChange === 'function') window.onWhoChange(by);
+        }
+        const e = overlayEntry(row, true);
+        if (!e) return;
+        e.notes = e.notes || [];
+        e.notes.push({ t: txt, by: by, m: m, at: new Date().toISOString() });
+        inp.value = '';
+        renderView();
+        touched();
+      };
+      inp.addEventListener('change', commit);
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); commit(); } });
+    });
+
+    /* Send a box, or do not send a box. Either one is a recommendation, and
+       either one goes to the Director. Neither moves anybody on its own. */
+    t.querySelectorAll('select.vsbox').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const row = state.rows[+sel.dataset.row];
+        if (!row) return;
+        const e = overlayEntry(row, true);
+        if (!e) return;
+        e.req = sel.value
+          ? { want: sel.value, state: REQ.PENDING,
+              by: state.whoami || 'Volunteer Services', at: new Date().toISOString() }
+          : null;
+        row.req = e.req;
+        renderView();
+        touched();
+      });
+    });
+  }
+
+  if (state.canApprove){
+    const decide = (idx, send) => {
+      const row = state.rows[idx];
+      if (!row) return;
+      const e = overlayEntry(row, true);
+      if (!e || !e.req) return;
+      /* The request itself is kept, so the row still says who asked, for what,
+         when, and on the back of which notes. What was asked for sits alongside
+         the outcome, so a decision that went the other way stays visible rather
+         than being silently rewritten.
+
+         A note is signed by its author. A decision is signed by the role that
+         holds the admin password, because Logistics needs to know the box was
+         authorised, not who happened to be at the keyboard. */
+      e.req = Object.assign({}, e.req, {
+        state: REQ.DECIDED,
+        outcome: send ? WANT.SEND : WANT.NOSEND,
+        decidedBy: APPROVER_ROLE,
+        decidedAt: new Date().toISOString()
+      });
+      row.req = e.req;
+      renderView();
+      touched();
+    };
+    t.querySelectorAll('.apyes').forEach(b => b.addEventListener('click', () => decide(+b.dataset.row, true)));
+    t.querySelectorAll('.apno').forEach(b => b.addEventListener('click', () => decide(+b.dataset.row, false)));
+
+    /* Ticked off once the change is actually in Salesforce. Unticking is
+       allowed, because the usual reason is realising you ticked the wrong row. */
+    t.querySelectorAll('.sfbox').forEach(box => {
+      box.addEventListener('change', () => {
+        const row = state.rows[+box.dataset.row];
+        if (!row) return;
+        const e = overlayEntry(row, true);
+        if (!e) return;
+        /* Dated either way, so unticking survives a merge with somebody
+           else's older copy instead of being read as "never ticked". */
+        e.sf = { done: box.checked, by: state.whoami || APPROVER_ROLE, at: new Date().toISOString() };
+        renderView();
+        touched();
       });
     });
   }
@@ -664,4 +1199,143 @@ function reviveRows(rows){
     r.reportBy = r.reportBy ? new Date(r.reportBy) : null;
   });
   return rows;
+}
+
+/* ---------- writing one file to GitHub ----------
+   Used by the staff page for the overlay only. The builder has its own copy of
+   this for the published list, so the two never share a code path. */
+async function ghCall(token, url, opts){
+  /* Only headers GitHub lists in access-control-allow-headers may be set here.
+     Anything else fails the CORS preflight and surfaces as a bare
+     "Failed to fetch" with no status. */
+  const bust = (opts && opts.method && opts.method !== 'GET') ? url
+    : url + (url.indexOf('?') > -1 ? '&' : '?') + '_=' + Date.now();
+  return fetch(bust, Object.assign({ cache:'no-store' }, opts, {
+    headers: Object.assign({
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Authorization': 'Bearer ' + token
+    }, (opts || {}).headers || {})
+  }));
+}
+function ghUrl(g, path){
+  return 'https://api.github.com/repos/' + g.owner + '/' + g.repo + '/contents/' + path;
+}
+async function ghGetText(token, g, path){
+  const res = await ghCall(token, ghUrl(g, path) + '?ref=' + encodeURIComponent(g.branch));
+  if (res.status === 404) return null;
+  if (res.status === 401) throw new Error('401 the key was not accepted');
+  if (res.status === 403) throw new Error('403 the key cannot write to this repository');
+  if (res.status !== 200) throw new Error('status ' + res.status);
+  const meta = await res.json();
+  return { sha: meta.sha, text: decodeURIComponent(escape(atob(String(meta.content || '').replace(/\s/g, '')))) };
+}
+async function ghPutText(token, g, path, text, message, sha){
+  const body = { message: message, content: b64.enc(new TextEncoder().encode(text)), branch: g.branch };
+  let put = null;
+  for (let a = 0; a < 4; a++){
+    if (sha) body.sha = sha; else delete body.sha;
+    put = await ghCall(token, ghUrl(g, path), { method:'PUT', body: JSON.stringify(body) });
+    if (put.status !== 409) break;
+    await new Promise(r => setTimeout(r, 700 * (a + 1)));
+    const re = await ghGetText(token, g, path).catch(() => null);
+    sha = re ? re.sha : null;
+  }
+  if (!put.ok){
+    const e = await put.json().catch(() => ({}));
+    throw new Error('status ' + put.status + (e.message ? '. ' + e.message : ''));
+  }
+  return put.json();
+}
+
+/* Reading the notes file. Used by the staff page, the builder, and the
+   Salesforce export, so all three agree on who is getting a box. A file that
+   is missing or will not open yields an empty set rather than an error: the
+   report has to keep working whatever state the notes are in. */
+async function fetchOverlay(pw){
+  try {
+    const res = await fetch(OVERLAY_PATH + '?_=' + Date.now(), { cache:'no-store' });
+    if (!res.ok) return emptyOverlay();
+    const raw = await res.text();
+    const probe = JSON.parse(raw);            // an HTML 404 page would throw here
+    if (!(probe && probe.ct && probe.salt && probe.iv)) return emptyOverlay();
+    const o = await decryptPayload(pw, raw);
+    return (o && o.entries) ? o : emptyOverlay();
+  } catch(e){ return emptyOverlay(); }
+}
+/* Load it and hang it on the rows, ignoring a file left from another month. */
+async function attachOverlay(pw){
+  state.overlay = await fetchOverlay(pw);
+  if (state.overlay.monthKey && monthKeyNow() && state.overlay.monthKey !== monthKeyNow())
+    state.overlay = emptyOverlay();
+  applyOverlay();
+  return state.overlay;
+}
+/* The notes belong in the notes file, not in two places. The published list
+   carries the members and nothing Volunteer Services typed. */
+function rowsForPublish(){
+  return state.rows.map(r => {
+    const c = Object.assign({}, r);
+    delete c.vs; delete c.req;
+    return c;
+  });
+}
+
+/* Open the write key with the Volunteer Services password. Three outcomes
+   worth telling apart: nobody has set one up, the password is wrong, or here
+   is the key. Saying which saves a round of "it just does not work". */
+async function loadVsKey(pw){
+  let raw;
+  try {
+    const res = await fetch(VSKEY_PATH + '?_=' + Date.now(), { cache:'no-store' });
+    if (!res.ok) return { missing:true };
+    raw = await res.text();
+    const probe = JSON.parse(raw);          // an HTML 404 page would throw here
+    if (!(probe && probe.ct && probe.salt && probe.iv)) return { missing:true };
+  } catch(e){ return { missing:true }; }
+  try {
+    const o = await decryptPayload(pw, raw);
+    return (o && o.token) ? { token:o.token } : { bad:true };
+  } catch(e){ return { bad:true }; }
+}
+/* Setting it. Run from the builder, with the Director's own token doing the
+   writing, so the Volunteer Services password is all anybody else needs. */
+async function publishVsKey(adminToken, g, vsPassword, vsToken){
+  const text = await encryptPayload(vsPassword, {
+    v:1, token:vsToken, set:new Date().toISOString() });
+  let sha = null;
+  const cur = await ghGetText(adminToken, g, VSKEY_PATH);
+  if (cur) sha = cur.sha;
+  return ghPutText(adminToken, g, VSKEY_PATH, text, 'Set the Volunteer Services password', sha);
+}
+
+/* The single door through which Volunteer Services writes anything.
+   The path is a constant, not an argument, so no caller can point this at the
+   published list by accident. Re-reads and merges first, so a second person
+   saving a minute later cannot wipe the first person's notes. */
+async function saveOverlay(token, g, pw, local){
+  if (g.path === OVERLAY_PATH)
+    throw new Error('config.js points the published list at the notes file. Fix that before saving.');
+
+  let sha = null, remote = null;
+  const cur = await ghGetText(token, g, OVERLAY_PATH);
+  if (cur){
+    sha = cur.sha;
+    try { remote = await decryptPayload(pw, cur.text); } catch(e){ remote = null; }
+  }
+  /* A notes file that will not open is left alone rather than overwritten.
+     Better to fail loudly than to quietly replace something unreadable. */
+  if (cur && !remote)
+    throw new Error('the notes already on the site could not be opened with this password, so nothing was changed');
+
+  /* A notes file from a previous month is replaced, not merged. Merging would
+     carry every one of last month's entries into this month's file under this
+     month's key, and last month's outreach would reappear against a fresh list. */
+  if (remote && remote.monthKey && local.monthKey && remote.monthKey !== local.monthKey) remote = null;
+
+  const merged = mergeOverlays(remote, local);
+  const text = await encryptPayload(pw, merged);
+  await ghPutText(token, g, OVERLAY_PATH, text,
+    'Volunteer Services notes for ' + (merged.monthKey || 'this month'), sha);
+  return merged;
 }

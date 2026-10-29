@@ -264,6 +264,33 @@
     </details>
 
     <details style="margin-top:10px">
+      <summary class="hint" style="cursor:pointer">Set the Volunteer Services password</summary>
+      <div class="note" style="margin-top:12px">
+        <div class="lbl">Three passwords, no tokens to hand out</div>
+        <p>Staff sign in with the <strong>team password</strong> and can read everything. Volunteer Services
+        types a <strong>second password</strong> to log contact and notes and to ask for a box. You keep the
+        <strong>admin password</strong> for approving those asks and for the Salesforce list.</p>
+        <p>Set the middle one here. Generate a second GitHub token the same way as above, named
+        "No Box volunteer services", with the same single repository and the same Contents permission.
+        Paste it below with the password you want Volunteer Services to use. The token is encrypted under
+        that password and published, so the only thing you ever hand out is the password itself. Changing
+        the password later is just doing this again.</p>
+        <p>Use a separate token rather than your own, so revoking their access never touches your publishing.</p>
+      </div>
+      <div class="map" style="display:block;margin-top:12px">
+        <div class="map-row"><label>VS password</label>
+          <input type="text" id="vsPw" placeholder="the password Volunteer Services will type" style="flex:1"></div>
+        <div class="map-row"><label>Their token</label>
+          <input type="password" id="vsTok" placeholder="github_pat_..." style="flex:1"></div>
+      </div>
+      <div class="rowline" style="margin-top:10px">
+        <button class="btn sm gold" id="btnVsKey">Publish the Volunteer Services password</button>
+        <span class="hint">Uses your token above to write it.</span>
+      </div>
+      <div id="vsKeyOut"></div>
+    </details>
+
+    <details style="margin-top:10px">
       <summary class="hint" style="cursor:pointer">Manual fallback, if GitHub is down or the token is expired</summary>
       <div style="margin-top:12px">
         <button class="btn sm out" id="btnPublish">Encrypt and download the file instead</button>

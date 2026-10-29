@@ -476,7 +476,7 @@ async function publish(){
       waitlisted: counted().filter(r => effStatus(r) === STATUS.WAIT).length,
       angel: counted().filter(r => effStatus(r) === STATUS.ANGEL).length
     },
-    rows: state.rows
+    rows: rowsForPublish()
   };
   try {
     const text = await encryptPayload(pw, payload);
@@ -692,7 +692,12 @@ async function updateHistory(g, payload){
 }
 
 /* Anything ending .enc in the data folder that is not the live file is left
-   over from a manual upload. Remove it so nobody opens the wrong month. */
+   over from a manual upload. Remove it so nobody opens the wrong month.
+
+   The Volunteer Services notes file lives in the same folder and must survive
+   every publish, so it is named here and skipped. Deleting it would throw away
+   an entire month of outreach the moment the report was re-run. */
+const KEEP_FILES = ['requests.enc', 'vskey.enc'];
 async function sweepOldFiles(g){
   const dir = g.path.indexOf('/') > -1 ? g.path.slice(0, g.path.lastIndexOf('/')) : '';
   if (!dir) return [];
@@ -703,7 +708,8 @@ async function sweepOldFiles(g){
   const items = await res.json();
   if (!Array.isArray(items)) return [];
 
-  const strays = items.filter(f => f.type === 'file' && f.name !== live && /\.enc$/i.test(f.name));
+  const strays = items.filter(f => f.type === 'file' && f.name !== live
+    && KEEP_FILES.indexOf(f.name) === -1 && /\.enc$/i.test(f.name));
   const gone = [];
   for (const f of strays){
     const del = await GH.call('https://api.github.com/repos/' + g.owner + '/' + g.repo +
@@ -736,6 +742,28 @@ async function publishLive(){
   if (!g.owner || !g.repo) return note('warn', 'Repo needed', 'Fill in the GitHub owner and repository name.');
   if (!GH.token()) return note('warn', 'Token needed', 'Paste a GitHub token with Contents write access to this repo. Instructions are below.');
 
+  /* Decisions live in the notes file, not in the exports this run was built
+     from. Pull them in before the numbers are worked out, so the counts that
+     get published match what staff see, and a member approved for a box last
+     week is still on the Logistics list after a re-run. */
+  out.innerHTML = '<p class="hint">Checking for Volunteer Services decisions...</p>';
+  try { await attachOverlay(pw); } catch(e){ state.overlay = null; }
+
+  const waiting = counted().filter(pendingBox).length;
+  if (waiting){
+    const go = await askConfirm({
+      title: 'Requests still waiting on you',
+      body: '<p>' + waiting + ' member' + (waiting === 1 ? '' : 's') + ' Volunteer Services asked about ' +
+            (waiting === 1 ? 'has' : 'have') + ' no decision yet, so ' +
+            (waiting === 1 ? 'it stays' : 'they stay') + ' off the Logistics list in this publish.</p>' +
+            '<p>Publishing now costs nothing: decisions live in their own file and take effect the ' +
+            'moment you make them, with no re-run needed.</p>',
+      yes: 'Publish anyway', no: 'Let me decide first'
+    });
+    if (!go) return note('', 'Nothing published',
+      'Open the staff site, work through the Needs approval tab, then come back here.');
+  }
+
   out.innerHTML = '<p class="hint">Encrypting ' + counted().length + ' counted rows...</p>';
   const label = new Date(state.month.y, state.month.m, 1).toLocaleString('en-US', { month:'long', year:'numeric' });
   const payload = {
@@ -749,7 +777,7 @@ async function publishLive(){
       waitlisted: counted().filter(r => effStatus(r) === STATUS.WAIT).length,
       angel: counted().filter(r => effStatus(r) === STATUS.ANGEL).length
     },
-    rows: state.rows
+    rows: rowsForPublish()
   };
 
   let text;
@@ -967,6 +995,44 @@ $('#btnToPublish').addEventListener('click', async () => {
   }
   openStage('#p5', '#chip4', null);
 });
+/* Publishing the Volunteer Services password. Their token is encrypted under
+   it and written with the Director's own token, so the password is the only
+   thing that ever leaves this screen. */
+async function publishVsPassword(){
+  const out = $('#vsKeyOut');
+  const note = (k, t, b) => { out.innerHTML = '<div class="note' + (k ? ' ' + k : '') + '"><div class="lbl">' + t + '</div><p>' + b + '</p></div>'; };
+
+  const pw = ($('#vsPw').value || '').trim();
+  const tok = ($('#vsTok').value || '').trim();
+  const g = GH.cfg();
+
+  if (!pw) return note('warn', 'Password needed', 'Type the password you want Volunteer Services to use.');
+  if (pw.length < 6) return note('warn', 'Too short', 'Six characters at the very least. This one guards a token that can write to the repository.');
+  if (!tok) return note('warn', 'Their token needed', 'Paste the second GitHub token, the one for Volunteer Services.');
+  if (tok === GH.token()) return note('warn', 'That is your own token',
+    'Generate a separate one for Volunteer Services, so revoking theirs never stops you publishing.');
+  if (!g.owner || !g.repo) return note('warn', 'Repo needed', 'Fill in the GitHub owner and repository above.');
+  if (!GH.token()) return note('warn', 'Your token needed', 'Paste your own access token above. It is what writes this file.');
+  if (!cryptoReady()) return note('warn', 'Open the live site', 'Encryption needs the https address, not a file on your hard drive.');
+
+  out.innerHTML = '<p class="hint">Encrypting and publishing...</p>';
+  try {
+    await publishVsKey(GH.token(), g, pw, tok);
+    $('#vsTok').value = '';
+    note('', 'Volunteer Services password set',
+      'Give them the password and nothing else. They type it on the staff site, with their name, ' +
+      'and the Volunteer Services tab becomes a worksheet. Render needs about a minute first.');
+  } catch(e){
+    const m = String(e.message || e);
+    note('warn', 'Could not publish it',
+      /401/.test(m) ? 'GitHub did not accept your token. Check it was copied whole and has not expired.'
+      : /403/.test(m) ? 'Your token needs Contents set to Read and write on this repository.'
+      : m + '. Nothing was changed.');
+  }
+}
+const vsBtn = $('#btnVsKey');
+if (vsBtn) vsBtn.addEventListener('click', publishVsPassword);
+
 GH.restore();
 restoreWho();
 openModeBanner();

@@ -10,7 +10,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
 .bar{position:sticky;top:0;z-index:60;background:var(--maroon-deep);color:#fff;border-bottom:3px solid var(--gold)}
-.bar-in{max-width:1240px;margin:0 auto;padding:11px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.bar-in{max-width:min(2200px, max(1240px, 93vw));margin:0 auto;padding:11px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
 .bar-title{font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:.09em;text-transform:uppercase}
 .bar-title span{color:var(--gold)}
 .bolt{color:var(--gold);opacity:.85;vertical-align:-2px;margin-left:9px}
@@ -22,7 +22,11 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);f
 .bar-actions{display:flex;gap:8px}
 .ghost{font-family:var(--display);text-transform:uppercase;letter-spacing:.1em;font-size:13px;background:none;border:1px solid rgba(255,255,255,.3);color:#F0E6DE;padding:5px 11px;cursor:pointer}
 .ghost:hover{border-color:var(--gold);color:var(--gold)}
-.wrap{max-width:1240px;margin:0 auto;padding:30px 24px 90px}
+/* The page grows with the window: never narrower than it used to be, and
+   capped so a very wide monitor does not stretch it past the point of
+   being readable. Prose keeps its own character limits below, so the
+   extra width goes to the tables, which is what needs it. */
+.wrap{max-width:min(2200px, max(1240px, 93vw));margin:0 auto;padding:30px 24px 90px}
 h1{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:clamp(30px,5vw,48px);line-height:1;margin:0 0 6px;color:var(--maroon)}
 .sub{color:var(--ink-soft);max-width:76ch;margin:0 0 8px}
 .privacy{font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;color:var(--ok);margin-bottom:26px}
@@ -101,7 +105,7 @@ select{flex:1;min-width:0}
 .viewhead .txt{flex:1;min-width:240px}
 .viewhead p{margin:0;font-size:14px;color:var(--ink-soft)}
 .tools{display:flex;gap:8px;flex-wrap:wrap}
-.tw{overflow:auto;max-height:560px;border:1px solid var(--rule)}
+.tw{overflow:auto;max-height:clamp(560px, calc(100vh - 230px), 1300px);border:1px solid var(--rule)}
 table{border-collapse:collapse;width:100%;font-size:13px}
 th{position:sticky;top:0;background:var(--maroon);color:#fff;text-align:left;padding:8px 10px;font-family:var(--display);text-transform:uppercase;letter-spacing:.07em;font-size:13px;font-weight:600;white-space:nowrap;z-index:2}
 td{padding:7px 10px;border-bottom:1px solid var(--rule);vertical-align:top;white-space:nowrap}
@@ -194,3 +198,101 @@ a{color:var(--maroon)}
   .batches{grid-template-columns:1fr}
   .pubstamp{flex-wrap:wrap}
 }
+
+/* ============================================================
+   Volunteer Services: notes, box requests, and the sign off.
+   ============================================================ */
+
+/* A row somebody has asked about, but nobody has decided on yet. */
+tr.asked td{background:#FFF8E1!important}
+tr.decided-no td{background:#F0EEE9!important;color:#6B645B}
+tr.decided-no{border-left-color:#B3AB9C}
+tr.asked{border-left-color:var(--gold)}
+
+/* The outreach tabs carry sentences, not codes, so they wrap. */
+table.vs{table-layout:fixed;width:100%;font-size:12.5px}
+table.vs th,table.vs td{white-space:normal;word-break:break-word;padding:7px 8px;vertical-align:top}
+table.vs .tag{white-space:normal;display:inline-block;margin-bottom:2px}
+table.vs th:nth-child(1){width:88px}
+table.vs select{max-width:100%}
+table.vs select.vsbox{width:100%;font-size:11.5px;padding:4px 5px}
+table.vs input{font-size:12px;padding:4px 6px;width:100%;min-width:0}
+
+/* Contact and notes, one cell: how, who, and what came of it. */
+.notecell{display:flex;flex-direction:column;gap:5px;min-width:190px}
+.noteadd{display:flex;flex-direction:column;gap:4px;
+  border-top:1px dashed var(--rule);padding-top:6px;margin-top:2px}
+.noteadd .vsby{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em}
+.noteadd .vsmethod{width:100%;font-size:11.5px;padding:4px 5px}
+.nlog em{display:inline-block;font-style:normal;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.1em;text-transform:uppercase;background:var(--rule);color:var(--ink);
+  padding:1px 5px;margin-right:5px;vertical-align:1px}
+.notelog{display:flex;flex-direction:column;gap:3px}
+.nlog{display:block;font-size:12px;line-height:1.45;padding-left:8px;
+  border-left:2px solid var(--rule);color:var(--ink)}
+.nlog b{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--maroon);font-weight:500;margin-right:5px}
+.nlog i{font-family:var(--mono);font-size:10px;color:var(--ink-soft);font-style:normal;margin-left:5px}
+.nby{display:block;font-family:var(--mono);font-size:10px;color:var(--ink-soft);margin-top:3px}
+
+.boxask{display:flex;gap:7px;align-items:flex-start;font-size:12px;cursor:pointer;line-height:1.35}
+.boxask input{width:16px;height:16px;flex:0 0 16px;margin-top:1px}
+
+.apact{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.apact .btn{white-space:nowrap}
+
+/* The save bar. Sits above the table so unsent work is impossible to miss. */
+.vsbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:0 0 12px;
+  background:#FFFCF2;border:1px solid var(--gold);border-left:4px solid var(--gold);padding:10px 14px}
+.vswho{display:flex;gap:7px;align-items:baseline}
+.vswho .lb{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+.linky{background:none;border:none;padding:0;font-family:var(--body);font-size:13px;font-weight:600;
+  color:var(--maroon);cursor:pointer;border-bottom:1px dotted var(--maroon)}
+.linky:hover{color:var(--maroon-deep)}
+.vsnag{font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;color:var(--maroon);font-weight:500}
+.vsbar .btn[disabled]{opacity:.45;cursor:default}
+.vsout{flex:1 1 100%}
+.vsout .note{margin:8px 0 0}
+
+.role.app{border-top-color:var(--gold)}
+
+/* The Salesforce worklist. Outstanding rows read normally, finished ones
+   fade back so the eye lands on what is left. */
+.role.sf{border-top-color:var(--blue)}
+.sfwhat{display:block;font-size:12px;line-height:1.45;margin-top:4px;color:var(--ink-soft)}
+table.vs th:last-child{width:120px}
+tr.sfdone td{background:#F4F6F4!important;color:#7A857C}
+tr.sfdone .sfwhat{color:#8F998F}
+
+/* Volunteer Services tab: coloured by what the outreach produced.
+   Red is the starting state, so it is kept light enough to read a full
+   screen of it without the tab looking like an emergency. */
+tr.vs-red td{background:#FBE8E6!important}
+tr.vs-red{border-left-color:var(--red)}
+tr.vs-yellow td{background:#FFF3D0!important}
+tr.vs-yellow{border-left-color:var(--gold)}
+tr.vs-green td{background:#EAF4EC!important}
+tr.vs-green{border-left-color:var(--ok)}
+
+.vskey{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;
+  font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-soft)}
+.vskey i{width:12px;height:12px;display:inline-block;margin-right:6px;
+  vertical-align:-1px;border-left:3px solid}
+.vskey i.r{background:#FBE8E6;border-left-color:var(--red)}
+.vskey i.y{background:#FFF3D0;border-left-color:var(--gold)}
+.vskey i.g{background:#EAF4EC;border-left-color:var(--ok)}
+
+/* Tracking a row across a wide screen is the thing that gets harder as the
+   page grows, so every coloured row gets a hover state. Without these the
+   generic hover is overridden by the row colours and does nothing, which is
+   exactly where it is most needed. */
+tr.vs-red:hover td{background:#F6D8D4!important}
+tr.vs-yellow:hover td{background:#FBEAB4!important}
+tr.vs-green:hover td{background:#DBEDE0!important}
+tr.asked:hover td{background:#FBEFCB!important}
+tr.decided:hover td{background:#E1EFE6!important}
+tr.decided-no:hover td{background:#E7E4DE!important}
+tr.decided-hold:hover td{background:#F7D7D7!important}
+tr.excluded:hover td{background:#E7E4DE!important}
+tr.sfdone:hover td{background:#E9EEE9!important}
+tr.edited:hover td{background:#E7F2E9!important}
