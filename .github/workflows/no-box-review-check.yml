@@ -1,0 +1,117 @@
+# Tells the Director when Volunteer Services has saved something.
+#
+# No email credentials anywhere. This opens a GitHub issue, and GitHub emails
+# you about it, because you own the repository and watch it by default.
+#
+# It can see that data/requests.enc changed. It cannot see what is in it: the
+# notes are encrypted and this workflow has no password. So the issue says how
+# many times it was saved and nothing about any member, which is the right side
+# of the line for something that lands in an inbox.
+
+name: No Box review check
+
+on:
+  # 20:45 UTC on weekdays. That is 3:45pm in San Antonio through the summer and
+  # 2:45pm through the winter, because GitHub only schedules in UTC and does not
+  # follow daylight saving. Either way it arrives before the end of the day.
+  schedule:
+    - cron: '45 20 * * 1-5'
+  # Lets you run it by hand from the Actions tab, which is how to test it.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Look for saves, and say so if there are any
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            const NOTES = 'data/requests.enc';
+            const LABEL = 'no-box-review';
+            const { owner, repo } = context.repo;
+
+            // A day plus a margin, so a save just before yesterday's run is not
+            // missed. Anything counted twice is caught by the dedupe below.
+            const since = new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString();
+
+            let commits = [];
+            try {
+              const res = await github.rest.repos.listCommits({ owner, repo, path: NOTES, since });
+              commits = res.data;
+            } catch (e) {
+              // No notes file yet is the normal state before the first save.
+              if (e.status === 404 || e.status === 409) {
+                core.info('No notes file yet. Nothing to report.');
+                return;
+              }
+              throw e;
+            }
+
+            if (!commits.length) {
+              core.info('Nothing saved since ' + since + '.');
+              return;
+            }
+
+            const latest = commits[0].sha;
+            const when = new Date(commits[0].commit.author.date)
+              .toLocaleString('en-US', { timeZone: 'America/Chicago',
+                weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            const marker = '<!-- no-box-review:' + latest + ' -->';
+
+            // One open thread at a time. If the last one is still open it gets a
+            // comment rather than a second issue, so this never buries an inbox.
+            const open = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', labels: LABEL, per_page: 1
+            });
+
+            const n = commits.length;
+            const body =
+              marker + '\n\n' +
+              'Volunteer Services saved **' + n + ' time' + (n === 1 ? '' : 's') +
+              '** since yesterday. The most recent was ' + when + ' Central.\n\n' +
+              'Open the staff site and check **Needs approval**. There may be nothing ' +
+              'waiting on you: a save that only adds notes, or one where everything was ' +
+              'marked as not needing a box, still counts as a save here.\n\n' +
+              '_What was saved is encrypted, so this check cannot read it and no member ' +
+              'detail appears in this issue or in the email about it._\n\n' +
+              'Close this once you have been through them.';
+
+            if (open.data.length) {
+              const issue = open.data[0];
+              if ((issue.body || '').includes(marker)) {
+                core.info('Already reported commit ' + latest + '. Nothing new.');
+                return;
+              }
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: issue.number, body
+              });
+              await github.rest.issues.update({
+                owner, repo, issue_number: issue.number, body
+              });
+              core.info('Added to the open issue #' + issue.number + '.');
+              return;
+            }
+
+            // The label has to exist before it can be applied.
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: LABEL });
+            } catch (e) {
+              if (e.status === 404) {
+                await github.rest.issues.createLabel({
+                  owner, repo, name: LABEL, color: 'FFC72C',
+                  description: 'Volunteer Services has saved changes to look at'
+                });
+              } else { throw e; }
+            }
+
+            const made = await github.rest.issues.create({
+              owner, repo,
+              title: 'No Box: Volunteer Services has changes for you',
+              body, labels: [LABEL]
+            });
+            core.info('Opened issue #' + made.data.number + '.');
