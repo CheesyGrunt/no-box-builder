@@ -334,7 +334,9 @@
 
   /* The run schedule, with the next date worked out so nobody has to count
      forward from the 27th and wonder about the weekend. */
-  const RUN_DAYS = [1, 15, 20, 25, 27];   // plus the last day of the month
+  /* The 15th, 20th, 25th and 27th, then the 1st to close out the month just
+     gone. Nothing runs on the last day of the month. */
+  const RUN_DAYS = [1, 15, 20, 25, 27];
   function nextBusinessDay(d){
     const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     while (x.getDay() === 0 || x.getDay() === 6) x.setDate(x.getDate() + 1);
@@ -346,8 +348,7 @@
     for (let m = -1; m <= 2; m++){
       const base = new Date(today.getFullYear(), today.getMonth() + m, 1);
       const y = base.getFullYear(), mo = base.getMonth();
-      const last = new Date(y, mo + 1, 0).getDate();
-      RUN_DAYS.concat([last]).forEach(d => out.push(nextBusinessDay(new Date(y, mo, d))));
+      RUN_DAYS.forEach(d => out.push(nextBusinessDay(new Date(y, mo, d))));
     }
     return out.filter(d => d >= today).sort((a, b) => a - b)[0] || null;
   }
@@ -358,11 +359,11 @@
     const when = nx ? nx.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : '';
     box.innerHTML =
       (when ? '<span class="nx">Next run &nbsp;<b>' + when + '</b></span>' : '') +
-      '<strong>This report is run on the 15th, the 20th, the 25th, the 27th, and the last day of the month.</strong> ' +
+      '<strong>This report is run on the 15th, the 20th, the 25th and the 27th, ' +
+      'with a final run on the 1st that closes out the month just gone.</strong> ' +
       'No changes are made after the 27th. Volunteer Services has the 25th and the 26th to make contact, ' +
       'which gives a member 24 hours to come back. If nobody hears from them, they go onto the box list ' +
       'automatically, and the final report is pulled on the 27th or the next business day after it. ' +
-      'The run on the 1st closes out the month just gone. ' +
       'Every run lands on a business day, so any of those dates falling on a weekend moves to the following business day.';
   }
 
