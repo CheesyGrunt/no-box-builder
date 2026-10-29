@@ -258,3 +258,21 @@ table.vs input{font-size:12px;padding:4px 6px;width:100%;min-width:0}
 table.vs th:last-child{width:120px}
 tr.sfdone td{background:#F4F6F4!important;color:#7A857C}
 tr.sfdone .sfwhat{color:#8F998F}
+
+/* Volunteer Services tab: coloured by what the outreach produced.
+   Red is the starting state, so it is kept light enough to read a full
+   screen of it without the tab looking like an emergency. */
+tr.vs-red td{background:#FBE8E6!important}
+tr.vs-red{border-left-color:var(--red)}
+tr.vs-yellow td{background:#FFF3D0!important}
+tr.vs-yellow{border-left-color:var(--gold)}
+tr.vs-green td{background:#EAF4EC!important}
+tr.vs-green{border-left-color:var(--ok)}
+
+.vskey{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;
+  font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-soft)}
+.vskey i{width:12px;height:12px;display:inline-block;margin-right:6px;
+  vertical-align:-1px;border-left:3px solid}
+.vskey i.r{background:#FBE8E6;border-left-color:var(--red)}
+.vskey i.y{background:#FFF3D0;border-left-color:var(--gold)}
+.vskey i.g{background:#EAF4EC;border-left-color:var(--ok)}

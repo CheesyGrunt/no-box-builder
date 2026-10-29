@@ -129,6 +129,27 @@ function sfAction(r){
 function sfDone(r){ return !!(r.vs && r.vs.sf && r.vs.sf.done); }
 function sfNeeded(r){ return !!sfAction(r) && !sfDone(r); }
 
+/* ---------- colour on the Volunteer Services tab ----------
+   Coloured by what the outreach has produced, not by the member's status.
+   Status is the same for everybody on this tab, so colouring by it told you
+   nothing. This tells you who still needs chasing:
+
+     red     nobody has come back yet. Everyone starts here.
+     yellow  heading for a box, whether Volunteer Services has only asked
+             or the Director has already said yes.
+     green   settled without needing a box. Somebody picked them up.
+
+   Pending and decided share a colour on purpose: the question the colour
+   answers is "do I still need to chase this person", and the Box? column
+   already says which of the two it is. */
+function outreachClass(r){
+  if (excluded(r)) return 'excluded';
+  const q = r.req;
+  if (!q) return 'vs-red';
+  const heading = q.state === REQ.DECIDED ? q.outcome : q.want;
+  return heading === WANT.SEND ? 'vs-yellow' : 'vs-green';
+}
+
 /* Two people can have the list open at once. Rather than let the second save
    wipe the first, the remote file is re-read and merged entry by entry: notes
    are unioned, and a decision always beats the request it answered. */
@@ -680,7 +701,16 @@ function renderView(){
   if (help) help.style.display = (state.view === 'review' || state.view === 'decisions') ? '' : 'none';
 
   const fbox = $('#vFilters');
-  if (state.view === 'logistics'){
+  if (state.view === 'volunteer'){
+    /* A key, because a colour nobody can decode is just decoration. */
+    const n = c => counted().filter(r => effStatus(r) === STATUS.ANGEL || r.req)
+                            .filter(r => outreachClass(r) === c).length;
+    fbox.innerHTML = '<span class="vskey">' +
+      '<span><i class="r"></i>' + n('vs-red') + ' no answer yet</span>' +
+      '<span><i class="y"></i>' + n('vs-yellow') + ' needs a box</span>' +
+      '<span><i class="g"></i>' + n('vs-green') + ' settled, no box</span>' +
+      '</span>';
+  } else if (state.view === 'logistics'){
     const held = state.rows.filter(r => effStatus(r) === STATUS.SEND && heldBack(r)).length;
     fbox.innerHTML = held
       ? `<span class="hint">${held} more would ship once resolved on the Needs review tab.</span>`
@@ -698,6 +728,7 @@ function renderView(){
   t.querySelector('tbody').innerHTML = rows.map(r => {
     let cls = '';
     if (state.view === 'sfcheck' && sfDone(r)) cls = 'sfdone';
+    else if (state.view === 'volunteer') cls = outreachClass(r);
     else if (excluded(r)) cls = 'excluded';
     else if (outcomeSend(r)) cls = 'decided';
     else if (outcomeNoSend(r)) cls = 'decided-no';
