@@ -50,5 +50,18 @@
     "eligible": 622,
     "coverage": 62,
     "rawCoverage": 61
+  },
+  {
+    "monthKey": "2026-11",
+    "month": "November 2026",
+    "published": "2026-11-02T16:22:59.485Z",
+    "updatedBy": "Director of Virtual Services",
+    "total": 624,
+    "got": 617,
+    "noBox": 7,
+    "waitlisted": 0,
+    "eligible": 624,
+    "coverage": 98,
+    "rawCoverage": 98
   }
 ]
